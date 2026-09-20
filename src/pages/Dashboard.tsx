@@ -1,27 +1,43 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
-import { payrollChart } from "@/mock/data"
 import { formatCurrency } from "@/lib/utils"
 import { Users, UserCheck, Palmtree, Wallet, Clock, AlertCircle, ArrowUpRight, Gift, Cake, Calendar } from "lucide-react"
 import { LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer, PieChart, Pie, Cell, BarChart, Bar } from "recharts"
+import { useDashboardSummary } from "@/hooks/useDashboard"
+import { payrollChart } from "@/mock/data"
 
-const kpis=[
-  {label:"Total Employees", value:"1,248", change:"+4.8% vs last month", icon:Users, color:"text-blue-600 bg-blue-50"},
-  {label:"Present Today", value:"1,086", change:"87% attendance", icon:UserCheck, color:"text-emerald-600 bg-emerald-50"},
-  {label:"On Leave", value:"42", change:"3.4% of workforce", icon:Palmtree, color:"text-amber-600 bg-amber-50"},
-  {label:"Payroll This Month", value:"₹80.1L", change:"Net payable", icon:Wallet, color:"text-violet-600 bg-violet-50"},
-  {label:"Pending Payroll", value:"128", change:"Awaiting process", icon:Clock, color:"text-orange-600 bg-orange-50"},
-  {label:"Net Salary Avg", value:"₹64,200", change:"+2.1% vs last", icon:ArrowUpRight, color:"text-zinc-600 bg-zinc-100"},
-]
 const donut=[{name:"Active",value:1120,color:"#2563eb"},{name:"On Leave",value:42,color:"#f59e0b"},{name:"Inactive",value:86,color:"#e5e7eb"}]
 const attendanceData=[{name:"Present",value:1086},{name:"Absent",value:64},{name:"Late",value:56},{name:"Half Day",value:42}]
 const deptData=[{dept:"Engineering",count:342},{dept:"Sales",count:210},{dept:"Marketing",count:124},{dept:"Support",count:98},{dept:"Finance",count:86},{dept:"Design",count:64}]
 
 export default function Dashboard(){
+  const { data: summary, isLoading, isError } = useDashboardSummary();
+
+  // Use live data if available, otherwise mock
+  const kpis = summary ? [
+    {label:"Total Employees", value: String(summary.employees.total), change:`${summary.employees.active} active`, icon:Users, color:"text-blue-600 bg-blue-50"},
+    {label:"Present Today", value: String(summary.attendance.present), change:`${summary.attendance.present} present`, icon:UserCheck, color:"text-emerald-600 bg-emerald-50"},
+    {label:"On Leave", value: String(summary.attendance.onLeave), change:`${summary.attendance.onLeave} on leave`, icon:Palmtree, color:"text-amber-600 bg-amber-50"},
+    {label:"Payroll This Month", value: formatCurrency(summary.payroll.net), change:"Net payable", icon:Wallet, color:"text-violet-600 bg-violet-50"},
+    {label:"Pending Payroll", value:"—", change:"View payroll runs", icon:Clock, color:"text-orange-600 bg-orange-50"},
+    {label:"Inactive", value: String(summary.employees.inactive), change:"Inactive", icon:ArrowUpRight, color:"text-zinc-600 bg-zinc-100"},
+  ] : [
+    {label:"Total Employees", value:"1,248", change:"+4.8% vs last month", icon:Users, color:"text-blue-600 bg-blue-50"},
+    {label:"Present Today", value:"1,086", change:"87% attendance", icon:UserCheck, color:"text-emerald-600 bg-emerald-50"},
+    {label:"On Leave", value:"42", change:"3.4% of workforce", icon:Palmtree, color:"text-amber-600 bg-amber-50"},
+    {label:"Payroll This Month", value:"₹80.1L", change:"Net payable", icon:Wallet, color:"text-violet-600 bg-violet-50"},
+    {label:"Pending Payroll", value:"128", change:"Awaiting process", icon:Clock, color:"text-orange-600 bg-orange-50"},
+    {label:"Net Salary Avg", value:"₹64,200", change:"+2.1% vs last", icon:ArrowUpRight, color:"text-zinc-600 bg-zinc-100"},
+  ];
+
+  if (isLoading) {
+    return <div className="space-y-4"><div className="grid grid-cols-6 gap-4">{Array.from({length:6}).map((_,i)=><Card key={i} className="h-[110px] animate-pulse bg-muted"/> )}</div><Card className="h-[300px] animate-pulse bg-muted"/></div>
+  }
+
   return <div className="space-y-6">
     <div className="flex flex-wrap items-start justify-between gap-4">
-      <div><h1 className="text-2xl font-semibold tracking-tight">Good Morning, Admin</h1><p className="text-sm text-muted-foreground">Here's what's happening with your workforce today.</p></div>
+      <div><h1 className="text-2xl font-semibold tracking-tight">Good Morning, Admin</h1><p className="text-sm text-muted-foreground">Here's what's happening with your workforce today.{isError && <span className="text-amber-600"> (showing cached data — API unavailable)</span>}</p></div>
       <Button>Process Payroll</Button>
     </div>
 
@@ -72,7 +88,7 @@ export default function Dashboard(){
         <CardHeader><CardTitle>Attendance Overview</CardTitle></CardHeader>
         <CardContent className="h-[260px]">
           <ResponsiveContainer width="100%" height="100%">
-            <BarChart data={attendanceData}><XAxis dataKey="name" fontSize={12}/><YAxis fontSize={12}/><Tooltip/><Bar dataKey="value" fill="#2563eb" radius={[6,6,0,0]}/></BarChart>
+            <BarChart data={summary ? [{name:"Present",value:summary.attendance.present},{name:"Absent",value:summary.attendance.absent},{name:"Late",value:summary.attendance.late}] : attendanceData}><XAxis dataKey="name" fontSize={12}/><YAxis fontSize={12}/><Tooltip/><Bar dataKey="value" fill="#2563eb" radius={[6,6,0,0]}/></BarChart>
           </ResponsiveContainer>
         </CardContent>
       </Card>
@@ -81,7 +97,7 @@ export default function Dashboard(){
         <CardHeader><CardTitle>Department Distribution</CardTitle></CardHeader>
         <CardContent className="h-[260px]">
           <ResponsiveContainer width="100%" height="100%">
-            <BarChart data={deptData} layout="vertical"><XAxis type="number" hide/><YAxis dataKey="dept" type="category" width={100} fontSize={12}/><Tooltip/><Bar dataKey="count" fill="#6366f1" radius={[0,6,6,0]}/></BarChart>
+            <BarChart data={summary?.departments?.length ? summary.departments.map((d:any)=>({dept:d.dept,count:Number(d.count)})) : deptData} layout="vertical"><XAxis type="number" hide/><YAxis dataKey="dept" type="category" width={100} fontSize={12}/><Tooltip/><Bar dataKey="count" fill="#6366f1" radius={[0,6,6,0]}/></BarChart>
           </ResponsiveContainer>
         </CardContent>
       </Card>
@@ -93,9 +109,9 @@ export default function Dashboard(){
             <div className="text-xs text-muted-foreground">Payroll Period</div><div className="font-semibold">September 2026</div>
             <div className="mt-3 grid grid-cols-2 gap-3 text-sm">
               <div><div className="text-muted-foreground text-xs">Status</div><Badge variant="warning">Processing</Badge></div>
-              <div><div className="text-muted-foreground text-xs">Employees</div><div className="font-medium">1,248</div></div>
-              <div><div className="text-muted-foreground text-xs">Processed</div><div className="font-medium text-emerald-600">1,120</div></div>
-              <div><div className="text-muted-foreground text-xs">Pending</div><div className="font-medium text-amber-600">128</div></div>
+              <div><div className="text-muted-foreground text-xs">Employees</div><div className="font-medium">{summary?.employees.total ?? 1248}</div></div>
+              <div><div className="text-muted-foreground text-xs">Processed</div><div className="font-medium text-emerald-600">{summary?.attendance.present ?? 1120}</div></div>
+              <div><div className="text-muted-foreground text-xs">Pending</div><div className="font-medium text-amber-600">{summary ? summary.employees.total - summary.attendance.present : 128}</div></div>
             </div>
             <div className="mt-3 w-full bg-muted rounded-full h-2"><div className="bg-primary h-2 rounded-full" style={{width:"89%"}}/></div>
             <Button className="w-full mt-4">Process Remaining</Button>
@@ -108,7 +124,7 @@ export default function Dashboard(){
         <CardContent className="grid grid-cols-1 md:grid-cols-2 gap-3">
           <div className="rounded-lg border p-3 flex gap-3"><div className="h-9 w-9 rounded-full bg-pink-100 flex items-center justify-center"><Cake className="h-4 w-4 text-pink-600"/></div><div><div className="text-sm font-medium">Birthdays This Week</div><div className="text-xs text-muted-foreground">5 employees • Tomorrow: Priya Sharma</div></div></div>
           <div className="rounded-lg border p-3 flex gap-3"><div className="h-9 w-9 rounded-full bg-blue-100 flex items-center justify-center"><Gift className="h-4 w-4 text-blue-600"/></div><div><div className="text-sm font-medium">Work Anniversaries</div><div className="text-xs text-muted-foreground">3 employees • Aarav - 3 years</div></div></div>
-          <div className="rounded-lg border p-3 flex gap-3"><div className="h-9 w-9 rounded-full bg-amber-100 flex items-center justify-center"><Calendar className="h-4 w-4 text-amber-600"/></div><div><div className="text-sm font-medium">Upcoming Holidays</div><div className="text-xs text-muted-foreground">Gandhi Jayanti • Oct 2</div></div></div>
+          <div className="rounded-lg border p-3 flex gap-3"><div className="h-9 w-9 rounded-full bg-amber-100 flex items-center justify-center"><Calendar className="h-4 w-4 text-amber-600"/></div><div><div className="text-sm font-medium">Upcoming Holidays</div><div className="text-xs text-muted-foreground">{summary?.upcomingHolidays?.[0]?.name ?? 'Gandhi Jayanti'} • {summary?.upcomingHolidays?.[0]?.holidayDate ?? 'Oct 2'}</div></div></div>
           <div className="rounded-lg border p-3 flex gap-3"><div className="h-9 w-9 rounded-full bg-violet-100 flex items-center justify-center"><AlertCircle className="h-4 w-4 text-violet-600"/></div><div><div className="text-sm font-medium">Pending Leave Requests</div><div className="text-xs text-muted-foreground">7 requests awaiting approval</div></div></div>
         </CardContent>
       </Card>

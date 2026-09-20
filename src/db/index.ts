@@ -13,7 +13,7 @@ import { drizzle } from "drizzle-orm/node-postgres";
 import { Pool } from "pg";
 import * as schema from "./schema";
 
-const connectionString = process.env.DATABASE_URL ?? "postgresql://postgres:postgres@localhost:5432/paymatrix";
+const connectionString = process.env.DATABASE_URL ?? "postgresql://postgres:Karan%40123@localhost:5432/paymatrix";
 
 export const pool = new Pool({ connectionString });
 

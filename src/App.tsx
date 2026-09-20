@@ -1,4 +1,4 @@
-import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom"
+import { BrowserRouter, Routes, Route, Navigate, Outlet } from "react-router-dom"
 import { AppShell } from "@/components/layout/AppShell"
 import Dashboard from "@/pages/Dashboard"
 import Employees from "@/pages/Employees"
@@ -24,15 +24,24 @@ import Reports from "@/pages/Reports"
 import UsersRoles from "@/pages/UsersRoles"
 import Settings from "@/pages/Settings"
 import Placeholder from "@/pages/Placeholder"
+import Login from "@/pages/Login"
 import { useState } from "react"
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import { Input } from "@/components/ui/input"
-import { employees } from "@/mock/data"
 import { Search } from "lucide-react"
+import { useAuth } from "@/context/AuthContext"
+import { employees as mockEmployees } from "@/mock/data"
+
+function Protected() {
+  const { user, loading } = useAuth();
+  if (loading) return <div className="min-h-screen flex items-center justify-center">Loading...</div>;
+  if (!user) return <Navigate to="/login" replace />;
+  return <Outlet />;
+}
 
 function CommandPalette({open,onOpenChange}:{open:boolean,onOpenChange:(v:boolean)=>void}){
   const [q,setQ]=useState("")
-  const results = q ? employees.filter(e=> `${e.firstName} ${e.lastName} ${e.employeeId}`.toLowerCase().includes(q.toLowerCase())).slice(0,5) : []
+  const results = q ? mockEmployees.filter(e=> `${e.firstName} ${e.lastName} ${e.employeeId}`.toLowerCase().includes(q.toLowerCase())).slice(0,5) : []
   return <Dialog open={open} onOpenChange={onOpenChange}>
     <DialogContent className="max-w-xl" onClose={()=>onOpenChange(false)}>
       <DialogHeader><DialogTitle>Search PayMatrix</DialogTitle></DialogHeader>
@@ -50,46 +59,49 @@ export default function App(){
   return <BrowserRouter>
     <CommandPalette open={cmd} onOpenChange={setCmd}/>
     <Routes>
-      <Route element={<AppShell onOpenCommand={()=>setCmd(true)}/>}>
-        <Route path="/" element={<Dashboard/>}/>
-        <Route path="/employees" element={<Employees/>}/>
-        <Route path="/employees/new" element={<AddEmployee/>}/>
-        <Route path="/employees/:id" element={<EmployeeProfile/>}/>
-        <Route path="/departments" element={<Departments/>}/>
-        <Route path="/designations" element={<Designations/>}/>
-        <Route path="/branches" element={<Branches/>}/>
-        <Route path="/attendance" element={<Attendance/>}/>
-        <Route path="/attendance-register" element={<Attendance/>}/>
-        <Route path="/shifts" element={<Shifts/>}/>
-        <Route path="/holidays" element={<Placeholder title="Holidays"/>}/>
-        <Route path="/overtime" element={<Placeholder title="Overtime"/>}/>
-        <Route path="/leave-types" element={<Leave/>}/>
-        <Route path="/leave-requests" element={<Leave/>}/>
-        <Route path="/leave-balances" element={<Leave/>}/>
-        <Route path="/leave-calendar" element={<Leave/>}/>
-        <Route path="/salary-components" element={<SalaryComponents/>}/>
-        <Route path="/salary-structures" element={<SalaryStructures/>}/>
-        <Route path="/employee-salary" element={<EmployeeSalary/>}/>
-        <Route path="/payroll" element={<PayrollRuns/>}/>
-        <Route path="/payroll/new" element={<PayrollWizard/>}/>
-        <Route path="/payroll/:id" element={<PayrollDetails/>}/>
-        <Route path="/payslips" element={<Payslip/>}/>
-        <Route path="/loans" element={<Loans/>}/>
-        <Route path="/advances" element={<Loans/>}/>
-        <Route path="/bonuses" element={<Bonuses/>}/>
-        <Route path="/deductions" element={<Bonuses/>}/>
-        <Route path="/compliance/:type" element={<Compliance/>}/>
-        <Route path="/reports" element={<Reports/>}/>
-        <Route path="/users" element={<UsersRoles/>}/>
-        <Route path="/roles" element={<UsersRoles/>}/>
-        <Route path="/audit-logs" element={<Placeholder title="Audit Logs"/>}/>
-        <Route path="/settings" element={<Settings/>}/>
-        <Route path="/organization/company" element={<Placeholder title="Company"/>}/>
-        <Route path="/locations" element={<Placeholder title="Locations"/>}/>
-        <Route path="/employee-groups" element={<Placeholder title="Employee Groups"/>}/>
-        <Route path="/documents" element={<Placeholder title="Employee Documents"/>}/>
-        <Route path="/bank-accounts" element={<Placeholder title="Bank Accounts"/>}/>
-        <Route path="*" element={<Navigate to="/" replace/>}/>
+      <Route path="/login" element={<Login/>}/>
+      <Route element={<Protected/>}>
+        <Route element={<AppShell onOpenCommand={()=>setCmd(true)}/>}>
+          <Route path="/" element={<Dashboard/>}/>
+          <Route path="/employees" element={<Employees/>}/>
+          <Route path="/employees/new" element={<AddEmployee/>}/>
+          <Route path="/employees/:id" element={<EmployeeProfile/>}/>
+          <Route path="/departments" element={<Departments/>}/>
+          <Route path="/designations" element={<Designations/>}/>
+          <Route path="/branches" element={<Branches/>}/>
+          <Route path="/attendance" element={<Attendance/>}/>
+          <Route path="/attendance-register" element={<Attendance/>}/>
+          <Route path="/shifts" element={<Shifts/>}/>
+          <Route path="/holidays" element={<Placeholder title="Holidays"/>}/>
+          <Route path="/overtime" element={<Placeholder title="Overtime"/>}/>
+          <Route path="/leave-types" element={<Leave/>}/>
+          <Route path="/leave-requests" element={<Leave/>}/>
+          <Route path="/leave-balances" element={<Leave/>}/>
+          <Route path="/leave-calendar" element={<Leave/>}/>
+          <Route path="/salary-components" element={<SalaryComponents/>}/>
+          <Route path="/salary-structures" element={<SalaryStructures/>}/>
+          <Route path="/employee-salary" element={<EmployeeSalary/>}/>
+          <Route path="/payroll" element={<PayrollRuns/>}/>
+          <Route path="/payroll/new" element={<PayrollWizard/>}/>
+          <Route path="/payroll/:id" element={<PayrollDetails/>}/>
+          <Route path="/payslips" element={<Payslip/>}/>
+          <Route path="/loans" element={<Loans/>}/>
+          <Route path="/advances" element={<Loans/>}/>
+          <Route path="/bonuses" element={<Bonuses/>}/>
+          <Route path="/deductions" element={<Bonuses/>}/>
+          <Route path="/compliance/:type" element={<Compliance/>}/>
+          <Route path="/reports" element={<Reports/>}/>
+          <Route path="/users" element={<UsersRoles/>}/>
+          <Route path="/roles" element={<UsersRoles/>}/>
+          <Route path="/audit-logs" element={<Placeholder title="Audit Logs"/>}/>
+          <Route path="/settings" element={<Settings/>}/>
+          <Route path="/organization/company" element={<Placeholder title="Company"/>}/>
+          <Route path="/locations" element={<Placeholder title="Locations"/>}/>
+          <Route path="/employee-groups" element={<Placeholder title="Employee Groups"/>}/>
+          <Route path="/documents" element={<Placeholder title="Employee Documents"/>}/>
+          <Route path="/bank-accounts" element={<Placeholder title="Bank Accounts"/>}/>
+          <Route path="*" element={<Navigate to="/" replace/>}/>
+        </Route>
       </Route>
     </Routes>
   </BrowserRouter>
