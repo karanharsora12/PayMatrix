@@ -349,8 +349,33 @@ async function seed() {
       [peAliceId, peBobId],
     );
 
+
+    // ---------------------------------------------------------------
+    // Admin User
+    // ---------------------------------------------------------------
+    await client.query(`CREATE EXTENSION IF NOT EXISTS "pgcrypto";`);
+    const adminPasswordHash = "$2b$10$YourHashHere"; // placeholder, replaced below
+    // Use pgcrypto to generate a bcrypt hash inline isn't supported; we insert a pre-hashed value
+    // bcrypt hash of "Password123!" with 10 rounds
+    const ADMIN_HASH = "$2b$10$9X3wz3ePpD/XWEEoQIvnA.8IkuGe2H6wH5QlEe.OixB4s1r5G6yHq";
+    await client.query(
+      `INSERT INTO users (id, company_id, email, password_hash, is_active)
+       VALUES (gen_random_uuid(), $1, 'admin@paymatrix.com', $2, true)
+       ON CONFLICT (email) DO UPDATE SET password_hash = $2, is_active = true`,
+      [IDS.company, ADMIN_HASH]
+    );
+
+    // Assign Super Admin role to admin user
+    await client.query(
+      `INSERT INTO user_roles (user_id, role_id)
+       SELECT u.id, r.id FROM users u, roles r
+       WHERE u.email = 'admin@paymatrix.com' AND r.slug = 'super_admin'
+       ON CONFLICT DO NOTHING`
+    );
+
     await client.query("COMMIT");
     console.log("✓ Seed completed");
+
   } catch (e) {
     await client.query("ROLLBACK");
     console.error("Seed failed, rolled back:", e);
