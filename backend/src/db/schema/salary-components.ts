@@ -23,6 +23,7 @@ export const salaryComponents = pgTable(
       .references(() => companies.id, { onDelete: "cascade" }),
     code: varchar("code", { length: 40 }).notNull(),
     name: varchar("name", { length: 255 }).notNull(),
+    description: text("description"),
     componentType: salaryComponentTypeEnum("component_type").notNull(),
     calculationType: calculationTypeEnum("calculation_type").default("FIXED").notNull(),
     defaultAmount: numeric("default_amount", monetary),
@@ -31,6 +32,7 @@ export const salaryComponents = pgTable(
     formula: text("formula"), // e.g. "BASIC * 0.4"
     isTaxable: boolean("is_taxable").default(true).notNull(),
     isStatutory: boolean("is_statutory").default(false).notNull(),
+    isProratable: boolean("is_proratable").default(true).notNull(),
     isRecurring: boolean("is_recurring").default(true).notNull(),
     displayOrder: integer("display_order").default(0).notNull(),
     isActive: boolean("is_active").default(true).notNull(),

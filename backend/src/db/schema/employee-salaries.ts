@@ -10,6 +10,7 @@ import {
   uuid,
   varchar,
 } from "drizzle-orm/pg-core";
+import { companies } from "./companies";
 import { employees } from "./employees";
 import { salaryComponents } from "./salary-components";
 import { salaryStructures } from "./salary-structures";
@@ -20,6 +21,7 @@ export const employeeSalaryStructures = pgTable(
   "employee_salary_structures",
   {
     id: pk(),
+    companyId: uuid("company_id").references(() => companies.id, { onDelete: "cascade" }),
     employeeId: uuid("employee_id")
       .notNull()
       .references(() => employees.id, { onDelete: "cascade" }),
@@ -32,16 +34,17 @@ export const employeeSalaryStructures = pgTable(
     grossSalary: numeric("gross_salary", monetary),
     annualCtc: numeric("annual_ctc", monetary),
     status: salaryStructureStatusEnum("status").default("ACTIVE").notNull(),
+    reason: text("reason"),
+    notes: text("notes"),
     remarks: text("remarks"),
     createdAt: timestamps.createdAt,
     updatedAt: timestamps.updatedAt,
   },
   (t) => [
+    index("employee_salary_structures_company_id_idx").on(t.companyId),
     index("employee_salary_structures_employee_id_idx").on(t.employeeId),
     index("employee_salary_structures_structure_id_idx").on(t.salaryStructureId),
     index("employee_salary_structures_effective_idx").on(t.effectiveFrom, t.effectiveTo),
-    // prevent overlapping active assignments at app level; partial unique via exclusion would need extension.
-    // Add check: effective_to >= effective_from handled in app/migration
   ],
 );
 
@@ -58,7 +61,11 @@ export const employeeSalaryComponents = pgTable(
     calculationType: calculationTypeEnum("calculation_type").notNull(),
     amount: numeric("amount", monetary),
     percentage: numeric("percentage", ratePrecision),
+    percentageOf: varchar("percentage_of", { length: 40 }),
     formula: text("formula"),
+    effectiveFrom: date("effective_from"),
+    effectiveTo: date("effective_to"),
+    reason: text("reason"),
     createdAt: timestamps.createdAt,
     updatedAt: timestamps.updatedAt,
   },

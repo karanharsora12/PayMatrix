@@ -25,6 +25,7 @@ import { UsersModule } from './users/users.module';
 import { RolesModule } from './roles/roles.module';
 import { AuditModule } from './audit/audit.module';
 import { NotificationsModule } from './notifications/notifications.module';
+import { HealthModule } from './health/health.module';
 import { JwtAuthGuard } from './common/guards/jwt-auth.guard';
 import { RolesGuard } from './common/guards/roles.guard';
 
@@ -55,6 +56,7 @@ import { RolesGuard } from './common/guards/roles.guard';
     RolesModule,
     AuditModule,
     NotificationsModule,
+    HealthModule,
   ],
   providers: [
     Reflector,

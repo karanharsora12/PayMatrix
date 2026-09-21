@@ -349,6 +349,15 @@ async function seed() {
       [peAliceId, peBobId],
     );
 
+    // Sample payroll run September 2026 (DRAFT) — ready for processing in development
+    const sepRunId = "77777777-7777-4777-8777-777777777779";
+    await client.query(
+      `INSERT INTO payroll_runs (id, company_id, payroll_code, run_number, period_year, period_month, period_start, period_end, pay_date, employee_count, gross_amount, total_gross, total_deductions, net_amount, total_net, status)
+       VALUES ($1,$2,'RUN-2026-09-001','RUN-2026-09-001',2026,9,'2026-09-01','2026-09-30','2026-10-05',2,145000,145000,15000,130000,130000,'DRAFT')
+       ON CONFLICT DO NOTHING`,
+      [sepRunId, IDS.company],
+    );
+
 
     // ---------------------------------------------------------------
     // Admin User
@@ -356,8 +365,8 @@ async function seed() {
     await client.query(`CREATE EXTENSION IF NOT EXISTS "pgcrypto";`);
     const adminPasswordHash = "$2b$10$YourHashHere"; // placeholder, replaced below
     // Use pgcrypto to generate a bcrypt hash inline isn't supported; we insert a pre-hashed value
-    // bcrypt hash of "Password123!" with 10 rounds
-    const ADMIN_HASH = "$2b$10$9X3wz3ePpD/XWEEoQIvnA.8IkuGe2H6wH5QlEe.OixB4s1r5G6yHq";
+    // bcrypt hash of "Password123!" with 10 rounds (generated via bcrypt.hash)
+    const ADMIN_HASH = "$2b$10$4jCeNIO9X0DF0r9/X7DTGOX5pGIUvlrYeaITCxp.MGPaFcdtUiqAG";
     await client.query(
       `INSERT INTO users (id, company_id, email, password_hash, is_active)
        VALUES (gen_random_uuid(), $1, 'admin@paymatrix.com', $2, true)

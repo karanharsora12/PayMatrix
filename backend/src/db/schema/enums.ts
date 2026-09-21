@@ -81,11 +81,18 @@ export const salaryComponentTypeEnum = pgEnum("salary_component_type", [
   "EARNING",
   "DEDUCTION",
   "EMPLOYER_CONTRIBUTION",
+  "REIMBURSEMENT",
 ]);
 
 export const calculationTypeEnum = pgEnum("calculation_type", ["FIXED", "PERCENTAGE", "FORMULA"]);
 
-export const salaryStructureStatusEnum = pgEnum("salary_structure_status", ["ACTIVE", "INACTIVE", "ARCHIVED"]);
+export const salaryStructureStatusEnum = pgEnum("salary_structure_status", [
+  "ACTIVE",
+  "INACTIVE",
+  "ARCHIVED",
+  "HISTORICAL",
+  "CANCELLED",
+]);
 
 export const payrollRunStatusEnum = pgEnum("payroll_run_status", [
   "DRAFT",

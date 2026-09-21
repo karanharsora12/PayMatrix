@@ -98,7 +98,7 @@ export default function AddEmployee(){
           <div><Input placeholder="Joining Date *" type="date" {...register("joiningDate")}/>{errors.joiningDate && <p className="text-xs text-red-500">{errors.joiningDate.message}</p>}</div>
           <div><Input placeholder="First Name *" {...register("firstName")}/>{errors.firstName && <p className="text-xs text-red-500">{errors.firstName.message}</p>}</div>
           <div><Input placeholder="Last Name *" {...register("lastName")}/>{errors.lastName && <p className="text-xs text-red-500">{errors.lastName.message}</p>}</div>
-          <NativeSelect {...register("gender")}><option value="">Gender</option><option>MALE</option><option>FEMALE</option><option>OTHER</option></NativeSelect>
+          <select {...register("gender")} className="h-9 rounded-md border px-3 text-sm"><option value="">Gender</option><option>MALE</option><option>FEMALE</option><option>OTHER</option></select>
           <Input placeholder="Blood Group" {...register("bloodGroup")}/>
         </div>}
         {step===1 && <div className="grid md:grid-cols-2 gap-4">

@@ -17,3 +17,4 @@ export function DialogContent({children,className,onClose}:{children:React.React
 export function DialogHeader({children}:{children:React.ReactNode}){return <div className="flex flex-col space-y-1.5 mb-4">{children}</div>}
 export function DialogTitle({children,className}:{children:React.ReactNode,className?:string}){return <h3 className={cn("text-lg font-semibold",className)}>{children}</h3>}
 export function DialogDescription({children}:{children:React.ReactNode}){return <p className="text-sm text-muted-foreground">{children}</p>}
+export function DialogFooter({children,className}:{children:React.ReactNode,className?:string}){return <div className={cn("flex flex-col-reverse sm:flex-row sm:justify-end sm:space-x-2 pt-4",className)}>{children}</div>}

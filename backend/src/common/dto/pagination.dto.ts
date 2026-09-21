@@ -36,8 +36,13 @@ export class PaginationDto {
   get offset() {
     return (this.page - 1) * this.pageSize;
   }
+  set offset(_val: number) {}
+
   get limit() {
     return this.pageSize;
+  }
+  set limit(val: number) {
+    if (val) this.pageSize = Number(val);
   }
 }
 
