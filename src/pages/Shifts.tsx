@@ -2,14 +2,9 @@ import { useState } from 'react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from '@/components/ui/table';
+import { DataGrid } from '@/components/common/DataGrid';
+import type { ColDef } from 'ag-grid-community';
+import { useMemo } from 'react';
 import {
   Dialog,
   DialogContent,
@@ -194,6 +189,103 @@ export default function Shifts() {
     }
   };
 
+  const shiftsColDefs = useMemo<ColDef[]>(() => [
+    { field: "code", headerName: "Code", width: 100, cellClass: "font-mono text-xs font-semibold" },
+    { field: "name", headerName: "Name", flex: 1, cellClass: "font-medium" },
+    { 
+      field: "timing", 
+      headerName: "Timing", 
+      width: 150,
+      valueGetter: (p) => p.data.startTime ? `${p.data.startTime.substring(0, 5)} - ${p.data.endTime.substring(0, 5)}` : '',
+      cellRenderer: (p: any) => (
+        <div className="flex items-center gap-1.5 text-sm h-full">
+          <Clock className="h-3.5 w-3.5 text-muted-foreground" />
+          <span>{p.value}</span>
+        </div>
+      )
+    },
+    { field: "workingHours", headerName: "Work Hours", width: 120, valueFormatter: (p) => `${Number(p.value)}h` },
+    { field: "breakMinutes", headerName: "Break", width: 100, valueFormatter: (p) => `${p.value}m` },
+    { field: "graceMinutes", headerName: "Grace", width: 100, valueFormatter: (p) => `${p.value}m` },
+    { 
+      field: "overtimeAllowed", 
+      headerName: "Overtime", 
+      width: 120,
+      cellRenderer: (p: any) => (
+        <Badge variant={p.value ? 'success' : 'secondary'}>{p.value ? 'Allowed' : 'Disabled'}</Badge>
+      )
+    },
+    {
+      field: "isNightShift",
+      headerName: "Type",
+      width: 120,
+      cellRenderer: (p: any) => p.value ? (
+        <span className="inline-flex items-center gap-1 text-xs font-medium px-2 py-0.5 rounded bg-indigo-50 text-indigo-700 dark:bg-indigo-950 dark:text-indigo-300">
+          <Moon className="h-3 w-3" /> Night
+        </span>
+      ) : <span className="text-xs text-muted-foreground">Regular</span>
+    },
+    { 
+      field: "isActive", 
+      headerName: "Status", 
+      width: 100,
+      cellRenderer: (p: any) => (
+        <Badge variant={p.value ? 'success' : 'secondary'}>{p.value ? 'Active' : 'Inactive'}</Badge>
+      )
+    },
+    {
+      headerName: "Actions",
+      width: 150,
+      sortable: false,
+      filter: false,
+      cellRenderer: (p: any) => (
+        <div className="flex items-center justify-end gap-1 h-full">
+          <Button size="sm" variant="ghost" title="Assign to Employee" className="h-8 w-8" onClick={() => handleOpenAssign(p.data)}>
+            <UserCheck className="h-3.5 w-3.5 text-muted-foreground" />
+          </Button>
+          <Button size="sm" variant="ghost" title="Edit Shift" className="h-8 w-8" onClick={() => handleOpenEdit(p.data)}>
+            <Pencil className="h-3.5 w-3.5 text-muted-foreground" />
+          </Button>
+          <Button size="sm" variant="ghost" title="Delete Shift" className="h-8 w-8" onClick={() => handleDeleteShift(p.data.id, p.data.name)}>
+            <Trash2 className="h-3.5 w-3.5 text-red-500" />
+          </Button>
+        </div>
+      )
+    }
+  ], []);
+
+  const historyColDefs = useMemo<ColDef[]>(() => [
+    { 
+      field: "shiftName", 
+      headerName: "Shift", 
+      flex: 1, 
+      cellClass: "font-medium",
+      valueGetter: (p) => p.data.shift ? `${p.data.shift.name} (${p.data.shift.code})` : '—'
+    },
+    { 
+      field: "timings", 
+      headerName: "Timings", 
+      flex: 1,
+      valueGetter: (p) => p.data.shift ? `${p.data.shift.startTime.substring(0, 5)} - ${p.data.shift.endTime.substring(0, 5)}` : '—'
+    },
+    { field: "effectiveFrom", headerName: "Effective From", flex: 1 },
+    { 
+      field: "effectiveTo", 
+      headerName: "Effective To", 
+      flex: 1,
+      valueFormatter: (p) => p.value || 'Ongoing / Indefinite'
+    },
+    { 
+      field: "status", 
+      headerName: "Status", 
+      width: 120,
+      valueGetter: (p) => !p.data.effectiveTo || p.data.effectiveTo >= new Date().toISOString().substring(0, 10),
+      cellRenderer: (p: any) => (
+        <Badge variant={p.value ? 'success' : 'secondary'}>{p.value ? 'Active' : 'Expired'}</Badge>
+      )
+    }
+  ], []);
+
   return (
     <div className="space-y-6">
       {/* Header */}
@@ -217,108 +309,9 @@ export default function Shifts() {
       </div>
 
       {/* Shifts Table Card */}
-      <Card>
-        <CardContent className="p-0">
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>Code</TableHead>
-                <TableHead>Name</TableHead>
-                <TableHead>Timing</TableHead>
-                <TableHead>Work Hours</TableHead>
-                <TableHead>Break</TableHead>
-                <TableHead>Grace</TableHead>
-                <TableHead>Overtime</TableHead>
-                <TableHead>Type</TableHead>
-                <TableHead>Status</TableHead>
-                <TableHead className="text-right">Actions</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {isLoading ? (
-                Array.from({ length: 3 }).map((_, i) => (
-                  <TableRow key={i}>
-                    <TableCell colSpan={10} className="h-12 text-center text-muted-foreground animate-pulse">
-                      Loading shifts...
-                    </TableCell>
-                  </TableRow>
-                ))
-              ) : shifts.length === 0 ? (
-                <TableRow>
-                  <TableCell colSpan={10} className="h-32 text-center text-muted-foreground">
-                    No shifts found. Create your first shift schedule.
-                  </TableCell>
-                </TableRow>
-              ) : (
-                shifts.map((s) => (
-                  <TableRow key={s.id}>
-                    <TableCell className="font-mono text-xs font-semibold">{s.code}</TableCell>
-                    <TableCell className="font-medium">{s.name}</TableCell>
-                    <TableCell>
-                      <div className="flex items-center gap-1.5 text-sm">
-                        <Clock className="h-3.5 w-3.5 text-muted-foreground" />
-                        <span>
-                          {s.startTime.substring(0, 5)} - {s.endTime.substring(0, 5)}
-                        </span>
-                      </div>
-                    </TableCell>
-                    <TableCell>{Number(s.workingHours)}h</TableCell>
-                    <TableCell>{s.breakMinutes}m</TableCell>
-                    <TableCell>{s.graceMinutes}m</TableCell>
-                    <TableCell>
-                      <Badge variant={s.overtimeAllowed ? 'success' : 'secondary'}>
-                        {s.overtimeAllowed ? 'Allowed' : 'Disabled'}
-                      </Badge>
-                    </TableCell>
-                    <TableCell>
-                      {s.isNightShift ? (
-                        <span className="inline-flex items-center gap-1 text-xs font-medium px-2 py-0.5 rounded bg-indigo-50 text-indigo-700 dark:bg-indigo-950 dark:text-indigo-300">
-                          <Moon className="h-3 w-3" /> Night
-                        </span>
-                      ) : (
-                        <span className="text-xs text-muted-foreground">Regular</span>
-                      )}
-                    </TableCell>
-                    <TableCell>
-                      <Badge variant={s.isActive ? 'success' : 'secondary'}>
-                        {s.isActive ? 'Active' : 'Inactive'}
-                      </Badge>
-                    </TableCell>
-                    <TableCell className="text-right">
-                      <div className="flex items-center justify-end gap-1">
-                        <Button
-                          size="sm"
-                          variant="ghost"
-                          title="Assign to Employee"
-                          onClick={() => handleOpenAssign(s)}
-                        >
-                          <UserCheck className="h-3.5 w-3.5 text-muted-foreground" />
-                        </Button>
-                        <Button
-                          size="sm"
-                          variant="ghost"
-                          title="Edit Shift"
-                          onClick={() => handleOpenEdit(s)}
-                        >
-                          <Pencil className="h-3.5 w-3.5 text-muted-foreground" />
-                        </Button>
-                        <Button
-                          size="sm"
-                          variant="ghost"
-                          title="Delete Shift"
-                          onClick={() => handleDeleteShift(s.id, s.name)}
-                        >
-                          <Trash2 className="h-3.5 w-3.5 text-red-500" />
-                        </Button>
-                      </div>
-                    </TableCell>
-                  </TableRow>
-                ))
-              )}
-            </TableBody>
-          </Table>
-        </CardContent>
-      </Card>
+      <div className="h-[500px]">
+        <DataGrid rowData={shifts} columnDefs={shiftsColDefs} />
+      </div>
 
       {/* Employee Shift History Quick View */}
       <Card>
@@ -343,50 +336,9 @@ export default function Shifts() {
         </div>
         <CardContent className="p-0">
           {historyEmpId ? (
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>Shift</TableHead>
-                  <TableHead>Timings</TableHead>
-                  <TableHead>Effective From</TableHead>
-                  <TableHead>Effective To</TableHead>
-                  <TableHead>Status</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {historyLoading ? (
-                  <TableRow>
-                    <TableCell colSpan={5} className="text-center py-6 text-muted-foreground animate-pulse">
-                      Loading history...
-                    </TableCell>
-                  </TableRow>
-                ) : (historyData?.length ?? 0) === 0 ? (
-                  <TableRow>
-                    <TableCell colSpan={5} className="text-center py-6 text-muted-foreground">
-                      No shift assignments recorded for this employee.
-                    </TableCell>
-                  </TableRow>
-                ) : (
-                  historyData?.map((a) => (
-                    <TableRow key={a.id}>
-                      <TableCell className="font-medium">
-                        {a.shift?.name} ({a.shift?.code})
-                      </TableCell>
-                      <TableCell>
-                        {a.shift?.startTime.substring(0, 5)} - {a.shift?.endTime.substring(0, 5)}
-                      </TableCell>
-                      <TableCell>{a.effectiveFrom}</TableCell>
-                      <TableCell>{a.effectiveTo || 'Ongoing / Indefinite'}</TableCell>
-                      <TableCell>
-                        <Badge variant={!a.effectiveTo || a.effectiveTo >= new Date().toISOString().substring(0, 10) ? 'success' : 'secondary'}>
-                          {!a.effectiveTo || a.effectiveTo >= new Date().toISOString().substring(0, 10) ? 'Active' : 'Expired'}
-                        </Badge>
-                      </TableCell>
-                    </TableRow>
-                  ))
-                )}
-              </TableBody>
-            </Table>
+            <div className="h-[300px]">
+              <DataGrid rowData={historyData || []} columnDefs={historyColDefs} />
+            </div>
           ) : (
             <div className="p-8 text-center text-sm text-muted-foreground">
               Select an employee above to inspect their shift allocation timeline.

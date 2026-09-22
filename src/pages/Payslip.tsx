@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { useParams, useNavigate, useSearchParams } from "react-router-dom";
 import {
   Card,
@@ -11,14 +11,8 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { NativeSelect } from "@/components/ui/select";
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table";
+import { DataGrid } from "@/components/common/DataGrid";
+import type { ColDef } from "ag-grid-community";
 import {
   Printer,
   FileText,
@@ -84,6 +78,84 @@ export default function Payslip() {
       (p.departmentName && p.departmentName.toLowerCase().includes(term))
     );
   });
+
+  const payslipColDefs = useMemo<ColDef[]>(() => [
+    { 
+      field: "payslipNumber", 
+      headerName: "Payslip Number", 
+      width: 150,
+      cellClass: "font-mono text-xs font-semibold"
+    },
+    { 
+      field: "employee", 
+      headerName: "Employee", 
+      flex: 1,
+      cellRenderer: (p: any) => (
+        <div className="flex flex-col justify-center h-full">
+          <div className="font-medium text-sm leading-tight">{p.data.employeeName}</div>
+          <div className="text-xs text-muted-foreground font-mono leading-tight">
+            {p.data.employeeCode} • {p.data.departmentName}
+          </div>
+        </div>
+      )
+    },
+    { 
+      field: "period", 
+      headerName: "Period", 
+      width: 130,
+      cellClass: "text-xs",
+      valueGetter: p => p.data.periodYear && p.data.periodMonth
+        ? new Date(p.data.periodYear, p.data.periodMonth - 1).toLocaleString("default", { month: "short", year: "numeric" })
+        : "—"
+    },
+    { 
+      field: "grossSalary", 
+      headerName: "Gross", 
+      width: 130,
+      cellClass: "text-right text-xs flex justify-end",
+      valueFormatter: p => formatCurrency(Number(p.value))
+    },
+    { 
+      field: "totalDeductions", 
+      headerName: "Deductions", 
+      width: 130,
+      cellClass: "text-right text-xs text-rose-600 flex justify-end",
+      valueFormatter: p => formatCurrency(Number(p.value))
+    },
+    { 
+      field: "netSalary", 
+      headerName: "Net Salary", 
+      width: 140,
+      cellClass: "text-right font-bold text-xs text-emerald-600 flex justify-end",
+      valueFormatter: p => formatCurrency(Number(p.value))
+    },
+    { 
+      field: "status", 
+      headerName: "Status", 
+      width: 120,
+      cellClass: "text-center",
+      cellRenderer: (p: any) => (
+        <Badge variant="outline" className="text-[10px] gap-1">
+          <Lock className="h-2.5 w-2.5" />
+          {p.value}
+        </Badge>
+      )
+    },
+    { 
+      headerName: "Action", 
+      width: 120,
+      sortable: false,
+      filter: false,
+      cellRenderer: (p: any) => (
+        <div className="flex justify-end items-center h-full">
+          <Button size="sm" variant="ghost" onClick={() => setSelectedPayslipId(p.data.id)}>
+            <Eye className="h-3.5 w-3.5 mr-1" />
+            View
+          </Button>
+        </div>
+      )
+    }
+  ], []);
 
   const handlePrint = () => {
     window.print();
@@ -360,66 +432,9 @@ export default function Payslip() {
               <p className="text-xs mt-1">Finalize an approved payroll run to generate payslips.</p>
             </div>
           ) : (
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>Payslip Number</TableHead>
-                  <TableHead>Employee</TableHead>
-                  <TableHead>Period</TableHead>
-                  <TableHead className="text-right">Gross</TableHead>
-                  <TableHead className="text-right">Deductions</TableHead>
-                  <TableHead className="text-right">Net Salary</TableHead>
-                  <TableHead className="text-center">Status</TableHead>
-                  <TableHead className="text-right">Action</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {filteredList.map((p) => (
-                  <TableRow
-                    key={p.id}
-                    className="cursor-pointer hover:bg-muted/40"
-                    onClick={() => setSelectedPayslipId(p.id)}
-                  >
-                    <TableCell className="font-mono text-xs font-semibold">
-                      {p.payslipNumber}
-                    </TableCell>
-                    <TableCell>
-                      <div className="font-medium text-sm">{p.employeeName}</div>
-                      <div className="text-xs text-muted-foreground font-mono">{p.employeeCode} • {p.departmentName}</div>
-                    </TableCell>
-                    <TableCell className="text-xs">
-                      {p.periodYear && p.periodMonth
-                        ? new Date(p.periodYear, p.periodMonth - 1).toLocaleString("default", {
-                            month: "short",
-                            year: "numeric",
-                          })
-                        : "—"}
-                    </TableCell>
-                    <TableCell className="text-right text-xs">
-                      {formatCurrency(Number(p.grossSalary))}
-                    </TableCell>
-                    <TableCell className="text-right text-xs text-rose-600">
-                      {formatCurrency(Number(p.totalDeductions))}
-                    </TableCell>
-                    <TableCell className="text-right font-bold text-xs text-emerald-600">
-                      {formatCurrency(Number(p.netSalary))}
-                    </TableCell>
-                    <TableCell className="text-center">
-                      <Badge variant="outline" className="text-[10px] gap-1">
-                        <Lock className="h-2.5 w-2.5" />
-                        {p.status}
-                      </Badge>
-                    </TableCell>
-                    <TableCell className="text-right" onClick={(e) => e.stopPropagation()}>
-                      <Button size="sm" variant="ghost" onClick={() => setSelectedPayslipId(p.id)}>
-                        <Eye className="h-3.5 w-3.5 mr-1" />
-                        View
-                      </Button>
-                    </TableCell>
-                  </TableRow>
-                ))}
-              </TableBody>
-            </Table>
+            <div className="h-[500px]">
+              <DataGrid rowData={filteredList} columnDefs={payslipColDefs} />
+            </div>
           )}
         </CardContent>
       </Card>

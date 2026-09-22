@@ -2,22 +2,56 @@ import { bonuses } from "@/mock/data"
 import { Card } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
+import { DataGrid } from "@/components/common/DataGrid"
+import type { ColDef } from "ag-grid-community"
+import { useMemo } from "react"
 import { Plus } from "lucide-react"
 import { formatCurrency } from "@/lib/utils"
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs"
 
 export default function Bonuses(){
+  const bonusColDefs = useMemo<ColDef[]>(() => [
+    { field: "employee", headerName: "Employee", flex: 1 },
+    { field: "type", headerName: "Type", flex: 1 },
+    { field: "amount", headerName: "Amount", flex: 1, valueFormatter: p => formatCurrency(p.value) },
+    { field: "date", headerName: "Date", flex: 1 },
+    { field: "period", headerName: "Period", flex: 1 },
+    { 
+      field: "status", 
+      headerName: "Status", 
+      width: 120,
+      cellRenderer: (p: any) => <Badge variant={p.value==="Approved"?"success":"warning"}>{p.value}</Badge> 
+    }
+  ], []);
+
+  const deductionsColDefs = useMemo<ColDef[]>(() => [
+    { field: "employee", headerName: "Employee", flex: 1 },
+    { field: "type", headerName: "Type", flex: 1 },
+    { field: "amount", headerName: "Amount", flex: 1, valueFormatter: p => formatCurrency(p.value) },
+    { field: "recurring", headerName: "Recurring", flex: 1 },
+    { field: "period", headerName: "Period", flex: 1 }
+  ], []);
+
+  const dummyDeductions = [
+    { employee: "Sneha Kapoor", type: "Advance Recovery", amount: 5000, recurring: "Yes", period: "Sep-Nov 2026" }
+  ];
+
   return <div className="space-y-4">
     <Tabs defaultValue="bonus"><div className="flex justify-between"><h1 className="text-xl font-semibold">Bonus & Deductions</h1><TabsList><TabsTrigger value="bonus">Bonuses</TabsTrigger><TabsTrigger value="deductions">Deductions</TabsTrigger></TabsList></div>
       <TabsContent value="bonus">
         <div className="flex justify-end mb-2"><Button size="sm"><Plus className="h-4 w-4 mr-1"/>Add Bonus</Button></div>
-        <Card><Table><TableHeader><TableRow><TableHead>Employee</TableHead><TableHead>Type</TableHead><TableHead>Amount</TableHead><TableHead>Date</TableHead><TableHead>Period</TableHead><TableHead>Status</TableHead></TableRow></TableHeader>
-        <TableBody>{bonuses.map(b=><TableRow key={b.id}><TableCell>{b.employee}</TableCell><TableCell>{b.type}</TableCell><TableCell>{formatCurrency(b.amount)}</TableCell><TableCell>{b.date}</TableCell><TableCell>{b.period}</TableCell><TableCell><Badge variant={b.status==="Approved"?"success":"warning"}>{b.status}</Badge></TableCell></TableRow>)}</TableBody></Table></Card>
+        <Card>
+          <div className="h-[400px]">
+            <DataGrid rowData={bonuses} columnDefs={bonusColDefs} />
+          </div>
+        </Card>
       </TabsContent>
       <TabsContent value="deductions">
-        <Card><Table><TableHeader><TableRow><TableHead>Employee</TableHead><TableHead>Type</TableHead><TableHead>Amount</TableHead><TableHead>Recurring</TableHead><TableHead>Period</TableHead></TableRow></TableHeader>
-        <TableBody><tr><td className="p-3">Sneha Kapoor</td><td className="p-3">Advance Recovery</td><td className="p-3">{formatCurrency(5000)}</td><td className="p-3">Yes</td><td className="p-3">Sep-Nov 2026</td></tr></TableBody></Table></Card>
+        <Card>
+          <div className="h-[200px]">
+            <DataGrid rowData={dummyDeductions} columnDefs={deductionsColDefs} />
+          </div>
+        </Card>
       </TabsContent>
     </Tabs>
   </div>

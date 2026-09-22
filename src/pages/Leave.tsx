@@ -2,14 +2,9 @@ import { useState } from 'react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from '@/components/ui/table';
+import { DataGrid } from '@/components/common/DataGrid';
+import type { ColDef } from 'ag-grid-community';
+import { useMemo } from 'react';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
 import { Input } from '@/components/ui/input';
 import { NativeSelect } from '@/components/ui/select';
@@ -277,6 +272,160 @@ export default function Leave() {
     }
   };
 
+  const requestsColDefs = useMemo<ColDef[]>(() => [
+    {
+      field: "employee",
+      headerName: "Employee",
+      flex: 1,
+      valueGetter: (p) => p.data?.employee?.firstName ? `${p.data.employee.firstName} ${p.data.employee.lastName}` : '—',
+      cellRenderer: (p: any) => (
+        <div className="flex flex-col justify-center h-full">
+          <div className="font-medium text-sm leading-tight">{p.value}</div>
+          <div className="text-xs text-muted-foreground leading-tight">{p.data?.employee?.employeeCode}</div>
+        </div>
+      )
+    },
+    {
+      field: "leaveType",
+      headerName: "Leave Type",
+      width: 150,
+      cellRenderer: (p: any) => (
+        <Badge variant="outline" className="font-medium">
+          {p.data.leaveType?.name || 'Leave'} ({p.data.leaveType?.code || 'LV'})
+        </Badge>
+      )
+    },
+    {
+      field: "period",
+      headerName: "Period",
+      width: 220,
+      cellClass: "text-sm font-mono",
+      valueGetter: (p) => `${p.data.fromDate} → ${p.data.toDate}`
+    },
+    {
+      field: "totalDays",
+      headerName: "Days",
+      width: 100,
+      cellClass: "font-semibold text-sm",
+      valueFormatter: (p) => `${Number(p.value)} ${Number(p.value) === 1 ? 'day' : 'days'}`
+    },
+    {
+      field: "reason",
+      headerName: "Reason",
+      flex: 1,
+      cellRenderer: (p: any) => (
+        <div className="text-xs text-muted-foreground max-w-[180px] truncate">
+          {p.value || '—'}
+          {p.data.rejectionReason && (
+            <div className="text-red-500 font-medium">Rejection: {p.data.rejectionReason}</div>
+          )}
+        </div>
+      )
+    },
+    {
+      field: "status",
+      headerName: "Status",
+      width: 120,
+      cellRenderer: (p: any) => getStatusBadge(p.value)
+    },
+    {
+      headerName: "Actions",
+      width: 220,
+      sortable: false,
+      filter: false,
+      cellRenderer: (p: any) => (
+        <div className="flex items-center justify-end gap-1.5 h-full">
+          {p.data.status === 'PENDING' && (
+            <>
+              <Button size="sm" variant="outline" className="h-8 text-xs text-emerald-600 border-emerald-300 hover:bg-emerald-50" onClick={() => handleApprove(p.data.id)} disabled={approveMutation.isPending}>
+                <CheckCircle2 className="h-3.5 w-3.5 mr-1" /> Approve
+              </Button>
+              <Button size="sm" variant="ghost" className="h-8 text-xs text-red-600 hover:bg-red-50" onClick={() => handleOpenReject(p.data.id)} disabled={rejectMutation.isPending}>
+                <XCircle className="h-3.5 w-3.5 mr-1" /> Reject
+              </Button>
+            </>
+          )}
+          {(p.data.status === 'PENDING' || p.data.status === 'APPROVED') && (
+            <Button size="sm" variant="ghost" className="h-8 text-xs text-muted-foreground hover:text-foreground" onClick={() => handleCancel(p.data.id)} disabled={cancelMutation.isPending}>
+              <RotateCcw className="h-3 w-3 mr-1" /> Cancel
+            </Button>
+          )}
+        </div>
+      )
+    }
+  ], [approveMutation.isPending, rejectMutation.isPending, cancelMutation.isPending]);
+
+  const typesColDefs = useMemo<ColDef[]>(() => [
+    { field: "code", headerName: "Code", width: 100, cellClass: "font-mono text-xs font-semibold" },
+    { field: "name", headerName: "Name", flex: 1, cellClass: "font-medium" },
+    {
+      field: "isPaid",
+      headerName: "Type",
+      width: 100,
+      cellRenderer: (p: any) => (
+        <Badge variant={p.value ? 'success' : 'secondary'}>{p.value ? 'Paid' : 'Unpaid'}</Badge>
+      )
+    },
+    { field: "annualAllowance", headerName: "Annual Allowance", width: 150, valueFormatter: (p) => `${Number(p.value)} days` },
+    {
+      field: "carryForwardAllowed",
+      headerName: "Carry Forward",
+      width: 150,
+      valueGetter: (p) => p.value ? `Yes (max ${p.data.maxCarryForwardDays ?? '∞'})` : 'No'
+    },
+    {
+      field: "maxConsecutiveDays",
+      headerName: "Max Consecutive",
+      width: 150,
+      valueFormatter: (p) => p.value ? `${p.value} days` : 'Unlimited'
+    },
+    {
+      field: "requiresApproval",
+      headerName: "Approval",
+      width: 120,
+      valueFormatter: (p) => p.value ? 'Required' : 'Auto'
+    },
+    {
+      field: "isActive",
+      headerName: "Status",
+      width: 100,
+      cellRenderer: (p: any) => (
+        <Badge variant={p.value ? 'success' : 'secondary'}>{p.value ? 'Active' : 'Inactive'}</Badge>
+      )
+    },
+    {
+      headerName: "Actions",
+      width: 120,
+      sortable: false,
+      filter: false,
+      cellRenderer: (p: any) => (
+        <div className="flex items-center justify-end gap-1 h-full">
+          <Button size="sm" variant="ghost" className="h-8 w-8" onClick={() => handleOpenTypeModal(p.data)}>
+            <Pencil className="h-3.5 w-3.5 text-muted-foreground" />
+          </Button>
+          <Button size="sm" variant="ghost" className="h-8 w-8" onClick={() => handleDeleteType(p.data.id, p.data.name)}>
+            <Trash2 className="h-3.5 w-3.5 text-red-500" />
+          </Button>
+        </div>
+      )
+    }
+  ], []);
+
+  const balancesColDefs = useMemo<ColDef[]>(() => [
+    {
+      field: "leaveType",
+      headerName: "Leave Type",
+      flex: 1,
+      cellClass: "font-semibold",
+      valueGetter: (p) => p.data.leaveType ? `${p.data.leaveType.name} (${p.data.leaveType.code})` : '—'
+    },
+    { field: "openingBalance", headerName: "Opening Balance", width: 150, valueFormatter: (p) => String(Number(p.value)) },
+    { field: "allocatedDays", headerName: "Allocated", width: 120, valueFormatter: (p) => String(Number(p.value)) },
+    { field: "usedDays", headerName: "Used Days", width: 120, cellClass: "text-amber-700 dark:text-amber-300 font-medium", valueFormatter: (p) => String(Number(p.value)) },
+    { field: "pendingDays", headerName: "Pending Approval", width: 150, cellClass: "text-blue-600 font-medium", valueFormatter: (p) => String(Number(p.value)) },
+    { field: "remainingDays", headerName: "Remaining Balance", width: 160, cellClass: "text-emerald-700 dark:text-emerald-300 font-bold text-base", valueFormatter: (p) => String(Number(p.value)) }
+  ], []);
+
   return (
     <div className="space-y-6">
       {/* Header */}
@@ -342,175 +491,18 @@ export default function Leave() {
           </Card>
 
           <Card>
-            <CardContent className="p-0">
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>Employee</TableHead>
-                    <TableHead>Leave Type</TableHead>
-                    <TableHead>Period</TableHead>
-                    <TableHead>Days</TableHead>
-                    <TableHead>Reason</TableHead>
-                    <TableHead>Status</TableHead>
-                    <TableHead className="text-right">Actions</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {requestsLoading ? (
-                    Array.from({ length: 4 }).map((_, i) => (
-                      <TableRow key={i}>
-                        <TableCell colSpan={7} className="h-12 text-center text-muted-foreground animate-pulse">
-                          Loading leave requests...
-                        </TableCell>
-                      </TableRow>
-                    ))
-                  ) : requests.length === 0 ? (
-                    <TableRow>
-                      <TableCell colSpan={7} className="h-32 text-center text-muted-foreground">
-                        No leave requests found.
-                      </TableCell>
-                    </TableRow>
-                  ) : (
-                    requests.map((r) => (
-                      <TableRow key={r.id}>
-                        <TableCell>
-                          <div className="font-medium text-sm">
-                            {r.employee?.firstName} {r.employee?.lastName}
-                          </div>
-                          <div className="text-xs text-muted-foreground">{r.employee?.employeeCode}</div>
-                        </TableCell>
-                        <TableCell>
-                          <Badge variant="outline" className="font-medium">
-                            {r.leaveType?.name || 'Leave'} ({r.leaveType?.code || 'LV'})
-                          </Badge>
-                        </TableCell>
-                        <TableCell className="text-sm font-mono">
-                          {r.fromDate} → {r.toDate}
-                        </TableCell>
-                        <TableCell className="font-semibold text-sm">
-                          {Number(r.totalDays)} {Number(r.totalDays) === 1 ? 'day' : 'days'}
-                        </TableCell>
-                        <TableCell className="text-xs text-muted-foreground max-w-[180px] truncate">
-                          {r.reason || '—'}
-                          {r.rejectionReason && (
-                            <div className="text-red-500 font-medium">Rejection: {r.rejectionReason}</div>
-                          )}
-                        </TableCell>
-                        <TableCell>{getStatusBadge(r.status)}</TableCell>
-                        <TableCell className="text-right">
-                          <div className="flex items-center justify-end gap-1.5">
-                            {r.status === 'PENDING' && (
-                              <>
-                                <Button
-                                  size="sm"
-                                  variant="outline"
-                                  className="h-8 text-xs text-emerald-600 border-emerald-300 hover:bg-emerald-50"
-                                  onClick={() => handleApprove(r.id)}
-                                  disabled={approveMutation.isPending}
-                                >
-                                  <CheckCircle2 className="h-3.5 w-3.5 mr-1" /> Approve
-                                </Button>
-                                <Button
-                                  size="sm"
-                                  variant="ghost"
-                                  className="h-8 text-xs text-red-600 hover:bg-red-50"
-                                  onClick={() => handleOpenReject(r.id)}
-                                  disabled={rejectMutation.isPending}
-                                >
-                                  <XCircle className="h-3.5 w-3.5 mr-1" /> Reject
-                                </Button>
-                              </>
-                            )}
-                            {(r.status === 'PENDING' || r.status === 'APPROVED') && (
-                              <Button
-                                size="sm"
-                                variant="ghost"
-                                className="h-8 text-xs text-muted-foreground hover:text-foreground"
-                                onClick={() => handleCancel(r.id)}
-                                disabled={cancelMutation.isPending}
-                              >
-                                <RotateCcw className="h-3 w-3 mr-1" /> Cancel
-                              </Button>
-                            )}
-                          </div>
-                        </TableCell>
-                      </TableRow>
-                    ))
-                  )}
-                </TableBody>
-              </Table>
-            </CardContent>
+            <div className="h-[500px]">
+              <DataGrid rowData={requests} columnDefs={requestsColDefs} />
+            </div>
           </Card>
         </TabsContent>
 
         {/* Tab 2: Leave Types */}
         <TabsContent value="types" className="space-y-4">
           <Card>
-            <CardContent className="p-0">
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>Code</TableHead>
-                    <TableHead>Name</TableHead>
-                    <TableHead>Type</TableHead>
-                    <TableHead>Annual Allowance</TableHead>
-                    <TableHead>Carry Forward</TableHead>
-                    <TableHead>Max Consecutive</TableHead>
-                    <TableHead>Approval</TableHead>
-                    <TableHead>Status</TableHead>
-                    <TableHead className="text-right">Actions</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {typesLoading ? (
-                    <TableRow>
-                      <TableCell colSpan={9} className="h-16 text-center text-muted-foreground animate-pulse">
-                        Loading leave types...
-                      </TableCell>
-                    </TableRow>
-                  ) : leaveTypes.length === 0 ? (
-                    <TableRow>
-                      <TableCell colSpan={9} className="h-32 text-center text-muted-foreground">
-                        No leave types defined. Create your standard leaves (Casual, Sick, Earned).
-                      </TableCell>
-                    </TableRow>
-                  ) : (
-                    leaveTypes.map((t) => (
-                      <TableRow key={t.id}>
-                        <TableCell className="font-mono text-xs font-semibold">{t.code}</TableCell>
-                        <TableCell className="font-medium">{t.name}</TableCell>
-                        <TableCell>
-                          <Badge variant={t.isPaid ? 'success' : 'secondary'}>
-                            {t.isPaid ? 'Paid' : 'Unpaid'}
-                          </Badge>
-                        </TableCell>
-                        <TableCell>{Number(t.annualAllowance)} days</TableCell>
-                        <TableCell>
-                          {t.carryForwardAllowed ? `Yes (max ${t.maxCarryForwardDays ?? '∞'})` : 'No'}
-                        </TableCell>
-                        <TableCell>{t.maxConsecutiveDays ? `${t.maxConsecutiveDays} days` : 'Unlimited'}</TableCell>
-                        <TableCell>{t.requiresApproval ? 'Required' : 'Auto'}</TableCell>
-                        <TableCell>
-                          <Badge variant={t.isActive ? 'success' : 'secondary'}>
-                            {t.isActive ? 'Active' : 'Inactive'}
-                          </Badge>
-                        </TableCell>
-                        <TableCell className="text-right">
-                          <div className="flex items-center justify-end gap-1">
-                            <Button size="sm" variant="ghost" onClick={() => handleOpenTypeModal(t)}>
-                              <Pencil className="h-3.5 w-3.5 text-muted-foreground" />
-                            </Button>
-                            <Button size="sm" variant="ghost" onClick={() => handleDeleteType(t.id, t.name)}>
-                              <Trash2 className="h-3.5 w-3.5 text-red-500" />
-                            </Button>
-                          </div>
-                        </TableCell>
-                      </TableRow>
-                    ))
-                  )}
-                </TableBody>
-              </Table>
-            </CardContent>
+            <div className="h-[500px]">
+              <DataGrid rowData={leaveTypes} columnDefs={typesColDefs} />
+            </div>
           </Card>
         </TabsContent>
 
@@ -536,52 +528,9 @@ export default function Leave() {
               </div>
             </div>
             <CardContent className="p-0">
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>Leave Type</TableHead>
-                    <TableHead>Opening Balance</TableHead>
-                    <TableHead>Allocated</TableHead>
-                    <TableHead>Used Days</TableHead>
-                    <TableHead>Pending Approval</TableHead>
-                    <TableHead>Remaining Balance</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {balancesLoading ? (
-                    <TableRow>
-                      <TableCell colSpan={6} className="h-16 text-center text-muted-foreground animate-pulse">
-                        Loading balances...
-                      </TableCell>
-                    </TableRow>
-                  ) : balances.length === 0 ? (
-                    <TableRow>
-                      <TableCell colSpan={6} className="h-32 text-center text-muted-foreground">
-                        No balance record found for this employee in {currentYear}.
-                      </TableCell>
-                    </TableRow>
-                  ) : (
-                    balances.map((b) => (
-                      <TableRow key={b.id}>
-                        <TableCell className="font-semibold">
-                          {b.leaveType?.name} ({b.leaveType?.code})
-                        </TableCell>
-                        <TableCell>{Number(b.openingBalance)}</TableCell>
-                        <TableCell>{Number(b.allocatedDays)}</TableCell>
-                        <TableCell className="text-amber-700 dark:text-amber-300 font-medium">
-                          {Number(b.usedDays)}
-                        </TableCell>
-                        <TableCell className="text-blue-600 font-medium">
-                          {Number(b.pendingDays)}
-                        </TableCell>
-                        <TableCell className="text-emerald-700 dark:text-emerald-300 font-bold text-base">
-                          {Number(b.remainingDays)}
-                        </TableCell>
-                      </TableRow>
-                    ))
-                  )}
-                </TableBody>
-              </Table>
+              <div className="h-[300px]">
+                <DataGrid rowData={balances} columnDefs={balancesColDefs} />
+              </div>
             </CardContent>
           </Card>
         </TabsContent>

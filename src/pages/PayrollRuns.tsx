@@ -11,14 +11,9 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { NativeSelect } from "@/components/ui/select";
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table";
+import { DataGrid } from "@/components/common/DataGrid";
+import type { ColDef } from "ag-grid-community";
+import { useMemo } from "react";
 import {
   Plus,
   Eye,
@@ -198,6 +193,192 @@ export default function PayrollRuns() {
     .filter((r) => ["FINALIZED", "PAID"].includes(r.status))
     .reduce((acc, r) => acc + Number(r.totalNet || r.netAmount || 0), 0);
 
+  const runsColDefs = useMemo<ColDef[]>(() => [
+    { 
+      field: "runNumber", 
+      headerName: "Run Number", 
+      width: 150,
+      cellClass: "font-mono text-xs font-semibold",
+      valueGetter: p => p.data.runNumber || p.data.payrollCode
+    },
+    { 
+      field: "period", 
+      headerName: "Period", 
+      flex: 1,
+      cellRenderer: (p: any) => (
+        <div className="flex flex-col justify-center h-full">
+          <div className="text-sm font-medium leading-tight">
+            {p.data.periodYear && p.data.periodMonth
+              ? new Date(p.data.periodYear, p.data.periodMonth - 1).toLocaleString("default", { month: "long", year: "numeric" })
+              : `${p.data.periodStart} → ${p.data.periodEnd}`}
+          </div>
+          <div className="text-xs text-muted-foreground leading-tight">
+            {p.data.periodStart} to {p.data.periodEnd}
+          </div>
+        </div>
+      )
+    },
+    { 
+      field: "employeeCount", 
+      headerName: "Employees", 
+      width: 120,
+      cellRenderer: (p: any) => (
+        <Badge variant="outline" className="gap-1">
+          <Users className="h-3 w-3" />
+          {p.value}
+        </Badge>
+      )
+    },
+    { 
+      field: "gross", 
+      headerName: "Gross", 
+      width: 120,
+      valueGetter: p => Number(p.data.totalGross || p.data.grossAmount || 0),
+      valueFormatter: p => formatCurrency(p.value)
+    },
+    { 
+      field: "deductions", 
+      headerName: "Deductions", 
+      width: 120,
+      valueGetter: p => Number(p.data.totalDeductions || 0),
+      valueFormatter: p => formatCurrency(p.value)
+    },
+    { 
+      field: "netSalary", 
+      headerName: "Net Salary", 
+      width: 140,
+      cellClass: "font-semibold text-emerald-600",
+      valueGetter: p => Number(p.data.totalNet || p.data.netAmount || 0),
+      valueFormatter: p => formatCurrency(p.value)
+    },
+    { 
+      field: "ctc", 
+      headerName: "CTC", 
+      width: 120,
+      cellClass: "text-muted-foreground text-xs",
+      valueGetter: p => Number(p.data.totalCtc || 0),
+      valueFormatter: p => formatCurrency(p.value)
+    },
+    { 
+      field: "status", 
+      headerName: "Status", 
+      width: 180,
+      cellRenderer: (p: any) => getStatusBadge(p.value)
+    },
+    { 
+      headerName: "Actions", 
+      width: 280,
+      sortable: false,
+      filter: false,
+      cellRenderer: (p: any) => {
+        const row = p.data;
+        return (
+          <div className="flex items-center justify-end gap-1 h-full">
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => nav(`/payroll/${row.id}`)}
+              title="View Run Details"
+            >
+              <Eye className="h-3.5 w-3.5 mr-1" />
+              View
+            </Button>
+
+            {/* Lifecycle action buttons */}
+            {row.status === "DRAFT" && (
+              <Button
+                size="sm"
+                variant="secondary"
+                onClick={(e) => handleCalculate(row.id, e)}
+                disabled={calcMutation.isPending}
+              >
+                <Calculator className="h-3.5 w-3.5 mr-1 text-primary" />
+                Calculate
+              </Button>
+            )}
+
+            {row.status === "CALCULATED" && (
+              <>
+                <Button
+                  size="sm"
+                  variant="outline"
+                  onClick={(e) => handleCalculate(row.id, e)}
+                  disabled={calcMutation.isPending}
+                  title="Recalculate Run"
+                >
+                  <RefreshCw className="h-3 w-3" />
+                </Button>
+                <Button
+                  size="sm"
+                  onClick={(e) => handleSubmit(row.id, e)}
+                  disabled={submitMutation.isPending}
+                >
+                  <Send className="h-3 w-3 mr-1" />
+                  Submit
+                </Button>
+              </>
+            )}
+
+            {row.status === "PENDING_APPROVAL" && (
+              <Button
+                size="sm"
+                variant="default"
+                className="bg-emerald-600 hover:bg-emerald-700"
+                onClick={(e) => handleApprove(row.id, e)}
+                disabled={approveMutation.isPending}
+              >
+                <CheckCircle2 className="h-3.5 w-3.5 mr-1" />
+                Approve
+              </Button>
+            )}
+
+            {row.status === "APPROVED" && (
+              <Button
+                size="sm"
+                variant="default"
+                className="bg-indigo-600 hover:bg-indigo-700"
+                onClick={(e) => handleFinalize(row.id, e)}
+                disabled={finalizeMutation.isPending}
+              >
+                <Lock className="h-3.5 w-3.5 mr-1" />
+                Finalize
+              </Button>
+            )}
+
+            {["FINALIZED", "PAID"].includes(row.status) && (
+              <Button
+                size="sm"
+                variant="outline"
+                onClick={() =>
+                  nav(
+                    `/payslips?year=${row.periodYear}&month=${row.periodMonth}`,
+                  )
+                }
+              >
+                <FileText className="h-3 w-3 mr-1" />
+                Payslips
+              </Button>
+            )}
+
+            {!["FINALIZED", "PAID", "CANCELLED"].includes(
+              row.status,
+            ) && (
+              <Button
+                size="sm"
+                variant="ghost"
+                className="text-muted-foreground hover:text-destructive"
+                onClick={(e) => handleCancel(row.id, e)}
+                title="Cancel Run"
+              >
+                <XCircle className="h-3.5 w-3.5" />
+              </Button>
+            )}
+          </div>
+        );
+      }
+    }
+  ], [calcMutation.isPending, submitMutation.isPending, approveMutation.isPending, finalizeMutation.isPending, nav]);
+
   return (
     <div className="space-y-6">
       {/* Header */}
@@ -349,177 +530,9 @@ export default function PayrollRuns() {
               </Button>
             </div>
           ) : (
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>Run Number</TableHead>
-                  <TableHead>Period</TableHead>
-                  <TableHead className="text-center">Employees</TableHead>
-                  <TableHead>Gross</TableHead>
-                  <TableHead>Deductions</TableHead>
-                  <TableHead>Net Salary</TableHead>
-                  <TableHead>CTC</TableHead>
-                  <TableHead>Status</TableHead>
-                  <TableHead className="text-right">Actions</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {filteredRuns.map((p: any) => (
-                  <TableRow
-                    key={p.id}
-                    className="cursor-pointer hover:bg-muted/50"
-                    onClick={() => nav(`/payroll/${p.id}`)}
-                  >
-                    <TableCell className="font-mono text-xs font-semibold">
-                      {p.runNumber || p.payrollCode}
-                    </TableCell>
-                    <TableCell>
-                      <div className="text-sm font-medium">
-                        {p.periodYear && p.periodMonth
-                          ? new Date(
-                              p.periodYear,
-                              p.periodMonth - 1,
-                            ).toLocaleString("default", {
-                              month: "long",
-                              year: "numeric",
-                            })
-                          : `${p.periodStart} → ${p.periodEnd}`}
-                      </div>
-                      <div className="text-xs text-muted-foreground">
-                        {p.periodStart} to {p.periodEnd}
-                      </div>
-                    </TableCell>
-                    <TableCell className="text-center">
-                      <Badge variant="outline" className="gap-1">
-                        <Users className="h-3 w-3" />
-                        {p.employeeCount}
-                      </Badge>
-                    </TableCell>
-                    <TableCell>
-                      {formatCurrency(
-                        Number(p.totalGross || p.grossAmount || 0),
-                      )}
-                    </TableCell>
-                    <TableCell>
-                      {formatCurrency(Number(p.totalDeductions || 0))}
-                    </TableCell>
-                    <TableCell className="font-semibold text-emerald-600">
-                      {formatCurrency(Number(p.totalNet || p.netAmount || 0))}
-                    </TableCell>
-                    <TableCell className="text-muted-foreground text-xs">
-                      {formatCurrency(Number(p.totalCtc || 0))}
-                    </TableCell>
-                    <TableCell>{getStatusBadge(p.status)}</TableCell>
-                    <TableCell
-                      className="text-right"
-                      onClick={(e) => e.stopPropagation()}
-                    >
-                      <div className="flex items-center justify-end gap-1">
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          onClick={() => nav(`/payroll/${p.id}`)}
-                          title="View Run Details"
-                        >
-                          <Eye className="h-3.5 w-3.5 mr-1" />
-                          View
-                        </Button>
-
-                        {/* Lifecycle action buttons */}
-                        {p.status === "DRAFT" && (
-                          <Button
-                            size="sm"
-                            variant="secondary"
-                            onClick={(e) => handleCalculate(p.id, e)}
-                            disabled={calcMutation.isPending}
-                          >
-                            <Calculator className="h-3.5 w-3.5 mr-1 text-primary" />
-                            Calculate
-                          </Button>
-                        )}
-
-                        {p.status === "CALCULATED" && (
-                          <>
-                            <Button
-                              size="sm"
-                              variant="outline"
-                              onClick={(e) => handleCalculate(p.id, e)}
-                              disabled={calcMutation.isPending}
-                              title="Recalculate Run"
-                            >
-                              <RefreshCw className="h-3 w-3" />
-                            </Button>
-                            <Button
-                              size="sm"
-                              onClick={(e) => handleSubmit(p.id, e)}
-                              disabled={submitMutation.isPending}
-                            >
-                              <Send className="h-3 w-3 mr-1" />
-                              Submit
-                            </Button>
-                          </>
-                        )}
-
-                        {p.status === "PENDING_APPROVAL" && (
-                          <Button
-                            size="sm"
-                            variant="default"
-                            className="bg-emerald-600 hover:bg-emerald-700"
-                            onClick={(e) => handleApprove(p.id, e)}
-                            disabled={approveMutation.isPending}
-                          >
-                            <CheckCircle2 className="h-3.5 w-3.5 mr-1" />
-                            Approve
-                          </Button>
-                        )}
-
-                        {p.status === "APPROVED" && (
-                          <Button
-                            size="sm"
-                            variant="default"
-                            className="bg-indigo-600 hover:bg-indigo-700"
-                            onClick={(e) => handleFinalize(p.id, e)}
-                            disabled={finalizeMutation.isPending}
-                          >
-                            <Lock className="h-3.5 w-3.5 mr-1" />
-                            Finalize
-                          </Button>
-                        )}
-
-                        {["FINALIZED", "PAID"].includes(p.status) && (
-                          <Button
-                            size="sm"
-                            variant="outline"
-                            onClick={() =>
-                              nav(
-                                `/payslips?year=${p.periodYear}&month=${p.periodMonth}`,
-                              )
-                            }
-                          >
-                            <FileText className="h-3 w-3 mr-1" />
-                            Payslips
-                          </Button>
-                        )}
-
-                        {!["FINALIZED", "PAID", "CANCELLED"].includes(
-                          p.status,
-                        ) && (
-                          <Button
-                            size="sm"
-                            variant="ghost"
-                            className="text-muted-foreground hover:text-destructive"
-                            onClick={(e) => handleCancel(p.id, e)}
-                            title="Cancel Run"
-                          >
-                            <XCircle className="h-3.5 w-3.5" />
-                          </Button>
-                        )}
-                      </div>
-                    </TableCell>
-                  </TableRow>
-                ))}
-              </TableBody>
-            </Table>
+            <div className="h-[500px]">
+              <DataGrid rowData={filteredRuns} columnDefs={runsColDefs} />
+            </div>
           )}
         </CardContent>
       </Card>

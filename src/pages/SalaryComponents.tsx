@@ -9,14 +9,9 @@ import type { SalaryComponentItem } from '@/api/salaryComponents';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from '@/components/ui/table';
+import { DataGrid } from '@/components/common/DataGrid';
+import type { ColDef } from 'ag-grid-community';
+import { useMemo } from 'react';
 import { Plus, Search, Edit2, Trash2, ShieldCheck, RefreshCw, Calculator } from 'lucide-react';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
@@ -146,6 +141,126 @@ export default function SalaryComponents() {
     setDeleteTarget(null);
   };
 
+  const componentsColDefs = useMemo<ColDef[]>(() => [
+    { 
+      field: "displayOrder", 
+      headerName: "#", 
+      width: 70, 
+      cellClass: "text-center font-mono text-xs text-muted-foreground",
+      valueGetter: (p) => p.data.displayOrder ?? (p.node?.rowIndex != null ? p.node.rowIndex + 1 : 0)
+    },
+    { field: "code", headerName: "Code", width: 100, cellClass: "font-mono text-xs font-semibold text-primary" },
+    { 
+      field: "name", 
+      headerName: "Component Name", 
+      flex: 1, 
+      cellRenderer: (p: any) => (
+        <div className="flex flex-col justify-center h-full">
+          <div className="font-medium text-sm leading-tight">{p.value}</div>
+          {p.data.description && (
+            <div className="text-xs text-muted-foreground line-clamp-1 leading-tight">
+              {p.data.description}
+            </div>
+          )}
+        </div>
+      )
+    },
+    { 
+      field: "componentType", 
+      headerName: "Type", 
+      width: 150,
+      cellRenderer: (p: any) => (
+        <Badge
+          variant={
+            p.value === 'EARNING'
+              ? 'success'
+              : p.value === 'DEDUCTION'
+              ? 'destructive'
+              : p.value === 'EMPLOYER_CONTRIBUTION'
+              ? 'secondary'
+              : 'outline'
+          }
+          className="capitalize text-xs"
+        >
+          {p.value === 'EMPLOYER_CONTRIBUTION' ? 'Employer' : p.value.toLowerCase()}
+        </Badge>
+      )
+    },
+    { 
+      field: "calculationType", 
+      headerName: "Calculation", 
+      width: 150,
+      cellClass: "text-xs",
+      cellRenderer: (p: any) => (
+        <div className="flex items-center h-full">
+          <span className="font-medium">{p.value}</span>
+          {p.value === 'PERCENTAGE' && (
+            <span className="text-muted-foreground ml-1">of {p.data.calculationBasis || 'BASIC'}</span>
+          )}
+        </div>
+      )
+    },
+    { 
+      field: "defaultRate", 
+      headerName: "Default Rate / Value", 
+      width: 180,
+      cellClass: "text-xs font-medium",
+      cellRenderer: (p: any) => {
+        const c = p.data;
+        if (c.calculationType === 'FIXED') {
+          return c.defaultAmount ? formatCurrency(Number(c.defaultAmount)) : '—';
+        } else if (c.calculationType === 'PERCENTAGE') {
+          return c.defaultPercentage ? `${c.defaultPercentage}%` : '—';
+        } else {
+          return <span className="font-mono text-xs text-muted-foreground">{c.formula || 'Formula'}</span>;
+        }
+      }
+    },
+    { 
+      field: "flags", 
+      headerName: "Flags", 
+      width: 120,
+      cellRenderer: (p: any) => (
+        <div className="flex items-center gap-1 h-full">
+          {p.data.isTaxable && (
+            <Badge variant="outline" className="text-[10px] px-1 py-0">Tax</Badge>
+          )}
+          {p.data.isStatutory && (
+            <Badge variant="secondary" className="text-[10px] px-1 py-0 bg-blue-50 text-blue-700 border-blue-200">
+              <ShieldCheck className="h-2.5 w-2.5 mr-0.5" /> Stat
+            </Badge>
+          )}
+        </div>
+      )
+    },
+    { 
+      field: "isActive", 
+      headerName: "Status", 
+      width: 100,
+      cellRenderer: (p: any) => (
+        <Badge variant={p.value ? 'success' : 'secondary'} className="text-xs">
+          {p.value ? 'Active' : 'Inactive'}
+        </Badge>
+      )
+    },
+    {
+      headerName: "Actions",
+      width: 120,
+      sortable: false,
+      filter: false,
+      cellRenderer: (p: any) => (
+        <div className="flex items-center justify-end gap-1 h-full">
+          <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground hover:text-foreground" onClick={() => handleOpenEdit(p.data)}>
+            <Edit2 className="h-3.5 w-3.5" />
+          </Button>
+          <Button variant="ghost" size="icon" className="h-8 w-8 text-destructive hover:text-destructive hover:bg-destructive/10" onClick={() => setDeleteTarget(p.data)}>
+            <Trash2 className="h-3.5 w-3.5" />
+          </Button>
+        </div>
+      )
+    }
+  ], []);
+
   return (
     <div className="space-y-6">
       {/* Header */}
@@ -200,117 +315,9 @@ export default function SalaryComponents() {
                 </Button>
               </div>
             ) : (
-              <Table>
-                <TableHeader>
-                  <TableRow className="bg-muted/40">
-                    <TableHead className="w-12 text-center">#</TableHead>
-                    <TableHead>Code</TableHead>
-                    <TableHead>Component Name</TableHead>
-                    <TableHead>Type</TableHead>
-                    <TableHead>Calculation</TableHead>
-                    <TableHead>Default Rate / Value</TableHead>
-                    <TableHead>Flags</TableHead>
-                    <TableHead>Status</TableHead>
-                    <TableHead className="text-right">Actions</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {components.map((c, idx) => (
-                    <TableRow key={c.id} className="hover:bg-muted/30 transition-colors">
-                      <TableCell className="text-center font-mono text-xs text-muted-foreground">
-                        {c.displayOrder ?? idx + 1}
-                      </TableCell>
-                      <TableCell className="font-mono text-xs font-semibold text-primary">
-                        {c.code}
-                      </TableCell>
-                      <TableCell>
-                        <div className="font-medium text-sm">{c.name}</div>
-                        {c.description && (
-                          <div className="text-xs text-muted-foreground line-clamp-1">
-                            {c.description}
-                          </div>
-                        )}
-                      </TableCell>
-                      <TableCell>
-                        <Badge
-                          variant={
-                            c.componentType === 'EARNING'
-                              ? 'success'
-                              : c.componentType === 'DEDUCTION'
-                              ? 'destructive'
-                              : c.componentType === 'EMPLOYER_CONTRIBUTION'
-                              ? 'secondary'
-                              : 'outline'
-                          }
-                          className="capitalize text-xs"
-                        >
-                          {c.componentType === 'EMPLOYER_CONTRIBUTION'
-                            ? 'Employer'
-                            : c.componentType.toLowerCase()}
-                        </Badge>
-                      </TableCell>
-                      <TableCell className="text-xs">
-                        <span className="font-medium">{c.calculationType}</span>
-                        {c.calculationType === 'PERCENTAGE' && (
-                          <span className="text-muted-foreground ml-1">
-                            of {c.calculationBasis || 'BASIC'}
-                          </span>
-                        )}
-                      </TableCell>
-                      <TableCell className="text-xs font-medium">
-                        {c.calculationType === 'FIXED' ? (
-                          c.defaultAmount ? formatCurrency(Number(c.defaultAmount)) : '—'
-                        ) : c.calculationType === 'PERCENTAGE' ? (
-                          c.defaultPercentage ? `${c.defaultPercentage}%` : '—'
-                        ) : (
-                          <span className="font-mono text-xs text-muted-foreground">
-                            {c.formula || 'Formula'}
-                          </span>
-                        )}
-                      </TableCell>
-                      <TableCell>
-                        <div className="flex gap-1">
-                          {c.isTaxable && (
-                            <Badge variant="outline" className="text-[10px] px-1 py-0">
-                              Tax
-                            </Badge>
-                          )}
-                          {c.isStatutory && (
-                            <Badge variant="secondary" className="text-[10px] px-1 py-0 bg-blue-50 text-blue-700 border-blue-200">
-                              <ShieldCheck className="h-2.5 w-2.5 mr-0.5" /> Stat
-                            </Badge>
-                          )}
-                        </div>
-                      </TableCell>
-                      <TableCell>
-                        <Badge variant={c.isActive ? 'success' : 'secondary'} className="text-xs">
-                          {c.isActive ? 'Active' : 'Inactive'}
-                        </Badge>
-                      </TableCell>
-                      <TableCell className="text-right">
-                        <div className="flex justify-end gap-1">
-                          <Button
-                            variant="ghost"
-                            size="icon"
-                            className="h-8 w-8 text-muted-foreground hover:text-foreground"
-                            onClick={() => handleOpenEdit(c)}
-                          >
-                            <Edit2 className="h-3.5 w-3.5" />
-                          </Button>
-                          <Button
-                            variant="ghost"
-                            size="icon"
-                            className="h-8 w-8 text-destructive hover:text-destructive hover:bg-destructive/10"
-                            onClick={() => setDeleteTarget(c)}
-                          >
-                            <Trash2 className="h-3.5 w-3.5" />
-                          </Button>
-                        </div>
-                      </TableCell>
-                    </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
+              <div className="h-[500px]">
+                <DataGrid rowData={components} columnDefs={componentsColDefs} />
+              </div>
             )}
           </Card>
         </TabsContent>

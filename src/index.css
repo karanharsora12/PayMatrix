@@ -52,8 +52,20 @@
   }
 }
 @layer base {
-  * { @apply border-border; }
-  body { @apply bg-background text-foreground antialiased; font-feature-settings: "cv02","cv03","cv04","cv11"; font-family: Inter, system-ui, sans-serif; }
+  * {
+    @apply border-border;
+  }
+  html,
+  body {
+    @apply bg-background text-foreground antialiased;
+    font-feature-settings: "cv02", "cv03", "cv04", "cv11";
+    font-family: "Inter", system-ui, sans-serif;
+  }
 }
-::-webkit-scrollbar { width:6px; height:6px; }
-::-webkit-scrollbar-thumb { @apply bg-zinc-300 dark:bg-zinc-700 rounded-full; }
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+::-webkit-scrollbar-thumb {
+  @apply bg-zinc-300 dark:bg-zinc-700 rounded-full;
+}

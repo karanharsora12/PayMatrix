@@ -13,14 +13,8 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { formatCurrency, formatDate } from '@/lib/utils';
 import { NativeSelect } from '@/components/ui/select';
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from '@/components/ui/table';
+import { DataGrid } from '@/components/common/DataGrid';
+import type { ColDef } from 'ag-grid-community';
 import {
   TrendingUp,
   History,
@@ -132,6 +126,159 @@ export default function EmployeeSalary() {
     setCancelTargetId(null);
     setCancelReason('');
   };
+
+  const earningsColDefs = useMemo<ColDef[]>(() => [
+    {
+      field: "name",
+      headerName: "Component",
+      flex: 1,
+      cellRenderer: (p: any) => (
+        <div className="flex flex-col justify-center h-full">
+          <div className="font-medium text-sm leading-tight">{p.value}</div>
+          <div className="text-xs font-mono text-muted-foreground leading-tight">{p.data.code}</div>
+        </div>
+      )
+    },
+    {
+      field: "calculationType",
+      headerName: "Calculation",
+      width: 200,
+      cellClass: "text-xs text-muted-foreground",
+      valueGetter: (p) => p.value === 'PERCENTAGE' ? `${p.data.percentage}% of ${p.data.percentageOf || 'BASIC'}` : p.value
+    },
+    {
+      field: "amount",
+      headerName: "Monthly Amount",
+      width: 150,
+      cellClass: "text-right font-medium text-sm flex justify-end",
+      valueFormatter: (p) => formatCurrency(p.value)
+    }
+  ], []);
+
+  const deductionsColDefs = useMemo<ColDef[]>(() => [
+    {
+      field: "name",
+      headerName: "Component",
+      flex: 1,
+      cellRenderer: (p: any) => (
+        <div className="flex flex-col justify-center h-full">
+          <div className="font-medium text-sm leading-tight">{p.value}</div>
+          <div className="text-xs font-mono text-muted-foreground leading-tight">{p.data.code}</div>
+        </div>
+      )
+    },
+    {
+      field: "type",
+      headerName: "Type",
+      width: 150,
+      cellRenderer: (p: any) => (
+        <Badge variant={p.data.isEmployerContribution ? "secondary" : "destructive"} className="text-[10px]">
+          {p.data.isEmployerContribution ? "Employer PF/ESI" : "Deduction"}
+        </Badge>
+      )
+    },
+    {
+      field: "amount",
+      headerName: "Monthly Amount",
+      width: 150,
+      cellClass: (p) => p.data.isEmployerContribution ? "text-right font-medium text-sm text-muted-foreground flex justify-end" : "text-right font-medium text-sm text-destructive flex justify-end",
+      valueFormatter: (p) => p.data.isEmployerContribution ? formatCurrency(p.value) : `-${formatCurrency(p.value)}`
+    }
+  ], []);
+
+  const combinedDeductions = useMemo(() => {
+    if (!currentSalary) return [];
+    const deds = (currentSalary.deductions || []).map((d: any) => ({ ...d, isEmployerContribution: false }));
+    const emps = (currentSalary.employerContributions || []).map((c: any) => ({ ...c, isEmployerContribution: true }));
+    return [...deds, ...emps];
+  }, [currentSalary]);
+
+  const historyColDefs = useMemo<ColDef[]>(() => [
+    {
+      field: "effectiveFrom",
+      headerName: "Effective Period",
+      width: 220,
+      cellClass: "text-xs font-medium",
+      cellRenderer: (p: any) => (
+        <div className="flex items-center gap-1.5 h-full">
+          <CalendarDays className="h-3.5 w-3.5 text-muted-foreground" />
+          {p.value} {p.data.effectiveTo ? `→ ${p.data.effectiveTo}` : '→ Present'}
+        </div>
+      )
+    },
+    {
+      field: "salaryStructure",
+      headerName: "Structure",
+      flex: 1,
+      cellRenderer: (p: any) => (
+        <div className="flex flex-col justify-center h-full">
+          <div className="font-medium text-sm leading-tight">{p.value?.name}</div>
+          <div className="font-mono text-xs text-muted-foreground leading-tight">{p.value?.code}</div>
+        </div>
+      )
+    },
+    {
+      field: "grossSalary",
+      headerName: "Gross Salary",
+      width: 150,
+      cellClass: "font-medium text-sm",
+      valueFormatter: (p) => p.value ? formatCurrency(Number(p.value)) : '—'
+    },
+    {
+      field: "annualCtc",
+      headerName: "Annual CTC",
+      width: 150,
+      cellClass: "font-medium text-sm",
+      valueFormatter: (p) => p.value ? formatCurrency(Number(p.value)) : '—'
+    },
+    {
+      field: "reason",
+      headerName: "Reason / Notes",
+      flex: 1,
+      cellClass: "text-xs text-muted-foreground truncate",
+      valueGetter: (p) => p.data.reason || p.data.notes || '—'
+    },
+    {
+      field: "status",
+      headerName: "Status",
+      width: 120,
+      cellRenderer: (p: any) => (
+        <Badge
+          variant={
+            p.value === 'ACTIVE'
+              ? 'success'
+              : p.value === 'HISTORICAL'
+              ? 'secondary'
+              : 'destructive'
+          }
+          className="text-xs"
+        >
+          {p.value}
+        </Badge>
+      )
+    },
+    {
+      headerName: "Actions",
+      width: 120,
+      sortable: false,
+      filter: false,
+      cellRenderer: (p: any) => {
+        if (p.data.status === 'CANCELLED') return null;
+        return (
+          <div className="flex justify-end h-full items-center">
+            <Button
+              variant="ghost"
+              size="sm"
+              className="text-xs text-destructive hover:bg-destructive/10"
+              onClick={() => setCancelTargetId(p.data.id)}
+            >
+              Cancel
+            </Button>
+          </div>
+        );
+      }
+    }
+  ], []);
 
   return (
     <div className="space-y-6">
@@ -287,33 +434,9 @@ export default function EmployeeSalary() {
                     </Badge>
                   </CardHeader>
                   <CardContent className="p-0">
-                    <Table>
-                      <TableHeader>
-                        <TableRow className="bg-muted/30">
-                          <TableHead>Component</TableHead>
-                          <TableHead>Calculation</TableHead>
-                          <TableHead className="text-right">Monthly Amount</TableHead>
-                        </TableRow>
-                      </TableHeader>
-                      <TableBody>
-                        {currentSalary.earnings.map((e: any) => (
-                          <TableRow key={e.componentId}>
-                            <TableCell>
-                              <div className="font-medium text-sm">{e.name}</div>
-                              <div className="text-xs font-mono text-muted-foreground">{e.code}</div>
-                            </TableCell>
-                            <TableCell className="text-xs text-muted-foreground">
-                              {e.calculationType === 'PERCENTAGE'
-                                ? `${e.percentage}% of ${e.percentageOf || 'BASIC'}`
-                                : e.calculationType}
-                            </TableCell>
-                            <TableCell className="text-right font-medium text-sm">
-                              {formatCurrency(e.amount)}
-                            </TableCell>
-                          </TableRow>
-                        ))}
-                      </TableBody>
-                    </Table>
+                    <div className="h-[300px]">
+                      <DataGrid rowData={currentSalary.earnings || []} columnDefs={earningsColDefs} />
+                    </div>
                   </CardContent>
                 </Card>
 
@@ -328,50 +451,9 @@ export default function EmployeeSalary() {
                     </Badge>
                   </CardHeader>
                   <CardContent className="p-0">
-                    <Table>
-                      <TableHeader>
-                        <TableRow className="bg-muted/30">
-                          <TableHead>Component</TableHead>
-                          <TableHead>Type</TableHead>
-                          <TableHead className="text-right">Monthly Amount</TableHead>
-                        </TableRow>
-                      </TableHeader>
-                      <TableBody>
-                        {currentSalary.deductions.map((d: any) => (
-                          <TableRow key={d.componentId}>
-                            <TableCell>
-                              <div className="font-medium text-sm">{d.name}</div>
-                              <div className="text-xs font-mono text-muted-foreground">{d.code}</div>
-                            </TableCell>
-                            <TableCell>
-                              <Badge variant="destructive" className="text-[10px]">
-                                Deduction
-                              </Badge>
-                            </TableCell>
-                            <TableCell className="text-right font-medium text-sm text-destructive">
-                              -{formatCurrency(d.amount)}
-                            </TableCell>
-                          </TableRow>
-                        ))}
-
-                        {currentSalary.employerContributions.map((c: any) => (
-                          <TableRow key={c.componentId}>
-                            <TableCell>
-                              <div className="font-medium text-sm">{c.name}</div>
-                              <div className="text-xs font-mono text-muted-foreground">{c.code}</div>
-                            </TableCell>
-                            <TableCell>
-                              <Badge variant="secondary" className="text-[10px]">
-                                Employer PF/ESI
-                              </Badge>
-                            </TableCell>
-                            <TableCell className="text-right font-medium text-sm text-muted-foreground">
-                              {formatCurrency(c.amount)}
-                            </TableCell>
-                          </TableRow>
-                        ))}
-                      </TableBody>
-                    </Table>
+                    <div className="h-[300px]">
+                      <DataGrid rowData={combinedDeductions} columnDefs={deductionsColDefs} />
+                    </div>
                   </CardContent>
                 </Card>
               </div>
@@ -536,72 +618,9 @@ export default function EmployeeSalary() {
                   No salary history found for this employee.
                 </div>
               ) : (
-                <Table>
-                  <TableHeader>
-                    <TableRow className="bg-muted/30">
-                      <TableHead>Effective Period</TableHead>
-                      <TableHead>Structure</TableHead>
-                      <TableHead>Gross Salary</TableHead>
-                      <TableHead>Annual CTC</TableHead>
-                      <TableHead>Reason / Notes</TableHead>
-                      <TableHead>Status</TableHead>
-                      <TableHead className="text-right">Actions</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {historyData.map((h: any) => (
-                      <TableRow key={h.id}>
-                        <TableCell className="text-xs font-medium">
-                          <div className="flex items-center gap-1.5">
-                            <CalendarDays className="h-3.5 w-3.5 text-muted-foreground" />
-                            {h.effectiveFrom} {h.effectiveTo ? `→ ${h.effectiveTo}` : '→ Present'}
-                          </div>
-                        </TableCell>
-                        <TableCell>
-                          <div className="font-medium text-sm">{h.salaryStructure?.name}</div>
-                          <div className="font-mono text-xs text-muted-foreground">
-                            {h.salaryStructure?.code}
-                          </div>
-                        </TableCell>
-                        <TableCell className="font-medium text-sm">
-                          {h.grossSalary ? formatCurrency(Number(h.grossSalary)) : '—'}
-                        </TableCell>
-                        <TableCell className="font-medium text-sm">
-                          {h.annualCtc ? formatCurrency(Number(h.annualCtc)) : '—'}
-                        </TableCell>
-                        <TableCell className="text-xs text-muted-foreground max-w-xs truncate">
-                          {h.reason || h.notes || '—'}
-                        </TableCell>
-                        <TableCell>
-                          <Badge
-                            variant={
-                              h.status === 'ACTIVE'
-                                ? 'success'
-                                : h.status === 'HISTORICAL'
-                                ? 'secondary'
-                                : 'destructive'
-                            }
-                            className="text-xs"
-                          >
-                            {h.status}
-                          </Badge>
-                        </TableCell>
-                        <TableCell className="text-right">
-                          {h.status !== 'CANCELLED' && (
-                            <Button
-                              variant="ghost"
-                              size="sm"
-                              className="text-xs text-destructive hover:bg-destructive/10"
-                              onClick={() => setCancelTargetId(h.id)}
-                            >
-                              Cancel
-                            </Button>
-                          )}
-                        </TableCell>
-                      </TableRow>
-                    ))}
-                  </TableBody>
-                </Table>
+                <div className="h-[400px]">
+                  <DataGrid rowData={historyData} columnDefs={historyColDefs} />
+                </div>
               )}
             </CardContent>
           </Card>

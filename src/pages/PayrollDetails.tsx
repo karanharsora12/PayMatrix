@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import {
   Card,
@@ -18,14 +18,8 @@ import {
   TabsTrigger,
   TabsContent,
 } from "@/components/ui/tabs";
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table";
+import { DataGrid } from "@/components/common/DataGrid";
+import type { ColDef } from "ag-grid-community";
 import {
   Dialog,
   DialogContent,
@@ -275,6 +269,152 @@ export default function PayrollDetails() {
 
   const departmentList = Array.from(new Set(employees.map((e) => e.departmentName).filter(Boolean)));
 
+  const employeeColDefs = useMemo<ColDef[]>(() => [
+    { 
+      field: "employee", 
+      headerName: "Employee", 
+      flex: 1,
+      cellRenderer: (p: any) => (
+        <div className="flex flex-col justify-center h-full">
+          <div className="font-medium text-sm leading-tight">{p.data.employeeName}</div>
+          <div className="font-mono text-xs text-muted-foreground leading-tight">{p.data.employeeCode}</div>
+        </div>
+      )
+    },
+    { 
+      field: "departmentName", 
+      headerName: "Department", 
+      width: 150,
+      cellClass: "text-xs"
+    },
+    { 
+      field: "paidDays", 
+      headerName: "Paid / Total Days", 
+      width: 150,
+      cellClass: "text-center text-xs",
+      cellRenderer: (p: any) => (
+        <><span className="font-semibold text-primary">{p.value}</span> / {p.data.calendarDays}</>
+      )
+    },
+    { 
+      field: "gross", 
+      headerName: "Gross", 
+      width: 130,
+      cellClass: "text-right text-xs",
+      valueGetter: p => Number(p.data.grossSalary || p.data.grossEarnings),
+      valueFormatter: p => formatCurrency(p.value)
+    },
+    { 
+      field: "totalDeductions", 
+      headerName: "Deductions", 
+      width: 130,
+      cellClass: "text-right text-xs text-rose-600",
+      valueGetter: p => Number(p.data.totalDeductions),
+      valueFormatter: p => formatCurrency(p.value)
+    },
+    { 
+      field: "netSalary", 
+      headerName: "Net Salary", 
+      width: 140,
+      cellClass: "text-right font-semibold text-xs text-emerald-600",
+      valueGetter: p => Number(p.data.netSalary),
+      valueFormatter: p => formatCurrency(p.value)
+    },
+    { 
+      field: "adjustments", 
+      headerName: "Adjustments", 
+      width: 130,
+      cellClass: "text-center",
+      cellRenderer: (p: any) => p.data.adjustments?.length > 0 ? (
+        <Badge variant="outline" className="text-[10px]">
+          {p.data.adjustments.length} adjustment{p.data.adjustments.length > 1 ? "s" : ""}
+        </Badge>
+      ) : (
+        <span className="text-muted-foreground text-xs">—</span>
+      )
+    },
+    { 
+      headerName: "Action", 
+      width: 120,
+      sortable: false,
+      filter: false,
+      cellRenderer: (p: any) => (
+        <div className="flex justify-end items-center h-full">
+          <Button
+            size="sm"
+            variant="ghost"
+            onClick={() => setSelectedEmployeeId(p.data.employeeId)}
+          >
+            <Eye className="h-3.5 w-3.5 mr-1" />
+            Breakdown
+          </Button>
+        </div>
+      )
+    }
+  ], []);
+
+  const deptColDefs = useMemo<ColDef[]>(() => [
+    { field: "departmentName", headerName: "Department", flex: 1, cellClass: "font-semibold" },
+    { field: "employeeCount", headerName: "Headcount", width: 120, cellClass: "text-center" },
+    { 
+      field: "gross", 
+      headerName: "Gross", 
+      width: 150,
+      cellClass: "text-right",
+      valueFormatter: p => formatCurrency(p.value)
+    },
+    { 
+      field: "deductions", 
+      headerName: "Deductions", 
+      width: 150,
+      cellClass: "text-right text-rose-600",
+      valueFormatter: p => formatCurrency(p.value)
+    },
+    { 
+      field: "net", 
+      headerName: "Net Payable", 
+      width: 150,
+      cellClass: "text-right font-semibold text-emerald-600",
+      valueFormatter: p => formatCurrency(p.value)
+    }
+  ], []);
+
+  const detailEarningsColDefs = useMemo<ColDef[]>(() => [
+    { 
+      field: "component", 
+      headerName: "Component", 
+      flex: 1, 
+      cellClass: "text-xs font-medium",
+      valueGetter: p => p.data.componentName || p.data.componentCode 
+    },
+    { field: "calculationType", headerName: "Type", width: 150, cellClass: "text-xs text-muted-foreground" },
+    { 
+      field: "amount", 
+      headerName: "Amount", 
+      width: 130,
+      cellClass: "text-xs text-right font-semibold flex justify-end",
+      valueFormatter: p => formatCurrency(Number(p.value))
+    }
+  ], []);
+
+  const detailDedsColDefs = useMemo<ColDef[]>(() => [
+    { 
+      field: "component", 
+      headerName: "Component", 
+      flex: 1, 
+      cellClass: "text-xs font-medium",
+      valueGetter: p => p.data.componentName || p.data.componentCode 
+    },
+    { field: "calculationType", headerName: "Type", width: 150, cellClass: "text-xs text-muted-foreground" },
+    { 
+      field: "amount", 
+      headerName: "Amount", 
+      width: 130,
+      cellClass: "text-xs text-right font-semibold text-rose-600 flex justify-end",
+      valueFormatter: p => formatCurrency(Number(p.value))
+    }
+  ], []);
+
   return (
     <div className="space-y-6 pb-12">
       {/* Top Breadcrumb & Status Bar */}
@@ -493,62 +633,9 @@ export default function PayrollDetails() {
                   No employee snapshots found for this run.
                 </div>
               ) : (
-                <Table>
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead>Employee</TableHead>
-                      <TableHead>Department</TableHead>
-                      <TableHead className="text-center">Paid / Total Days</TableHead>
-                      <TableHead className="text-right">Gross</TableHead>
-                      <TableHead className="text-right">Deductions</TableHead>
-                      <TableHead className="text-right">Net Salary</TableHead>
-                      <TableHead className="text-center">Adjustments</TableHead>
-                      <TableHead className="text-right">Action</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {filteredEmployees.map((pe: any) => (
-                      <TableRow key={pe.id} className="hover:bg-muted/40">
-                        <TableCell>
-                          <div className="font-medium text-sm">{pe.employeeName}</div>
-                          <div className="font-mono text-xs text-muted-foreground">{pe.employeeCode}</div>
-                        </TableCell>
-                        <TableCell className="text-xs">{pe.departmentName}</TableCell>
-                        <TableCell className="text-center text-xs">
-                          <span className="font-semibold text-primary">{pe.paidDays}</span> / {pe.calendarDays}
-                        </TableCell>
-                        <TableCell className="text-right text-xs">
-                          {formatCurrency(Number(pe.grossSalary || pe.grossEarnings))}
-                        </TableCell>
-                        <TableCell className="text-right text-xs text-rose-600">
-                          {formatCurrency(Number(pe.totalDeductions))}
-                        </TableCell>
-                        <TableCell className="text-right font-semibold text-xs text-emerald-600">
-                          {formatCurrency(Number(pe.netSalary))}
-                        </TableCell>
-                        <TableCell className="text-center">
-                          {pe.adjustments?.length > 0 ? (
-                            <Badge variant="outline" className="text-[10px]">
-                              {pe.adjustments.length} adjustment{pe.adjustments.length > 1 ? "s" : ""}
-                            </Badge>
-                          ) : (
-                            <span className="text-muted-foreground text-xs">—</span>
-                          )}
-                        </TableCell>
-                        <TableCell className="text-right">
-                          <Button
-                            size="sm"
-                            variant="ghost"
-                            onClick={() => setSelectedEmployeeId(pe.employeeId)}
-                          >
-                            <Eye className="h-3.5 w-3.5 mr-1" />
-                            Breakdown
-                          </Button>
-                        </TableCell>
-                      </TableRow>
-                    ))}
-                  </TableBody>
-                </Table>
+                <div className="h-[400px]">
+                  <DataGrid rowData={filteredEmployees} columnDefs={employeeColDefs} />
+                </div>
               )}
             </CardContent>
           </Card>
@@ -563,30 +650,9 @@ export default function PayrollDetails() {
             </CardHeader>
             <CardContent>
               {summary?.departmentSummary?.length > 0 ? (
-                <Table>
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead>Department</TableHead>
-                      <TableHead className="text-center">Headcount</TableHead>
-                      <TableHead className="text-right">Gross</TableHead>
-                      <TableHead className="text-right">Deductions</TableHead>
-                      <TableHead className="text-right">Net Payable</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {summary.departmentSummary.map((dept: any) => (
-                      <TableRow key={dept.departmentName}>
-                        <TableCell className="font-semibold">{dept.departmentName}</TableCell>
-                        <TableCell className="text-center">{dept.employeeCount}</TableCell>
-                        <TableCell className="text-right">{formatCurrency(dept.gross)}</TableCell>
-                        <TableCell className="text-right text-rose-600">{formatCurrency(dept.deductions)}</TableCell>
-                        <TableCell className="text-right font-semibold text-emerald-600">
-                          {formatCurrency(dept.net)}
-                        </TableCell>
-                      </TableRow>
-                    ))}
-                  </TableBody>
-                </Table>
+                <div className="h-[300px]">
+                  <DataGrid rowData={summary.departmentSummary} columnDefs={deptColDefs} />
+                </div>
               ) : (
                 <div className="p-8 text-center text-muted-foreground">
                   No department breakdown available yet. Calculate the run to populate.
@@ -680,24 +746,9 @@ export default function PayrollDetails() {
               <div className="space-y-1.5">
                 <h4 className="text-xs font-bold uppercase text-muted-foreground tracking-wider">Earnings</h4>
                 <div className="border rounded-lg overflow-hidden">
-                  <Table>
-                    <TableHeader>
-                      <TableRow>
-                        <TableHead className="text-xs py-2">Component</TableHead>
-                        <TableHead className="text-xs py-2">Type</TableHead>
-                        <TableHead className="text-xs py-2 text-right">Amount</TableHead>
-                      </TableRow>
-                    </TableHeader>
-                    <TableBody>
-                      {selectedDetails.earnings.map((c: any) => (
-                        <TableRow key={c.id}>
-                          <TableCell className="text-xs py-2 font-medium">{c.componentName || c.componentCode}</TableCell>
-                          <TableCell className="text-xs py-2 text-muted-foreground">{c.calculationType}</TableCell>
-                          <TableCell className="text-xs py-2 text-right font-semibold">{formatCurrency(Number(c.amount))}</TableCell>
-                        </TableRow>
-                      ))}
-                    </TableBody>
-                  </Table>
+                  <div className="h-[200px]">
+                    <DataGrid rowData={selectedDetails.earnings} columnDefs={detailEarningsColDefs} />
+                  </div>
                 </div>
               </div>
 
@@ -706,26 +757,9 @@ export default function PayrollDetails() {
                 <div className="space-y-1.5">
                   <h4 className="text-xs font-bold uppercase text-muted-foreground tracking-wider">Deductions</h4>
                   <div className="border rounded-lg overflow-hidden">
-                    <Table>
-                      <TableHeader>
-                        <TableRow>
-                          <TableHead className="text-xs py-2">Component</TableHead>
-                          <TableHead className="text-xs py-2">Type</TableHead>
-                          <TableHead className="text-xs py-2 text-right">Amount</TableHead>
-                        </TableRow>
-                      </TableHeader>
-                      <TableBody>
-                        {selectedDetails.deductions.map((c: any) => (
-                          <TableRow key={c.id}>
-                            <TableCell className="text-xs py-2 font-medium">{c.componentName || c.componentCode}</TableCell>
-                            <TableCell className="text-xs py-2 text-muted-foreground">{c.calculationType}</TableCell>
-                            <TableCell className="text-xs py-2 text-right text-rose-600 font-semibold">
-                              {formatCurrency(Number(c.amount))}
-                            </TableCell>
-                          </TableRow>
-                        ))}
-                      </TableBody>
-                    </Table>
+                    <div className="h-[200px]">
+                      <DataGrid rowData={selectedDetails.deductions} columnDefs={detailDedsColDefs} />
+                    </div>
                   </div>
                 </div>
               )}

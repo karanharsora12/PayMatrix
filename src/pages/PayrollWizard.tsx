@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
 import {
   Card,
@@ -12,14 +12,8 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import { NativeSelect } from "@/components/ui/select";
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table";
+import { DataGrid } from "@/components/common/DataGrid";
+import type { ColDef } from "ag-grid-community";
 import {
   Check,
   Calendar,
@@ -88,6 +82,14 @@ export default function PayrollWizard() {
   const summary: any = (summaryData as any)?.data;
   const runEmployees: any[] = (runEmployeesData as any)?.data || [];
   const exceptions: any[] = calculationResult?.exceptions || [];
+
+  const deptColDefs = useMemo<ColDef[]>(() => [
+    { field: "departmentName", headerName: "Department", flex: 1, cellClass: "font-medium" },
+    { field: "employeeCount", headerName: "Employees", width: 120, cellClass: "text-center" },
+    { field: "gross", headerName: "Gross", width: 130, cellClass: "text-right", valueFormatter: p => formatCurrency(p.value) },
+    { field: "deductions", headerName: "Deductions", width: 130, cellClass: "text-right text-rose-600", valueFormatter: p => formatCurrency(p.value) },
+    { field: "net", headerName: "Net", width: 130, cellClass: "text-right font-semibold text-emerald-600", valueFormatter: p => formatCurrency(p.value) }
+  ], []);
 
   // Step 1 -> Step 2: Create Draft Run
   const handleCreateRun = async () => {
@@ -453,29 +455,8 @@ export default function PayrollWizard() {
               {summary?.departmentSummary && summary.departmentSummary.length > 0 && (
                 <div className="space-y-2">
                   <h4 className="text-sm font-semibold">Department Breakdown</h4>
-                  <div className="border rounded-lg overflow-hidden">
-                    <Table>
-                      <TableHeader>
-                        <TableRow>
-                          <TableHead>Department</TableHead>
-                          <TableHead className="text-center">Employees</TableHead>
-                          <TableHead className="text-right">Gross</TableHead>
-                          <TableHead className="text-right">Deductions</TableHead>
-                          <TableHead className="text-right">Net</TableHead>
-                        </TableRow>
-                      </TableHeader>
-                      <TableBody>
-                        {summary.departmentSummary.map((dept: any) => (
-                          <TableRow key={dept.departmentName}>
-                            <TableCell className="font-medium">{dept.departmentName}</TableCell>
-                            <TableCell className="text-center">{dept.employeeCount}</TableCell>
-                            <TableCell className="text-right">{formatCurrency(dept.gross)}</TableCell>
-                            <TableCell className="text-right text-rose-600">{formatCurrency(dept.deductions)}</TableCell>
-                            <TableCell className="text-right font-semibold text-emerald-600">{formatCurrency(dept.net)}</TableCell>
-                          </TableRow>
-                        ))}
-                      </TableBody>
-                    </Table>
+                  <div className="border rounded-lg overflow-hidden h-[250px]">
+                    <DataGrid rowData={summary.departmentSummary} columnDefs={deptColDefs} />
                   </div>
                 </div>
               )}

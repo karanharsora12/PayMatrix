@@ -1,0 +1,358 @@
+/* ─── AG Grid Custom Overrides — PayMatrix Theme ─── */
+:root {
+  --primary-action: hsl(var(--primary, 221 83% 53%));
+}
+.dark {
+  --primary-action: hsl(var(--primary, 217 91% 60%));
+}
+
+/* Floating filter row: PayMatrix primary tint */
+.ag-grid-custom .ag-floating-filter {
+  background-color: color-mix(
+    in srgb,
+    var(--primary-action) 6%,
+    white
+  );
+  padding: 0 !important;
+}
+.dark .ag-grid-custom .ag-floating-filter {
+  background-color: color-mix(
+    in srgb,
+    var(--primary-action) 16%,
+    black
+  );
+}
+
+.ag-grid-custom .ag-floating-filter-body {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: stretch;
+}
+
+.ag-grid-custom .ag-floating-filter-input {
+  width: 100%;
+  height: 100%;
+  font-size: 12px;
+}
+
+.ag-grid-custom .ag-floating-filter-input input,
+.ag-grid-custom .ag-floating-filter-input .ag-input-field-input {
+  width: 100% !important;
+  height: 100% !important;
+  padding: 0 10px !important;
+  border: none !important;
+  border-radius: 0 !important;
+  outline: none !important;
+  box-shadow: none !important;
+  background: transparent !important;
+  font-size: 12px;
+  color: inherit;
+}
+
+.ag-grid-custom .ag-floating-filter-input input:focus,
+.ag-grid-custom .ag-floating-filter-input .ag-input-field-input:focus {
+  border: none !important;
+  outline: none !important;
+  box-shadow: none !important;
+}
+
+.ag-grid-custom .ag-floating-filter .ag-text-field-input-wrapper,
+.ag-grid-custom .ag-floating-filter .ag-input-wrapper {
+  border: none !important;
+  box-shadow: none !important;
+  background: transparent !important;
+  height: 100%;
+}
+
+.ag-grid-custom .ag-floating-filter-button {
+  opacity: 0;
+  transition: opacity 0.15s ease;
+  margin: 0 4px;
+}
+.ag-grid-custom .ag-floating-filter:hover .ag-floating-filter-button {
+  opacity: 1;
+}
+.ag-grid-custom .ag-floating-filter-button.ag-filter-active,
+.ag-grid-custom .ag-header-cell.ag-filter-active .ag-floating-filter-button {
+  opacity: 1;
+}
+
+.ag-grid-custom .ag-header-cell-filtered .ag-floating-filter-button {
+  opacity: 1;
+}
+
+.ag-grid-custom .ag-header-cell-label {
+  font-weight: 600;
+  font-size: 13px;
+  letter-spacing: -0.01em;
+  color: hsl(240 10% 3.9%);
+}
+.dark .ag-grid-custom .ag-header-cell-label {
+  color: color-mix(in srgb, var(--primary-action, #4a9bbd) 45%, white);
+}
+
+.ag-grid-custom .ag-header-cell {
+  border-right: 1px solid hsl(240 5.9% 88%) !important;
+}
+.ag-grid-custom .ag-header-cell:last-child {
+  border-right: none !important;
+}
+.dark .ag-grid-custom .ag-header-cell {
+  border-right: 1px solid hsl(240 3.7% 22%) !important;
+}
+.dark .ag-grid-custom .ag-header-cell:last-child {
+  border-right: none !important;
+}
+
+.ag-grid-custom .ag-row {
+  transition: background-color 0.12s ease;
+}
+
+.ag-grid-custom .ag-paging-panel {
+  font-size: 13px;
+  border-top: 1px solid hsl(240 5.9% 90%);
+}
+.dark .ag-grid-custom .ag-paging-panel {
+  border-top-color: hsl(240 3.7% 17%);
+}
+
+.ag-grid-custom,
+.ag-grid-custom .ag-root-wrapper,
+.ag-grid-custom.ag-theme-quartz,
+.ag-theme-quartz {
+  --ag-accent-color: var(--primary-action, #3b82a0) !important;
+  --ag-selected-row-background-color: color-mix(
+    in srgb,
+    var(--primary-action, #3b82a0) 12%,
+    white
+  ) !important;
+  --ag-range-selection-background-color: color-mix(
+    in srgb,
+    var(--primary-action, #3b82a0) 15%,
+    white
+  ) !important;
+  --ag-range-selection-border-color: var(--primary-action, #3b82a0) !important;
+  --ag-cell-focus-border: none !important;
+  --ag-cell-focused-border: none !important;
+  --ag-cell-focused-box-shadow: none !important;
+  --ag-cell-editing-border: none !important;
+  --ag-focus-shadow: none !important;
+  --ag-input-focus-box-shadow: none !important;
+  --ag-input-focus-border-color: transparent !important;
+  --ag-cell-focus-border-color: transparent !important;
+  --ag-cell-editing-border-color: transparent !important;
+}
+
+/* Cell vertical column borders */
+.ag-grid-custom .ag-cell {
+  border-right: 1px solid hsl(240 5.9% 90%) !important;
+}
+.dark .ag-grid-custom .ag-cell {
+  border-right: 1px solid hsl(240 3.7% 20%) !important;
+}
+
+.ag-grid-custom .ag-cell:focus,
+.ag-grid-custom .ag-cell:focus-within,
+.ag-grid-custom .ag-cell-focus,
+.ag-grid-custom .ag-cell.ag-cell-focus,
+.ag-grid-custom .ag-cell.ag-cell-focus:not(.ag-cell-range-selected),
+.ag-grid-custom .ag-cell-inline-editing,
+.ag-grid-custom .ag-cell.ag-cell-inline-editing,
+.ag-grid-custom .ag-cell-inline-editing:focus,
+.ag-grid-custom .ag-cell-inline-editing:focus-within {
+  outline: none !important;
+  box-shadow: none !important;
+  border-top: none !important;
+  border-left: none !important;
+  border-bottom: none !important;
+  border-radius: 0 !important;
+}
+
+/* Pseudo-elements used by AG Grid Theme Quartz for focus rectangles */
+.ag-grid-custom .ag-cell-focus::after,
+.ag-grid-custom .ag-cell-focus::before,
+.ag-grid-custom .ag-cell:focus::after,
+.ag-grid-custom .ag-cell:focus::before,
+.ag-grid-custom .ag-cell-inline-editing::after,
+.ag-grid-custom .ag-cell-inline-editing::before,
+.ag-grid-custom .ag-cell.ag-cell-inline-editing::after,
+.ag-grid-custom .ag-cell.ag-cell-inline-editing::before {
+  display: none !important;
+  content: none !important;
+  border: none !important;
+  outline: none !important;
+  box-shadow: none !important;
+}
+
+/* Select editors, dropdown pickers (e.g. UOM "GMS"), and input wrappers */
+.ag-grid-custom .ag-cell-inline-editing .ag-picker-field-wrapper,
+.ag-grid-custom .ag-cell-inline-editing .ag-select,
+.ag-grid-custom .ag-cell-inline-editing .ag-select-cell-editor,
+.ag-grid-custom .ag-cell-inline-editing .ag-input-wrapper,
+.ag-grid-custom .ag-cell-inline-editing .ag-text-field-input-wrapper,
+.ag-grid-custom .ag-picker-field-wrapper,
+.ag-grid-custom .ag-picker-field-wrapper:focus,
+.ag-grid-custom .ag-picker-field-wrapper:focus-within {
+  border: none !important;
+  outline: none !important;
+  box-shadow: none !important;
+  border-radius: 0 !important;
+  background: transparent !important;
+}
+
+/* All inputs and controls inside inline editing */
+.ag-grid-custom .ag-cell-inline-editing input,
+.ag-grid-custom .ag-cell-inline-editing .ag-input-field-input,
+.ag-grid-custom .ag-cell-inline-editing input:focus,
+.ag-grid-custom .ag-cell-inline-editing input:focus-visible,
+.ag-grid-custom .ag-cell-inline-editing .ag-input-field-input:focus,
+.ag-grid-custom .ag-cell-inline-editing .ag-input-wrapper {
+  border: none !important;
+  border-radius: 0 !important;
+  outline: none !important;
+  box-shadow: none !important;
+  --tw-ring-shadow: none !important;
+  --tw-ring-offset-shadow: none !important;
+  --tw-ring-color: transparent !important;
+  background: transparent !important;
+  height: 100% !important;
+  width: 100% !important;
+  padding: 0 4px !important;
+  font-size: 13px !important;
+}
+
+.ag-grid-custom .ag-cell {
+  display: flex !important;
+  align-items: center !important;
+}
+
+.ag-grid-custom .ag-cell-wrapper {
+  display: flex !important;
+  align-items: center !important;
+  height: 100%;
+}
+
+.ag-grid-custom .ag-cell-value {
+  display: flex;
+  align-items: center;
+  height: 100%;
+}
+
+/* Maintain right alignment for numeric / right-aligned columns */
+.ag-grid-custom .ag-right-aligned-cell {
+  justify-content: flex-end !important;
+}
+
+/* Sort icon color in dark header */
+.ag-grid-custom .ag-header-icon {
+  color: hsl(0 0% 70%);
+}
+
+/* ─── Pinned Bottom Total Row ─── */
+.ag-grid-custom .ag-row-pinned {
+  background-color: color-mix(
+    in srgb,
+    var(--primary-action, #3b82a0) 10%,
+    white
+  ) !important;
+  font-weight: 600;
+  font-size: 13px;
+}
+.dark .ag-grid-custom .ag-row-pinned {
+  background-color: color-mix(
+    in srgb,
+    var(--primary-action, #4a9bbd) 26%,
+    black
+  ) !important;
+  border-top: 2px solid
+    color-mix(in srgb, var(--primary-action, #4a9bbd) 45%, black) !important;
+}
+.ag-grid-custom .ag-row-pinned .ag-cell {
+  color: hsl(240 10% 3.9%);
+}
+.dark .ag-grid-custom .ag-row-pinned .ag-cell {
+  color: color-mix(in srgb, var(--primary-action, #4a9bbd) 50%, white);
+}
+
+.ag-grid-custom ::-webkit-scrollbar {
+  width: 8px !important;
+  height: 8px !important;
+}
+
+.ag-grid-custom ::-webkit-scrollbar-track {
+  background: transparent !important;
+}
+
+.ag-grid-custom ::-webkit-scrollbar-thumb {
+  background-color: #f97316 !important; /* Screenshot orange indicator */
+  border-radius: 9999px !important;
+  border: 2px solid transparent !important;
+  background-clip: content-box !important;
+}
+
+.ag-grid-custom ::-webkit-scrollbar-thumb:hover {
+  background-color: #ea580c !important;
+}
+
+.dark .ag-grid-custom ::-webkit-scrollbar-thumb {
+  background-color: #f97316 !important;
+}
+
+/* Tooltip Popup matching user screenshot */
+.ag-grid-custom .ag-tooltip,
+.pm-cell-tooltip-popup {
+  background: #ffffff !important;
+  color: #0f172a !important;
+  border: 1px solid #cbd5e1 !important;
+  border-radius: 6px !important;
+  padding: 6px 12px !important;
+  font-size: 12px !important;
+  font-weight: 600 !important;
+  box-shadow: 0 8px 20px -4px rgba(0, 0, 0, 0.15), 0 2px 6px -1px rgba(0, 0, 0, 0.08) !important;
+  pointer-events: none !important;
+  z-index: 99999 !important;
+  white-space: nowrap !important;
+}
+
+.dark .ag-grid-custom .ag-tooltip,
+.dark .pm-cell-tooltip-popup {
+  background: #1e293b !important;
+  color: #f8fafc !important;
+  border-color: #334155 !important;
+}
+
+.dark .ag-grid-custom,
+.dark .ag-grid-custom .ag-root-wrapper,
+.dark .ag-grid-custom.ag-theme-quartz {
+  --ag-selected-row-background-color: color-mix(
+    in srgb,
+    var(--primary-action, #4a9bbd) 28%,
+    black
+  ) !important;
+  --ag-range-selection-background-color: color-mix(
+    in srgb,
+    var(--primary-action, #4a9bbd) 22%,
+    black
+  ) !important;
+}
+
+.dark .ag-grid-custom ::-webkit-scrollbar-thumb:hover {
+  background-color: hsl(240 3.7% 48%) !important;
+}
+
+.ag-grid-custom .ag-row-selected {
+  box-shadow: inset 3px 0 0 var(--primary-action, #3b82a0);
+}
+.ag-grid-custom .ag-sort-ascending .ag-header-icon,
+.ag-grid-custom .ag-sort-descending .ag-header-icon,
+.ag-grid-custom .ag-sort-none .ag-header-icon.ag-sort-indicator-icon,
+.ag-grid-custom .ag-header-cell-filtered .ag-header-icon,
+.ag-grid-custom .ag-floating-filter-button.ag-filter-active {
+  color: var(--primary-action, #3b82a0) !important;
+}
+
+.ag-grid-custom input[type="checkbox"],
+.ag-grid-custom input[type="radio"] {
+  accent-color: var(--primary-action, #3b82a0);
+}

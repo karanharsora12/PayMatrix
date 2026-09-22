@@ -2,14 +2,9 @@ import { useState } from 'react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from '@/components/ui/table';
+import { DataGrid } from '@/components/common/DataGrid';
+import type { ColDef } from 'ag-grid-community';
+import { useMemo } from 'react';
 import { Input } from '@/components/ui/input';
 import { NativeSelect } from '@/components/ui/select';
 import {
@@ -155,6 +150,49 @@ export default function Holidays() {
     }
   };
 
+  const holidaysColDefs = useMemo<ColDef[]>(() => [
+    { field: "name", headerName: "Holiday Name", flex: 1, cellClass: "font-semibold text-sm" },
+    { field: "holidayDate", headerName: "Date", width: 120, cellClass: "font-mono text-sm" },
+    { 
+      field: "day", 
+      headerName: "Day", 
+      width: 120, 
+      cellClass: "text-sm text-muted-foreground",
+      valueGetter: (p) => p.data.holidayDate ? new Date(p.data.holidayDate + 'T00:00:00Z').toLocaleDateString('en-US', { weekday: 'long', timeZone: 'UTC' }) : '—'
+    },
+    { 
+      field: "holidayType", 
+      headerName: "Type", 
+      width: 150,
+      cellRenderer: (p: any) => getTypeBadge(p.value)
+    },
+    { 
+      field: "isOptional", 
+      headerName: "Optional", 
+      width: 120,
+      cellRenderer: (p: any) => (
+        <Badge variant={p.value ? 'secondary' : 'outline'}>{p.value ? 'Optional' : 'Mandatory'}</Badge>
+      )
+    },
+    { field: "description", headerName: "Description", flex: 1, cellClass: "text-xs text-muted-foreground truncate" },
+    {
+      headerName: "Actions",
+      width: 120,
+      sortable: false,
+      filter: false,
+      cellRenderer: (p: any) => (
+        <div className="flex items-center justify-end gap-1 h-full">
+          <Button size="sm" variant="ghost" className="h-8 w-8" onClick={() => handleOpenEdit(p.data)}>
+            <Pencil className="h-3.5 w-3.5 text-muted-foreground" />
+          </Button>
+          <Button size="sm" variant="ghost" className="h-8 w-8" onClick={() => handleDeleteHoliday(p.data.id, p.data.name)}>
+            <Trash2 className="h-3.5 w-3.5 text-red-500" />
+          </Button>
+        </div>
+      )
+    }
+  ], []);
+
   return (
     <div className="space-y-6">
       {/* Header */}
@@ -221,72 +259,9 @@ export default function Holidays() {
       </Card>
 
       {/* Holidays Table */}
-      <Card>
-        <CardContent className="p-0">
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>Holiday Name</TableHead>
-                <TableHead>Date</TableHead>
-                <TableHead>Day</TableHead>
-                <TableHead>Type</TableHead>
-                <TableHead>Optional</TableHead>
-                <TableHead>Description</TableHead>
-                <TableHead className="text-right">Actions</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {isLoading ? (
-                Array.from({ length: 4 }).map((_, i) => (
-                  <TableRow key={i}>
-                    <TableCell colSpan={7} className="h-12 text-center text-muted-foreground animate-pulse">
-                      Loading holidays...
-                    </TableCell>
-                  </TableRow>
-                ))
-              ) : holidays.length === 0 ? (
-                <TableRow>
-                  <TableCell colSpan={7} className="h-32 text-center text-muted-foreground">
-                    No holidays found for year {filterYear}.
-                  </TableCell>
-                </TableRow>
-              ) : (
-                holidays.map((h) => {
-                  const dateObj = new Date(h.holidayDate + 'T00:00:00Z');
-                  const dayName = dateObj.toLocaleDateString('en-US', { weekday: 'long', timeZone: 'UTC' });
-
-                  return (
-                    <TableRow key={h.id}>
-                      <TableCell className="font-semibold text-sm">{h.name}</TableCell>
-                      <TableCell className="font-mono text-sm">{h.holidayDate}</TableCell>
-                      <TableCell className="text-sm text-muted-foreground">{dayName}</TableCell>
-                      <TableCell>{getTypeBadge(h.holidayType)}</TableCell>
-                      <TableCell>
-                        <Badge variant={h.isOptional ? 'secondary' : 'outline'}>
-                          {h.isOptional ? 'Optional' : 'Mandatory'}
-                        </Badge>
-                      </TableCell>
-                      <TableCell className="text-xs text-muted-foreground max-w-[200px] truncate">
-                        {h.description || '—'}
-                      </TableCell>
-                      <TableCell className="text-right">
-                        <div className="flex items-center justify-end gap-1">
-                          <Button size="sm" variant="ghost" onClick={() => handleOpenEdit(h)}>
-                            <Pencil className="h-3.5 w-3.5 text-muted-foreground" />
-                          </Button>
-                          <Button size="sm" variant="ghost" onClick={() => handleDeleteHoliday(h.id, h.name)}>
-                            <Trash2 className="h-3.5 w-3.5 text-red-500" />
-                          </Button>
-                        </div>
-                      </TableCell>
-                    </TableRow>
-                  );
-                })
-              )}
-            </TableBody>
-          </Table>
-        </CardContent>
-      </Card>
+      <div className="h-[500px]">
+        <DataGrid rowData={holidays} columnDefs={holidaysColDefs} />
+      </div>
 
       {/* Create / Edit Holiday Modal */}
       <Dialog open={modalOpen} onOpenChange={setModalOpen}>

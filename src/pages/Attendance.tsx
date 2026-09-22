@@ -1,13 +1,8 @@
 import { useState } from 'react';
 import { Card, CardContent } from '@/components/ui/card';
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from '@/components/ui/table';
+import { DataGrid } from '@/components/common/DataGrid';
+import type { ColDef } from 'ag-grid-community';
+import { useMemo } from 'react';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
@@ -231,6 +226,99 @@ export default function Attendance() {
     }
   };
 
+  const recordsColDefs = useMemo<ColDef[]>(() => [
+    { 
+      field: "employee", 
+      headerName: "Employee", 
+      flex: 1,
+      valueGetter: (p) => p.data?.employee?.firstName ? `${p.data.employee.firstName} ${p.data.employee.lastName}` : '—',
+      cellRenderer: (p: any) => (
+        <div className="flex flex-col justify-center h-full">
+          <div className="font-medium text-sm leading-tight">{p.value}</div>
+          <div className="text-xs text-muted-foreground leading-tight">{p.data?.employee?.employeeCode} • {p.data?.employee?.department?.name || 'General'}</div>
+        </div>
+      )
+    },
+    { field: "attendanceDate", headerName: "Date", width: 120, cellClass: "font-mono text-sm" },
+    { 
+      field: "checkIn", 
+      headerName: "Check In", 
+      width: 100, 
+      valueFormatter: (p) => p.value ? new Date(p.value).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : '—' 
+    },
+    { 
+      field: "checkOut", 
+      headerName: "Check Out", 
+      width: 100, 
+      valueFormatter: (p) => p.value ? new Date(p.value).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : '—' 
+    },
+    { 
+      field: "workingMinutes", 
+      headerName: "Working Hours", 
+      width: 140, 
+      valueFormatter: (p) => p.value != null ? `${(p.value / 60).toFixed(1)}h` : '—',
+      cellClass: "font-medium text-sm"
+    },
+    { 
+      field: "overtimeMinutes", 
+      headerName: "Overtime", 
+      width: 110, 
+      valueFormatter: (p) => p.value ? `${(p.value / 60).toFixed(1)}h` : '0h'
+    },
+    { 
+      field: "status", 
+      headerName: "Status", 
+      width: 120, 
+      cellRenderer: (p: any) => getStatusBadge(p.value) 
+    },
+    { field: "remarks", headerName: "Remarks", flex: 1, cellClass: "text-xs text-muted-foreground truncate" },
+    {
+      headerName: "Actions",
+      width: 100,
+      sortable: false,
+      filter: false,
+      cellRenderer: (p: any) => (
+        <div className="flex items-center justify-end h-full">
+          <Button size="sm" variant="ghost" className="h-8 w-8" onClick={() => handleOpenEdit(p.data)}>
+            <Pencil className="h-3.5 w-3.5 text-muted-foreground" />
+          </Button>
+        </div>
+      )
+    }
+  ], []);
+
+  const punchLogsColDefs = useMemo<ColDef[]>(() => [
+    { 
+      field: "employee", 
+      headerName: "Employee", 
+      flex: 1,
+      valueGetter: (p) => p.data?.employee?.firstName ? `${p.data.employee.firstName} ${p.data.employee.lastName}` : '—',
+      cellRenderer: (p: any) => (
+        <div className="flex flex-col justify-center h-full">
+          <div className="font-medium text-sm leading-tight">{p.value}</div>
+          <div className="text-xs text-muted-foreground leading-tight">{p.data?.employee?.employeeCode}</div>
+        </div>
+      )
+    },
+    { 
+      field: "punchTime", 
+      headerName: "Punch Time", 
+      width: 200, 
+      cellClass: "font-mono text-sm",
+      valueFormatter: (p) => p.value ? new Date(p.value).toLocaleString() : '—'
+    },
+    { 
+      field: "punchType", 
+      headerName: "Type", 
+      width: 120,
+      cellRenderer: (p: any) => (
+        <Badge variant={p.value === 'IN' ? 'success' : 'secondary'}>{p.value}</Badge>
+      )
+    },
+    { field: "source", headerName: "Source", width: 120, cellClass: "font-mono text-xs" },
+    { field: "deviceId", headerName: "Device ID", flex: 1, cellClass: "text-xs text-muted-foreground", valueFormatter: (p) => p.value || 'WEB-PORTAL' }
+  ], []);
+
   return (
     <div className="space-y-6">
       {/* Header */}
@@ -388,76 +476,9 @@ export default function Attendance() {
           </Card>
 
           {/* Table */}
-          <Card>
-            <CardContent className="p-0">
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>Employee</TableHead>
-                    <TableHead>Date</TableHead>
-                    <TableHead>Check In</TableHead>
-                    <TableHead>Check Out</TableHead>
-                    <TableHead>Working Hours</TableHead>
-                    <TableHead>Overtime</TableHead>
-                    <TableHead>Status</TableHead>
-                    <TableHead>Remarks</TableHead>
-                    <TableHead className="text-right">Actions</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {tableLoading ? (
-                    Array.from({ length: 5 }).map((_, i) => (
-                      <TableRow key={i}>
-                        <TableCell colSpan={9} className="h-12 text-center text-muted-foreground animate-pulse">
-                          Loading attendance records...
-                        </TableCell>
-                      </TableRow>
-                    ))
-                  ) : records.length === 0 ? (
-                    <TableRow>
-                      <TableCell colSpan={9} className="h-32 text-center text-muted-foreground">
-                        No attendance entries matching filters.
-                      </TableCell>
-                    </TableRow>
-                  ) : (
-                    records.map((r) => {
-                      const inFormatted = r.checkIn ? new Date(r.checkIn).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : '—';
-                      const outFormatted = r.checkOut ? new Date(r.checkOut).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : '—';
-                      const workHours = r.workingMinutes != null ? `${(r.workingMinutes / 60).toFixed(1)}h` : '—';
-                      const otHours = r.overtimeMinutes ? `${(r.overtimeMinutes / 60).toFixed(1)}h` : '0h';
-
-                      return (
-                        <TableRow key={r.id}>
-                          <TableCell>
-                            <div className="font-medium text-sm">
-                              {r.employee?.firstName} {r.employee?.lastName}
-                            </div>
-                            <div className="text-xs text-muted-foreground">
-                              {r.employee?.employeeCode} • {r.employee?.department?.name || 'General'}
-                            </div>
-                          </TableCell>
-                          <TableCell className="text-sm font-mono">{r.attendanceDate}</TableCell>
-                          <TableCell className="text-sm">{inFormatted}</TableCell>
-                          <TableCell className="text-sm">{outFormatted}</TableCell>
-                          <TableCell className="text-sm font-medium">{workHours}</TableCell>
-                          <TableCell className="text-sm">{otHours}</TableCell>
-                          <TableCell>{getStatusBadge(r.status)}</TableCell>
-                          <TableCell className="text-xs text-muted-foreground max-w-[140px] truncate">
-                            {r.remarks || '—'}
-                          </TableCell>
-                          <TableCell className="text-right">
-                            <Button size="sm" variant="ghost" onClick={() => handleOpenEdit(r)}>
-                              <Pencil className="h-3.5 w-3.5 text-muted-foreground" />
-                            </Button>
-                          </TableCell>
-                        </TableRow>
-                      );
-                    })
-                  )}
-                </TableBody>
-              </Table>
-            </CardContent>
-          </Card>
+          <div className="h-[500px]">
+            <DataGrid rowData={records} columnDefs={recordsColDefs} />
+          </div>
         </TabsContent>
 
         {/* Tab 2: Monthly Calendar View */}
@@ -533,49 +554,9 @@ export default function Attendance() {
                 <Fingerprint className="h-4 w-4 mr-1" /> Log Punch
               </Button>
             </div>
-            <CardContent className="p-0">
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>Employee</TableHead>
-                    <TableHead>Punch Time</TableHead>
-                    <TableHead>Type</TableHead>
-                    <TableHead>Source</TableHead>
-                    <TableHead>Device ID</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {(punchLogs ?? []).length === 0 ? (
-                    <TableRow>
-                      <TableCell colSpan={5} className="h-24 text-center text-muted-foreground">
-                        No raw punch logs recorded.
-                      </TableCell>
-                    </TableRow>
-                  ) : (
-                    punchLogs?.map((p) => (
-                      <TableRow key={p.id}>
-                        <TableCell>
-                          <div className="font-medium text-sm">
-                            {p.employee?.firstName} {p.employee?.lastName}
-                          </div>
-                          <div className="text-xs text-muted-foreground">{p.employee?.employeeCode}</div>
-                        </TableCell>
-                        <TableCell className="font-mono text-sm">
-                          {new Date(p.punchTime).toLocaleString()}
-                        </TableCell>
-                        <TableCell>
-                          <Badge variant={p.punchType === 'IN' ? 'success' : 'secondary'}>
-                            {p.punchType}
-                          </Badge>
-                        </TableCell>
-                        <TableCell className="text-xs font-mono">{p.source}</TableCell>
-                        <TableCell className="text-xs text-muted-foreground">{p.deviceId || 'WEB-PORTAL'}</TableCell>
-                      </TableRow>
-                    ))
-                  )}
-                </TableBody>
-              </Table>
-            </CardContent>
+            <div className="h-[400px]">
+              <DataGrid rowData={punchLogs || []} columnDefs={punchLogsColDefs} />
+            </div>
           </Card>
         </TabsContent>
       </Tabs>
