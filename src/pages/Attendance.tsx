@@ -7,7 +7,13 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
 import { Input } from '@/components/ui/input';
-import { NativeSelect } from '@/components/ui/select';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select"
 import {
   Dialog,
   DialogContent,
@@ -81,6 +87,39 @@ export default function Attendance() {
 
   const { data: employeesData } = useEmployees({ pageSize: 100 });
   const employees = employeesData?.data ?? [];
+
+  const employeeOptions = useMemo(() => employees.map((e: any) => ({
+    value: e.id,
+    label: `${e.firstName} ${e.lastName} (${e.employeeCode})`
+  })), [employees]);
+
+  const statusOptions = useMemo(() => [
+    { value: "PRESENT", label: "PRESENT" },
+    { value: "HALF_DAY", label: "HALF_DAY" },
+    { value: "LATE", label: "LATE" },
+    { value: "ON_LEAVE", label: "ON_LEAVE" },
+    { value: "HOLIDAY", label: "HOLIDAY" },
+    { value: "WEEK_OFF", label: "WEEK_OFF" },
+    { value: "ABSENT", label: "ABSENT" }
+  ], []);
+
+  const filterStatusOptions = useMemo(() => [
+    { value: "", label: "All Statuses" },
+    { value: "PRESENT", label: "Present" },
+    { value: "LATE", label: "Late" },
+    { value: "HALF_DAY", label: "Half Day" },
+    { value: "ON_LEAVE", label: "On Leave" },
+    { value: "HOLIDAY", label: "Holiday" },
+    { value: "WEEK_OFF", label: "Week Off" },
+    { value: "ABSENT", label: "Absent" }
+  ], []);
+  
+  const punchTypeOptions = useMemo(() => [
+    { value: "IN", label: "PUNCH IN" },
+    { value: "OUT", label: "PUNCH OUT" },
+    { value: "BREAK_IN", label: "BREAK IN" },
+    { value: "BREAK_OUT", label: "BREAK OUT" }
+  ], []);
 
   // Mutations
   const createMutation = useCreateAttendance();
@@ -423,17 +462,17 @@ export default function Attendance() {
           <Card>
             <CardContent className="p-3 flex flex-wrap items-center gap-3">
               <div className="flex-1 min-w-[200px]">
-                <NativeSelect
-                  placeholder="All Employees"
-                  value={filterEmployeeId}
-                  onChange={(val) => setFilterEmployeeId(val || '')}
-                >
-                  {employees.map((e) => (
-                    <option key={e.id} value={e.id}>
-                      {e.firstName} {e.lastName} ({e.employeeCode})
-                    </option>
-                  ))}
-                </NativeSelect>
+                <Select value={filterEmployeeId || "ALL"} onValueChange={(val) => setFilterEmployeeId(val === "ALL" ? "" : val)}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="All Employees" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="ALL">All Employees</SelectItem>
+                    {employeeOptions.map(opt => (
+                      <SelectItem key={opt.value} value={opt.value}>{opt.label}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
               </div>
               <div className="flex items-center gap-2">
                 <span className="text-xs text-muted-foreground font-medium">From:</span>
@@ -452,19 +491,17 @@ export default function Attendance() {
                 />
               </div>
               <div className="w-36">
-                <NativeSelect
-                  placeholder="All Statuses"
-                  value={filterStatus}
-                  onChange={(val) => setFilterStatus(val || '')}
-                >
-                  <option value="PRESENT">Present</option>
-                  <option value="LATE">Late</option>
-                  <option value="HALF_DAY">Half Day</option>
-                  <option value="ON_LEAVE">On Leave</option>
-                  <option value="HOLIDAY">Holiday</option>
-                  <option value="WEEK_OFF">Week Off</option>
-                  <option value="ABSENT">Absent</option>
-                </NativeSelect>
+                <Select value={filterStatus || "ALL"} onValueChange={(val) => setFilterStatus(val === "ALL" ? "" : val)}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="All Statuses" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="ALL">All Statuses</SelectItem>
+                    {statusOptions.map(opt => (
+                      <SelectItem key={opt.value} value={opt.value}>{opt.label}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
               </div>
               <Button size="sm" variant="ghost" onClick={() => { setFromDate(today); setToDate(today); setFilterEmployeeId(''); setFilterStatus(''); }}>
                 Reset
@@ -563,7 +600,7 @@ export default function Attendance() {
 
       {/* Manual Attendance Dialog */}
       <Dialog open={manualOpen} onOpenChange={setManualOpen}>
-        <DialogContent onClose={() => setManualOpen(false)}>
+        <DialogContent>
           <DialogHeader>
             <DialogTitle>{editingRecord ? 'Edit Attendance Record' : 'Record Manual Attendance'}</DialogTitle>
             <DialogDescription>
@@ -573,19 +610,20 @@ export default function Attendance() {
           <form onSubmit={handleSaveManual} className="space-y-4">
             <div>
               <label className="text-xs font-medium text-muted-foreground">Employee</label>
-              <NativeSelect
-                placeholder="Select employee"
+              <Select
                 value={manualForm.employeeId}
-                onChange={(val) => setManualForm({ ...manualForm, employeeId: val || '' })}
+                onValueChange={(val) => setManualForm({ ...manualForm, employeeId: val })}
                 disabled={!!editingRecord}
-                required
               >
-                {employees.map((e) => (
-                  <option key={e.id} value={e.id}>
-                    {e.firstName} {e.lastName} ({e.employeeCode})
-                  </option>
-                ))}
-              </NativeSelect>
+                <SelectTrigger>
+                  <SelectValue placeholder="Select employee" />
+                </SelectTrigger>
+                <SelectContent>
+                  {employeeOptions.map(opt => (
+                    <SelectItem key={opt.value} value={opt.value}>{opt.label}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
             </div>
 
             <div>
@@ -630,18 +668,19 @@ export default function Attendance() {
               </div>
               <div>
                 <label className="text-xs font-medium text-muted-foreground">Status (Optional Override)</label>
-                <NativeSelect
+                <Select
                   value={manualForm.status}
-                  onChange={(val) => setManualForm({ ...manualForm, status: val || 'PRESENT' })}
+                  onValueChange={(val) => setManualForm({ ...manualForm, status: val })}
                 >
-                  <option value="PRESENT">PRESENT</option>
-                  <option value="HALF_DAY">HALF_DAY</option>
-                  <option value="LATE">LATE</option>
-                  <option value="ON_LEAVE">ON_LEAVE</option>
-                  <option value="HOLIDAY">HOLIDAY</option>
-                  <option value="WEEK_OFF">WEEK_OFF</option>
-                  <option value="ABSENT">ABSENT</option>
-                </NativeSelect>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Status" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {statusOptions.map(opt => (
+                      <SelectItem key={opt.value} value={opt.value}>{opt.label}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
               </div>
             </div>
 
@@ -668,7 +707,7 @@ export default function Attendance() {
 
       {/* Quick Punch Modal */}
       <Dialog open={punchOpen} onOpenChange={setPunchOpen}>
-        <DialogContent onClose={() => setPunchOpen(false)}>
+        <DialogContent>
           <DialogHeader>
             <DialogTitle>Log Attendance Punch</DialogTitle>
             <DialogDescription>Simulate or record an employee check-in or check-out punch timestamp.</DialogDescription>
@@ -676,31 +715,36 @@ export default function Attendance() {
           <form onSubmit={handleSavePunch} className="space-y-4">
             <div>
               <label className="text-xs font-medium text-muted-foreground">Employee</label>
-              <NativeSelect
-                placeholder="Select employee"
+              <Select
                 value={punchForm.employeeId}
-                onChange={(val) => setPunchForm({ ...punchForm, employeeId: val || '' })}
-                required
+                onValueChange={(val) => setPunchForm({ ...punchForm, employeeId: val })}
               >
-                {employees.map((e) => (
-                  <option key={e.id} value={e.id}>
-                    {e.firstName} {e.lastName} ({e.employeeCode})
-                  </option>
-                ))}
-              </NativeSelect>
+                <SelectTrigger>
+                  <SelectValue placeholder="Select employee" />
+                </SelectTrigger>
+                <SelectContent>
+                  {employeeOptions.map(opt => (
+                    <SelectItem key={opt.value} value={opt.value}>{opt.label}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
             </div>
 
             <div>
               <label className="text-xs font-medium text-muted-foreground">Punch Type</label>
-              <NativeSelect
+              <Select
                 value={punchForm.punchType}
-                onChange={(val) => setPunchForm({ ...punchForm, punchType: val || 'IN' })}
+                onValueChange={(val) => setPunchForm({ ...punchForm, punchType: val })}
               >
-                <option value="IN">PUNCH IN</option>
-                <option value="OUT">PUNCH OUT</option>
-                <option value="BREAK_IN">BREAK IN</option>
-                <option value="BREAK_OUT">BREAK OUT</option>
-              </NativeSelect>
+                <SelectTrigger>
+                  <SelectValue placeholder="Punch Type" />
+                </SelectTrigger>
+                <SelectContent>
+                  {punchTypeOptions.map(opt => (
+                    <SelectItem key={opt.value} value={opt.value}>{opt.label}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
             </div>
 
             <div>
