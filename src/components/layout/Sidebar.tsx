@@ -146,7 +146,7 @@ export function Sidebar({
   const content = (
     <div
       className={cn(
-        "flex flex-col h-full bg-[#fcfcfd] dark:bg-zinc-900 border-r",
+        "flex flex-col h-full bg-sidebar border-r border-sidebar-border",
         collapsed ? "w-[64px]" : "w-[260px]",
       )}
     >
@@ -174,7 +174,7 @@ export function Sidebar({
                   cn(
                     "flex items-center gap-3 px-2.5 py-2 rounded-md text-sm",
                     isActive
-                      ? "bg-primary text-primary-foreground"
+                      ? "bg-primary/10 text-primary font-medium dark:bg-primary/20 dark:text-indigo-300"
                       : "hover:bg-accent text-muted-foreground hover:text-foreground",
                     collapsed && "justify-center",
                   )
@@ -210,7 +210,7 @@ export function Sidebar({
                         cn(
                           "flex items-center gap-3 px-2.5 py-1.5 rounded-md text-[13px]",
                           isActive
-                            ? "bg-primary text-primary-foreground"
+                            ? "bg-primary/10 text-primary font-medium dark:bg-primary/20 dark:text-indigo-300"
                             : "hover:bg-accent text-zinc-600 dark:text-zinc-400 hover:text-foreground",
                           collapsed && "justify-center",
                         )
