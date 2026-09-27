@@ -176,16 +176,13 @@ export default function Holidays() {
     },
     { field: "description", headerName: "Description", flex: 1, cellClass: "text-xs text-muted-foreground truncate" },
     {
-      headerName: "Actions",
-      width: 120,
+      headerName: "",
+      width: 80,
       sortable: false,
       filter: false,
       cellRenderer: (p: any) => (
         <div className="flex items-center justify-end gap-1 h-full">
-          <Button size="sm" variant="ghost" className="h-8 w-8" onClick={() => handleOpenEdit(p.data)}>
-            <Pencil className="h-3.5 w-3.5 text-muted-foreground" />
-          </Button>
-          <Button size="sm" variant="ghost" className="h-8 w-8" onClick={() => handleDeleteHoliday(p.data.id, p.data.name)}>
+          <Button size="sm" variant="ghost" className="h-8 w-8" onClick={(e) => { e.stopPropagation(); handleDeleteHoliday(p.data.id, p.data.name); }}>
             <Trash2 className="h-3.5 w-3.5 text-red-500" />
           </Button>
         </div>
@@ -260,7 +257,13 @@ export default function Holidays() {
 
       {/* Holidays Table */}
       <div className="h-[500px]">
-        <DataGrid rowData={holidays} columnDefs={holidaysColDefs} />
+        <DataGrid 
+          rowData={holidays} 
+          columnDefs={holidaysColDefs} 
+          gridOptions={{
+            onRowDoubleClicked: (e) => handleOpenEdit(e.data)
+          }}
+        />
       </div>
 
       {/* Create / Edit Holiday Modal */}

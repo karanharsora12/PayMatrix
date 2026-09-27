@@ -311,19 +311,6 @@ export default function Attendance() {
       cellRenderer: (p: any) => getStatusBadge(p.value) 
     },
     { field: "remarks", headerName: "Remarks", flex: 1, cellClass: "text-xs text-muted-foreground truncate" },
-    {
-      headerName: "Actions",
-      width: 100,
-      sortable: false,
-      filter: false,
-      cellRenderer: (p: any) => (
-        <div className="flex items-center justify-end h-full">
-          <Button size="sm" variant="ghost" className="h-8 w-8" onClick={() => handleOpenEdit(p.data)}>
-            <Pencil className="h-3.5 w-3.5 text-muted-foreground" />
-          </Button>
-        </div>
-      )
-    }
   ], []);
 
   const punchLogsColDefs = useMemo<ColDef[]>(() => [
@@ -514,7 +501,13 @@ export default function Attendance() {
 
           {/* Table */}
           <div className="h-[500px]">
-            <DataGrid rowData={records} columnDefs={recordsColDefs} />
+            <DataGrid 
+              rowData={records} 
+              columnDefs={recordsColDefs} 
+              gridOptions={{
+                onRowDoubleClicked: (e) => handleOpenEdit(e.data)
+              }}
+            />
           </div>
         </TabsContent>
 

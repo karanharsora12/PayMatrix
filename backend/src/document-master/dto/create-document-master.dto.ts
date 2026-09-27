@@ -1,5 +1,5 @@
 import { IsBoolean, IsOptional, IsString, MaxLength, IsArray } from 'class-validator';
-import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
+import { ApiProperty, ApiPropertyOptional, PartialType } from '@nestjs/swagger';
 
 export class CreateDocumentMasterDto {
   @ApiProperty()
@@ -39,4 +39,4 @@ export class CreateDocumentMasterDto {
   templateContent?: string;
 }
 
-export class UpdateDocumentMasterDto extends CreateDocumentMasterDto {}
+export class UpdateDocumentMasterDto extends PartialType(CreateDocumentMasterDto) {}

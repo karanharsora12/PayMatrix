@@ -106,16 +106,13 @@ export default function Branches() {
       )
     },
     {
-      headerName: "Actions",
-      width: 120,
+      headerName: "",
+      width: 80,
       sortable: false,
       filter: false,
       cellRenderer: (params: any) => (
         <div className="flex gap-1 items-center justify-center h-full">
-          <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => handleEdit(params.data)}>
-            <Pencil className="h-4 w-4" />
-          </Button>
-          <Button variant="ghost" size="icon" className="h-8 w-8 text-red-500 hover:text-red-600" onClick={() => handleDelete(params.data.id)}>
+          <Button variant="ghost" size="icon" className="h-8 w-8 text-red-500 hover:text-red-600" onClick={(e) => { e.stopPropagation(); handleDelete(params.data.id); }}>
             <Trash2 className="h-4 w-4" />
           </Button>
         </div>
@@ -134,7 +131,13 @@ export default function Branches() {
         </Button>
       </div>
       <div className="h-[500px]">
-        <DataGrid rowData={branches} columnDefs={columnDefs} />
+        <DataGrid 
+          rowData={branches} 
+          columnDefs={columnDefs} 
+          gridOptions={{
+            onRowDoubleClicked: (e) => handleEdit(e.data)
+          }}
+        />
       </div>
 
       <Dialog open={open} onOpenChange={(v) => { if (!v) resetForm(); setOpen(v); }}>

@@ -234,19 +234,16 @@ export default function Shifts() {
       )
     },
     {
-      headerName: "Actions",
-      width: 150,
+      headerName: "",
+      width: 110,
       sortable: false,
       filter: false,
       cellRenderer: (p: any) => (
         <div className="flex items-center justify-end gap-1 h-full">
-          <Button size="sm" variant="ghost" title="Assign to Employee" className="h-8 w-8" onClick={() => handleOpenAssign(p.data)}>
+          <Button size="sm" variant="ghost" title="Assign to Employee" className="h-8 w-8" onClick={(e) => { e.stopPropagation(); handleOpenAssign(p.data); }}>
             <UserCheck className="h-3.5 w-3.5 text-muted-foreground" />
           </Button>
-          <Button size="sm" variant="ghost" title="Edit Shift" className="h-8 w-8" onClick={() => handleOpenEdit(p.data)}>
-            <Pencil className="h-3.5 w-3.5 text-muted-foreground" />
-          </Button>
-          <Button size="sm" variant="ghost" title="Delete Shift" className="h-8 w-8" onClick={() => handleDeleteShift(p.data.id, p.data.name)}>
+          <Button size="sm" variant="ghost" title="Delete Shift" className="h-8 w-8" onClick={(e) => { e.stopPropagation(); handleDeleteShift(p.data.id, p.data.name); }}>
             <Trash2 className="h-3.5 w-3.5 text-red-500" />
           </Button>
         </div>
@@ -310,7 +307,13 @@ export default function Shifts() {
 
       {/* Shifts Table Card */}
       <div className="h-[500px]">
-        <DataGrid rowData={shifts} columnDefs={shiftsColDefs} />
+        <DataGrid 
+          rowData={shifts} 
+          columnDefs={shiftsColDefs} 
+          gridOptions={{
+            onRowDoubleClicked: (e) => handleOpenEdit(e.data)
+          }}
+        />
       </div>
 
       {/* Employee Shift History Quick View */}

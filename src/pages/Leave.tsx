@@ -394,16 +394,13 @@ export default function Leave() {
       )
     },
     {
-      headerName: "Actions",
-      width: 120,
+      headerName: "",
+      width: 80,
       sortable: false,
       filter: false,
       cellRenderer: (p: any) => (
         <div className="flex items-center justify-end gap-1 h-full">
-          <Button size="sm" variant="ghost" className="h-8 w-8" onClick={() => handleOpenTypeModal(p.data)}>
-            <Pencil className="h-3.5 w-3.5 text-muted-foreground" />
-          </Button>
-          <Button size="sm" variant="ghost" className="h-8 w-8" onClick={() => handleDeleteType(p.data.id, p.data.name)}>
+          <Button size="sm" variant="ghost" className="h-8 w-8" onClick={(e) => { e.stopPropagation(); handleDeleteType(p.data.id, p.data.name); }}>
             <Trash2 className="h-3.5 w-3.5 text-red-500" />
           </Button>
         </div>
@@ -501,7 +498,13 @@ export default function Leave() {
         <TabsContent value="types" className="space-y-4">
           <Card>
             <div className="h-[500px]">
-              <DataGrid rowData={leaveTypes} columnDefs={typesColDefs} />
+              <DataGrid 
+                rowData={leaveTypes} 
+                columnDefs={typesColDefs} 
+                gridOptions={{
+                  onRowDoubleClicked: (e) => handleOpenTypeModal(e.data)
+                }}
+              />
             </div>
           </Card>
         </TabsContent>

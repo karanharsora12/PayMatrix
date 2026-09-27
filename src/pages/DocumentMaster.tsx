@@ -91,14 +91,13 @@ function DocumentTypesTab({ data, queryClient }: { data: any[], queryClient: any
     { field: "name", headerName: "Name", flex: 1 },
     { field: "description", headerName: "Description", flex: 1 },
     {
-      headerName: "Actions",
-      width: 120,
+      headerName: "",
+      width: 80,
+      sortable: false,
+      filter: false,
       cellRenderer: (params: any) => (
         <div className="flex gap-1 items-center justify-center h-full">
-          <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => handleEdit(params.data)}>
-            <Pencil className="h-4 w-4" />
-          </Button>
-          <Button variant="ghost" size="icon" className="h-8 w-8 text-red-500 hover:text-red-600" onClick={() => handleDelete(params.data.id)}>
+          <Button variant="ghost" size="icon" className="h-8 w-8 text-red-500 hover:text-red-600" onClick={(e) => { e.stopPropagation(); handleDelete(params.data.id); }}>
             <Trash2 className="h-4 w-4" />
           </Button>
         </div>
@@ -114,7 +113,13 @@ function DocumentTypesTab({ data, queryClient }: { data: any[], queryClient: any
         </Button>
       </div>
       <div className="h-[500px]">
-        <DataGrid rowData={data} columnDefs={columnDefs} />
+        <DataGrid 
+          rowData={data} 
+          columnDefs={columnDefs} 
+          gridOptions={{
+            onRowDoubleClicked: (e) => handleEdit(e.data)
+          }}
+        />
       </div>
 
       <Dialog open={open} onOpenChange={(v) => { if (!v) resetForm(); setOpen(v); }}>
@@ -169,7 +174,7 @@ function DocumentTypesTab({ data, queryClient }: { data: any[], queryClient: any
 }
 
 function DocumentMasterTab({ data, queryClient }: { data: any[], queryClient: any }) {
-  const [selectedDocId, setSelectedDocId] = useState<string>("");
+  const [selectedDocId, setSelectedDocId] = useState<string | null>(null);
 
   const selectedDoc = useMemo(() => data.find(d => d.id === selectedDocId), [data, selectedDocId]);
 
@@ -178,6 +183,7 @@ function DocumentMasterTab({ data, queryClient }: { data: any[], queryClient: an
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["documentMaster"] });
       toast.success("Template saved successfully");
+      setSelectedDocId(null);
     }
   });
 
@@ -209,26 +215,57 @@ function DocumentMasterTab({ data, queryClient }: { data: any[], queryClient: an
     editor?.chain().focus().insertContent(`{{${field}}}`).run();
   };
 
-  return (
-    <div className="space-y-6">
-      <div className="w-64">
-        <label className="text-xs font-medium mb-1 block">Select Document Type</label>
-        <Select value={selectedDocId} onValueChange={setSelectedDocId}>
-          <SelectTrigger><SelectValue placeholder="Choose a document..." /></SelectTrigger>
-          <SelectContent>
-            {data.map(d => (
-              <SelectItem key={d.id} value={d.id}>{d.name}</SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
-      </div>
+  const columnDefs = useMemo<ColDef[]>(() => [
+    { field: "code", headerName: "Code", width: 120 },
+    { field: "name", headerName: "Name", flex: 1 },
+    {
+      field: "templateContent",
+      headerName: "Template Status",
+      width: 150,
+      cellRenderer: (params: any) => (
+        <Badge variant={params.value ? "success" : "secondary"}>
+          {params.value ? "Configured" : "Pending"}
+        </Badge>
+      )
+    },
+    {
+      headerName: "",
+      width: 80,
+      sortable: false,
+      filter: false,
+      cellRenderer: (params: any) => (
+        <div className="flex gap-1 items-center justify-center h-full">
+          <Button 
+            variant="ghost" 
+            size="icon" 
+            className="h-8 w-8 text-red-500 hover:text-red-600" 
+            onClick={(e) => { 
+              e.stopPropagation(); 
+              if (confirm("Are you sure you want to clear this template?")) {
+                updateMutation.mutate({ id: params.data.id, dt: { templateContent: '' } });
+              }
+            }}
+          >
+            <Trash2 className="h-4 w-4" />
+          </Button>
+        </div>
+      )
+    }
+  ], []);
 
-      {selectedDoc && (
+  if (selectedDocId) {
+    return (
+      <div className="space-y-4">
+        <div className="flex items-center gap-4 mb-4">
+          <Button variant="outline" onClick={() => setSelectedDocId(null)}>← Back to List</Button>
+          <h2 className="text-lg font-semibold">Editing Template: {selectedDoc?.name}</h2>
+        </div>
+
         <div className="border rounded-md p-4 bg-muted/10 space-y-4">
           <div>
             <label className="text-xs font-medium mb-2 block">Available Fields (Click to insert)</label>
             <div className="flex flex-wrap gap-2">
-              {selectedDoc.fields?.map((f: string) => (
+              {selectedDoc?.fields?.map((f: string) => (
                 <Badge 
                   key={f} 
                   variant="outline" 
@@ -238,23 +275,23 @@ function DocumentMasterTab({ data, queryClient }: { data: any[], queryClient: an
                   {f}
                 </Badge>
               ))}
-              {(!selectedDoc.fields || selectedDoc.fields.length === 0) && (
+              {(!selectedDoc?.fields || selectedDoc.fields.length === 0) && (
                 <span className="text-xs text-muted-foreground">No fields defined for this document type.</span>
               )}
             </div>
           </div>
 
           <div className="border rounded-md overflow-hidden bg-white flex flex-col">
-            <div className="flex items-center gap-1 p-2 border-b bg-muted/30">
-              <Button size="sm" variant="ghost" onClick={() => editor?.chain().focus().toggleBold().run()} className={editor?.isActive('bold') ? 'bg-muted' : ''}>Bold</Button>
-              <Button size="sm" variant="ghost" onClick={() => editor?.chain().focus().toggleItalic().run()} className={editor?.isActive('italic') ? 'bg-muted' : ''}>Italic</Button>
+            <div className="flex items-center gap-1 p-2 border-b bg-muted/30 flex-wrap">
+              <Button type="button" size="sm" variant="ghost" onClick={() => editor?.chain().focus().toggleBold().run()} className={editor?.isActive('bold') ? 'bg-muted' : ''}>Bold</Button>
+              <Button type="button" size="sm" variant="ghost" onClick={() => editor?.chain().focus().toggleItalic().run()} className={editor?.isActive('italic') ? 'bg-muted' : ''}>Italic</Button>
               <div className="w-px h-4 bg-border mx-1" />
-              <Button size="sm" variant="ghost" onClick={() => editor?.chain().focus().toggleHeading({ level: 1 }).run()} className={editor?.isActive('heading', { level: 1 }) ? 'bg-muted' : ''}>H1</Button>
-              <Button size="sm" variant="ghost" onClick={() => editor?.chain().focus().toggleHeading({ level: 2 }).run()} className={editor?.isActive('heading', { level: 2 }) ? 'bg-muted' : ''}>H2</Button>
-              <Button size="sm" variant="ghost" onClick={() => editor?.chain().focus().setParagraph().run()} className={editor?.isActive('paragraph') ? 'bg-muted' : ''}>P</Button>
+              <Button type="button" size="sm" variant="ghost" onClick={() => editor?.chain().focus().toggleHeading({ level: 1 }).run()} className={editor?.isActive('heading', { level: 1 }) ? 'bg-muted' : ''}>H1</Button>
+              <Button type="button" size="sm" variant="ghost" onClick={() => editor?.chain().focus().toggleHeading({ level: 2 }).run()} className={editor?.isActive('heading', { level: 2 }) ? 'bg-muted' : ''}>H2</Button>
+              <Button type="button" size="sm" variant="ghost" onClick={() => editor?.chain().focus().setParagraph().run()} className={editor?.isActive('paragraph') ? 'bg-muted' : ''}>P</Button>
               <div className="w-px h-4 bg-border mx-1" />
-              <Button size="sm" variant="ghost" onClick={() => editor?.chain().focus().toggleBulletList().run()} className={editor?.isActive('bulletList') ? 'bg-muted' : ''}>Bullet List</Button>
-              <Button size="sm" variant="ghost" onClick={() => editor?.chain().focus().toggleOrderedList().run()} className={editor?.isActive('orderedList') ? 'bg-muted' : ''}>Numbered List</Button>
+              <Button type="button" size="sm" variant="ghost" onClick={() => editor?.chain().focus().toggleBulletList().run()} className={editor?.isActive('bulletList') ? 'bg-muted' : ''}>Bullet List</Button>
+              <Button type="button" size="sm" variant="ghost" onClick={() => editor?.chain().focus().toggleOrderedList().run()} className={editor?.isActive('orderedList') ? 'bg-muted' : ''}>Numbered List</Button>
             </div>
             <EditorContent editor={editor} className="flex-1" />
           </div>
@@ -265,7 +302,21 @@ function DocumentMasterTab({ data, queryClient }: { data: any[], queryClient: an
             </Button>
           </div>
         </div>
-      )}
+      </div>
+    );
+  }
+
+  return (
+    <div className="space-y-4">
+      <div className="h-[500px]">
+        <DataGrid 
+          rowData={data} 
+          columnDefs={columnDefs} 
+          gridOptions={{
+            onRowDoubleClicked: (e) => setSelectedDocId(e.data.id)
+          }}
+        />
+      </div>
     </div>
   );
 }
