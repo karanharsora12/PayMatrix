@@ -190,8 +190,8 @@ export default function Shifts() {
   };
 
   const shiftsColDefs = useMemo<ColDef[]>(() => [
-    { field: "code", headerName: "Code", width: 100, cellClass: "font-mono text-xs font-semibold" },
-    { field: "name", headerName: "Name", flex: 1, cellClass: "font-medium" },
+    { field: "code", headerName: "Code", width: 100 },
+    { field: "name", headerName: "Name", flex: 1 },
     { 
       field: "timing", 
       headerName: "Timing", 
@@ -212,7 +212,9 @@ export default function Shifts() {
       headerName: "Overtime", 
       width: 120,
       cellRenderer: (p: any) => (
-        <Badge variant={p.value ? 'success' : 'secondary'}>{p.value ? 'Allowed' : 'Disabled'}</Badge>
+        <div className="flex items-center h-full">
+          <div className={`h-2.5 w-2.5 rounded-full ${p.value ? "bg-emerald-500" : "bg-red-500"}`} title={p.value ? "Active" : "Inactive"} />
+        </div>
       )
     },
     {
@@ -230,7 +232,9 @@ export default function Shifts() {
       headerName: "Status", 
       width: 100,
       cellRenderer: (p: any) => (
-        <Badge variant={p.value ? 'success' : 'secondary'}>{p.value ? 'Active' : 'Inactive'}</Badge>
+        <div className="flex items-center h-full">
+          <div className={`h-2.5 w-2.5 rounded-full ${p.value ? "bg-emerald-500" : "bg-red-500"}`} title={p.value ? "Active" : "Inactive"} />
+        </div>
       )
     },
     {
@@ -255,8 +259,7 @@ export default function Shifts() {
     { 
       field: "shiftName", 
       headerName: "Shift", 
-      flex: 1, 
-      cellClass: "font-medium",
+      flex: 1,
       valueGetter: (p) => p.data.shift ? `${p.data.shift.name} (${p.data.shift.code})` : '—'
     },
     { 
@@ -278,7 +281,9 @@ export default function Shifts() {
       width: 120,
       valueGetter: (p) => !p.data.effectiveTo || p.data.effectiveTo >= new Date().toISOString().substring(0, 10),
       cellRenderer: (p: any) => (
-        <Badge variant={p.value ? 'success' : 'secondary'}>{p.value ? 'Active' : 'Expired'}</Badge>
+        <div className="flex items-center h-full">
+          <div className={`h-2.5 w-2.5 rounded-full ${p.value ? "bg-emerald-500" : "bg-red-500"}`} title={p.value ? "Active" : "Inactive"} />
+        </div>
       )
     }
   ], []);

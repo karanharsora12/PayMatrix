@@ -89,18 +89,18 @@ export default function Company() {
   };
 
   const columnDefs = useMemo<ColDef[]>(() => [
-    { field: "code", headerName: "Code", width: 120, cellClass: "font-mono text-xs" },
-    { field: "name", headerName: "Name", flex: 1, cellClass: "font-medium" },
+    { field: "code", headerName: "Code", width: 120 },
+    { field: "name", headerName: "Name", flex: 1 },
     { field: "email", headerName: "Email", flex: 1 },
     { field: "city", headerName: "City", width: 150 },
     {
       field: "isActive",
       headerName: "Status",
       width: 120,
-      cellRenderer: (params: any) => (
-        <Badge variant={params.value ? "success" : "secondary"}>
-          {params.value ? "Active" : "Inactive"}
-        </Badge>
+      cellRenderer: (p: any) => (
+        <div className="flex items-center h-full">
+          <div className={`h-2.5 w-2.5 rounded-full ${p.value ? "bg-emerald-500" : "bg-red-500"}`} title={p.value ? "Active" : "Inactive"} />
+        </div>
       )
     },
     {

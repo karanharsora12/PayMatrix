@@ -88,20 +88,20 @@ export default function Departments() {
   };
 
   const columnDefs = useMemo<ColDef[]>(() => [
-    { field: "code", headerName: "Code", width: 120, cellClass: "font-mono text-xs" },
-    { field: "name", headerName: "Name", flex: 1, cellClass: "font-medium" },
+    { field: "code", headerName: "Code", width: 120 },
+    { field: "name", headerName: "Name", flex: 1 },
     { field: "description", headerName: "Description", flex: 1 },
     {
       field: "isActive",
       headerName: "Status",
       width: 120,
-      cellRenderer: (params: any) => (
-        <Badge variant={params.value ? "success" : "secondary"}>
-          {params.value ? "Active" : "Inactive"}
-        </Badge>
+      cellRenderer: (p: any) => (
+        <div className="flex items-center h-full">
+          <div className={`h-2.5 w-2.5 rounded-full ${p.value ? "bg-emerald-500" : "bg-red-500"}`} title={p.value ? "Active" : "Inactive"} />
+        </div>
       )
     },
-    { field: "createdAt", headerName: "Created", width: 150, cellClass: "text-sm", valueFormatter: (params) => new Date(params.value).toLocaleDateString() },
+    { field: "createdAt", headerName: "Created", width: 150, valueFormatter: (params) => new Date(params.value).toLocaleDateString() },
     {
       headerName: "",
       width: 80,

@@ -145,11 +145,10 @@ export default function SalaryComponents() {
     { 
       field: "displayOrder", 
       headerName: "#", 
-      width: 70, 
-      cellClass: "text-center font-mono text-xs text-muted-foreground",
+      width: 70,
       valueGetter: (p) => p.data.displayOrder ?? (p.node?.rowIndex != null ? p.node.rowIndex + 1 : 0)
     },
-    { field: "code", headerName: "Code", width: 100, cellClass: "font-mono text-xs font-semibold text-primary" },
+    { field: "code", headerName: "Code", width: 100 },
     { 
       field: "name", 
       headerName: "Component Name", 
@@ -170,27 +169,15 @@ export default function SalaryComponents() {
       headerName: "Type", 
       width: 150,
       cellRenderer: (p: any) => (
-        <Badge
-          variant={
-            p.value === 'EARNING'
-              ? 'success'
-              : p.value === 'DEDUCTION'
-              ? 'destructive'
-              : p.value === 'EMPLOYER_CONTRIBUTION'
-              ? 'secondary'
-              : 'outline'
-          }
-          className="capitalize text-xs"
-        >
-          {p.value === 'EMPLOYER_CONTRIBUTION' ? 'Employer' : p.value.toLowerCase()}
-        </Badge>
+        <div className="flex items-center h-full">
+          <div className={`h-2.5 w-2.5 rounded-full ${p.value ? "bg-emerald-500" : "bg-red-500"}`} title={p.value ? "Active" : "Inactive"} />
+        </div>
       )
     },
     { 
       field: "calculationType", 
       headerName: "Calculation", 
       width: 150,
-      cellClass: "text-xs",
       cellRenderer: (p: any) => (
         <div className="flex items-center h-full">
           <span className="font-medium">{p.value}</span>
@@ -204,7 +191,6 @@ export default function SalaryComponents() {
       field: "defaultRate", 
       headerName: "Default Rate / Value", 
       width: 180,
-      cellClass: "text-xs font-medium",
       cellRenderer: (p: any) => {
         const c = p.data;
         if (c.calculationType === 'FIXED') {
@@ -238,9 +224,9 @@ export default function SalaryComponents() {
       headerName: "Status", 
       width: 100,
       cellRenderer: (p: any) => (
-        <Badge variant={p.value ? 'success' : 'secondary'} className="text-xs">
-          {p.value ? 'Active' : 'Inactive'}
-        </Badge>
+        <div className="flex items-center h-full">
+          <div className={`h-2.5 w-2.5 rounded-full ${p.value ? "bg-emerald-500" : "bg-red-500"}`} title={p.value ? "Active" : "Inactive"} />
+        </div>
       )
     },
     {

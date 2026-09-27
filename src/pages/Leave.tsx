@@ -290,23 +290,21 @@ export default function Leave() {
       headerName: "Leave Type",
       width: 150,
       cellRenderer: (p: any) => (
-        <Badge variant="outline" className="font-medium">
-          {p.data.leaveType?.name || 'Leave'} ({p.data.leaveType?.code || 'LV'})
-        </Badge>
+        <div className="flex items-center h-full">
+          <div className={`h-2.5 w-2.5 rounded-full ${p.value ? "bg-emerald-500" : "bg-red-500"}`} title={p.value ? "Active" : "Inactive"} />
+        </div>
       )
     },
     {
       field: "period",
       headerName: "Period",
       width: 220,
-      cellClass: "text-sm font-mono",
       valueGetter: (p) => `${p.data.fromDate} → ${p.data.toDate}`
     },
     {
       field: "totalDays",
       headerName: "Days",
       width: 100,
-      cellClass: "font-semibold text-sm",
       valueFormatter: (p) => `${Number(p.value)} ${Number(p.value) === 1 ? 'day' : 'days'}`
     },
     {
@@ -356,14 +354,16 @@ export default function Leave() {
   ], [approveMutation.isPending, rejectMutation.isPending, cancelMutation.isPending]);
 
   const typesColDefs = useMemo<ColDef[]>(() => [
-    { field: "code", headerName: "Code", width: 100, cellClass: "font-mono text-xs font-semibold" },
-    { field: "name", headerName: "Name", flex: 1, cellClass: "font-medium" },
+    { field: "code", headerName: "Code", width: 100 },
+    { field: "name", headerName: "Name", flex: 1 },
     {
       field: "isPaid",
       headerName: "Type",
       width: 100,
       cellRenderer: (p: any) => (
-        <Badge variant={p.value ? 'success' : 'secondary'}>{p.value ? 'Paid' : 'Unpaid'}</Badge>
+        <div className="flex items-center h-full">
+          <div className={`h-2.5 w-2.5 rounded-full ${p.value ? "bg-emerald-500" : "bg-red-500"}`} title={p.value ? "Active" : "Inactive"} />
+        </div>
       )
     },
     { field: "annualAllowance", headerName: "Annual Allowance", width: 150, valueFormatter: (p) => `${Number(p.value)} days` },
@@ -390,7 +390,9 @@ export default function Leave() {
       headerName: "Status",
       width: 100,
       cellRenderer: (p: any) => (
-        <Badge variant={p.value ? 'success' : 'secondary'}>{p.value ? 'Active' : 'Inactive'}</Badge>
+        <div className="flex items-center h-full">
+          <div className={`h-2.5 w-2.5 rounded-full ${p.value ? "bg-emerald-500" : "bg-red-500"}`} title={p.value ? "Active" : "Inactive"} />
+        </div>
       )
     },
     {
@@ -413,14 +415,13 @@ export default function Leave() {
       field: "leaveType",
       headerName: "Leave Type",
       flex: 1,
-      cellClass: "font-semibold",
       valueGetter: (p) => p.data.leaveType ? `${p.data.leaveType.name} (${p.data.leaveType.code})` : '—'
     },
     { field: "openingBalance", headerName: "Opening Balance", width: 150, valueFormatter: (p) => String(Number(p.value)) },
     { field: "allocatedDays", headerName: "Allocated", width: 120, valueFormatter: (p) => String(Number(p.value)) },
-    { field: "usedDays", headerName: "Used Days", width: 120, cellClass: "text-amber-700 dark:text-amber-300 font-medium", valueFormatter: (p) => String(Number(p.value)) },
-    { field: "pendingDays", headerName: "Pending Approval", width: 150, cellClass: "text-blue-600 font-medium", valueFormatter: (p) => String(Number(p.value)) },
-    { field: "remainingDays", headerName: "Remaining Balance", width: 160, cellClass: "text-emerald-700 dark:text-emerald-300 font-bold text-base", valueFormatter: (p) => String(Number(p.value)) }
+    { field: "usedDays", headerName: "Used Days", width: 120, valueFormatter: (p) => String(Number(p.value)) },
+    { field: "pendingDays", headerName: "Pending Approval", width: 150, valueFormatter: (p) => String(Number(p.value)) },
+    { field: "remainingDays", headerName: "Remaining Balance", width: 160, valueFormatter: (p) => String(Number(p.value)) }
   ], []);
 
   return (
