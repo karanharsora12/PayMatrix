@@ -1,5 +1,5 @@
 import { ConflictException, Inject, Injectable, NotFoundException } from '@nestjs/common';
-import { eq, and, ilike, sql } from 'drizzle-orm';
+import { eq, and, ilike, sql, isNull } from 'drizzle-orm';
 import { DRIZZLE } from '../database/database.module';
 import * as schema from '../db/schema';
 import { PaginationDto, paginated } from '../common/dto/pagination.dto';
@@ -10,7 +10,7 @@ export class BranchesService {
   constructor(@Inject(DRIZZLE) private db: any) {}
 
   async list(companyId: string, dto: PaginationDto) {
-    const base = eq(schema.branches.companyId, companyId);
+    const base = and(eq(schema.branches.companyId, companyId), isNull(schema.branches.deletedAt));
     const search = dto.search ? ilike(schema.branches.name, `%${dto.search}%`) : undefined;
     const where = search ? and(base, search) : base;
     const total = await this.db.select({ count: sql`count(*)` }).from(schema.branches).where(where).then((r: any) => Number(r[0].count));

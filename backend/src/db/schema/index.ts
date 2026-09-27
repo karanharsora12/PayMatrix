@@ -12,9 +12,11 @@ export * from "./helpers";
 // Core org
 export * from "./companies";
 export * from "./branches";
+export * from "./locations";
 export * from "./departments";
 export * from "./designations";
 export * from "./employment-types";
+export * from "./document-master";
 
 // Employee domain
 export * from "./employees";

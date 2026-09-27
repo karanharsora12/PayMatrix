@@ -226,19 +226,6 @@ export function Sidebar({
           );
         })}
       </div>
-      <div className="p-3 border-t">
-        {!collapsed && (
-          <div className="rounded-lg bg-primary/10 p-3">
-            <div className="text-xs font-medium">Payroll Due</div>
-            <div className="text-[11px] text-muted-foreground">
-              September 2026 processing
-            </div>
-            <div className="mt-2 h-1.5 bg-primary/20 rounded-full">
-              <div className="h-full w-[89%] bg-primary rounded-full" />
-            </div>
-          </div>
-        )}
-      </div>
     </div>
   );
   return (

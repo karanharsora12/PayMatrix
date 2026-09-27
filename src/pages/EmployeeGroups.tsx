@@ -1,6 +1,5 @@
 import { useState, useMemo } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { DataGrid } from "@/components/common/DataGrid";
@@ -8,10 +7,10 @@ import { Plus, Pencil, Trash2 } from "lucide-react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { toast } from "sonner";
-import { departmentApi } from "@/api/departments";
+import { employeeGroupApi } from "@/api/employeeGroups";
 import type { ColDef } from "ag-grid-community";
 
-export default function Departments() {
+export default function EmployeeGroups() {
   const [open, setOpen] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [formData, setFormData] = useState({ code: "", name: "", description: "" });
@@ -19,39 +18,39 @@ export default function Departments() {
   const queryClient = useQueryClient();
 
   const { data, isLoading } = useQuery({
-    queryKey: ["departments"],
-    queryFn: () => departmentApi.list(),
+    queryKey: ["employeeGroups"],
+    queryFn: () => employeeGroupApi.list(),
   });
 
   const createMutation = useMutation({
-    mutationFn: departmentApi.create,
+    mutationFn: employeeGroupApi.create,
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["departments"] });
-      toast.success("Department created successfully");
+      queryClient.invalidateQueries({ queryKey: ["employeeGroups"] });
+      toast.success("Group created successfully");
       setOpen(false);
       resetForm();
     },
-    onError: (err: any) => toast.error(err.response?.data?.message || "Error creating department")
+    onError: (err: any) => toast.error(err.response?.data?.message || "Error creating group")
   });
 
   const updateMutation = useMutation({
-    mutationFn: ({ id, data }: { id: string, data: any }) => departmentApi.update(id, data),
+    mutationFn: ({ id, data }: { id: string, data: any }) => employeeGroupApi.update(id, data),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["departments"] });
-      toast.success("Department updated successfully");
+      queryClient.invalidateQueries({ queryKey: ["employeeGroups"] });
+      toast.success("Group updated successfully");
       setOpen(false);
       resetForm();
     },
-    onError: (err: any) => toast.error(err.response?.data?.message || "Error updating department")
+    onError: (err: any) => toast.error(err.response?.data?.message || "Error updating group")
   });
 
   const deleteMutation = useMutation({
-    mutationFn: departmentApi.remove,
+    mutationFn: employeeGroupApi.remove,
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["departments"] });
-      toast.success("Department deleted successfully");
+      queryClient.invalidateQueries({ queryKey: ["employeeGroups"] });
+      toast.success("Group deleted successfully");
     },
-    onError: (err: any) => toast.error(err.response?.data?.message || "Error deleting department")
+    onError: (err: any) => toast.error(err.response?.data?.message || "Error deleting group")
   });
 
   const resetForm = () => {
@@ -59,18 +58,18 @@ export default function Departments() {
     setFormData({ code: "", name: "", description: "" });
   };
 
-  const handleEdit = (dept: any) => {
-    setEditingId(dept.id);
+  const handleEdit = (group: any) => {
+    setEditingId(group.id);
     setFormData({
-      code: dept.code || "",
-      name: dept.name || "",
-      description: dept.description || "",
+      code: group.code || "",
+      name: group.name || "",
+      description: group.description || "",
     });
     setOpen(true);
   };
 
   const handleDelete = (id: string) => {
-    if (confirm("Are you sure you want to delete this department?")) {
+    if (confirm("Are you sure you want to delete this group?")) {
       deleteMutation.mutate(id);
     }
   };
@@ -101,7 +100,6 @@ export default function Departments() {
         </Badge>
       )
     },
-    { field: "createdAt", headerName: "Created", width: 150, cellClass: "text-sm", valueFormatter: (params) => new Date(params.value).toLocaleDateString() },
     {
       headerName: "Actions",
       width: 120,
@@ -120,37 +118,37 @@ export default function Departments() {
     }
   ], []);
 
-  const departments = data?.data || [];
+  const groups = data?.data || [];
 
   return (
     <div className="space-y-4">
       <div className="flex justify-between items-center">
-        <h1 className="text-xl font-semibold">Departments</h1>
+        <h1 className="text-xl font-semibold">Employee Groups</h1>
         <Button onClick={() => { resetForm(); setOpen(true); }}>
-          <Plus className="h-4 w-4 mr-2" />Add Department
+          <Plus className="h-4 w-4 mr-2" />Add Group
         </Button>
       </div>
 
       <div className="h-[500px]">
-        <DataGrid rowData={departments} columnDefs={columnDefs} />
+        <DataGrid rowData={groups} columnDefs={columnDefs} />
       </div>
 
       <Dialog open={open} onOpenChange={(v) => { if (!v) resetForm(); setOpen(v); }}>
         <DialogContent>
-          <DialogHeader><DialogTitle>{editingId ? "Edit Department" : "Add Department"}</DialogTitle></DialogHeader>
+          <DialogHeader><DialogTitle>{editingId ? "Edit Group" : "Add Group"}</DialogTitle></DialogHeader>
           <div className="space-y-3 mt-4">
             <div>
-              <label className="text-xs font-medium mb-1 block">Department Code</label>
+              <label className="text-xs font-medium mb-1 block">Group Code</label>
               <Input
-                placeholder="e.g. ENG"
+                placeholder="e.g. GRP-A"
                 value={formData.code}
                 onChange={e => setFormData(p => ({ ...p, code: e.target.value }))}
               />
             </div>
             <div>
-              <label className="text-xs font-medium mb-1 block">Department Name</label>
+              <label className="text-xs font-medium mb-1 block">Group Name</label>
               <Input
-                placeholder="e.g. Engineering"
+                placeholder="e.g. Senior Management"
                 value={formData.name}
                 onChange={e => setFormData(p => ({ ...p, name: e.target.value }))}
               />

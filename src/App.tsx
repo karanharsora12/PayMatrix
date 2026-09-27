@@ -10,9 +10,13 @@ import Dashboard from "@/pages/Dashboard";
 import Employees from "@/pages/Employees";
 import EmployeeProfile from "@/pages/EmployeeProfile";
 import AddEmployee from "@/pages/AddEmployee";
+import Company from "@/pages/Company";
 import Departments from "@/pages/Departments";
 import Designations from "@/pages/Designations";
 import Branches from "@/pages/Branches";
+import Locations from "@/pages/Locations";
+import EmployeeGroups from "@/pages/EmployeeGroups";
+import DocumentMaster from "@/pages/DocumentMaster";
 import Attendance from "@/pages/Attendance";
 import Shifts from "@/pages/Shifts";
 import Holidays from "@/pages/Holidays";
@@ -48,8 +52,15 @@ function Protected() {
   const { user, loading } = useAuth();
   if (loading)
     return (
-      <div className="min-h-screen flex items-center justify-center">
-        Loading...
+      <div className="min-h-screen flex flex-col items-center justify-center bg-background">
+        <div className="flex flex-col items-center animate-pulse">
+          <div className="h-16 w-16 mb-6 rounded-2xl bg-primary text-primary-foreground flex items-center justify-center font-bold text-3xl shadow-lg">
+            PM
+          </div>
+          <div className="text-2xl font-bold tracking-tight text-foreground">
+            PayMatrix
+          </div>
+        </div>
       </div>
     );
   if (!user) return <Navigate to="/login" replace />;
@@ -66,12 +77,12 @@ function CommandPalette({
   const [q, setQ] = useState("");
   const results = q
     ? mockEmployees
-        .filter((e) =>
-          `${e.firstName} ${e.lastName} ${e.employeeId}`
-            .toLowerCase()
-            .includes(q.toLowerCase()),
-        )
-        .slice(0, 5)
+      .filter((e) =>
+        `${e.firstName} ${e.lastName} ${e.employeeId}`
+          .toLowerCase()
+          .includes(q.toLowerCase()),
+      )
+      .slice(0, 5)
     : [];
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -167,19 +178,19 @@ export default function App() {
             <Route path="/settings" element={<Settings />} />
             <Route
               path="/organization/company"
-              element={<Placeholder title="Company" />}
+              element={<Company />}
             />
             <Route
               path="/locations"
-              element={<Placeholder title="Locations" />}
+              element={<Locations />}
             />
             <Route
               path="/employee-groups"
-              element={<Placeholder title="Employee Groups" />}
+              element={<EmployeeGroups />}
             />
             <Route
               path="/documents"
-              element={<Placeholder title="Employee Documents" />}
+              element={<DocumentMaster />}
             />
             <Route
               path="/bank-accounts"

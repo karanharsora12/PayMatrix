@@ -1,4 +1,5 @@
 import { Injectable, UnauthorizedException, BadRequestException, Inject } from '@nestjs/common';
+import { ConfigService } from '@nestjs/config';
 import { JwtService } from '@nestjs/jwt';
 import { eq } from 'drizzle-orm';
 import * as bcrypt from 'bcrypt';
@@ -10,6 +11,7 @@ export class AuthService {
   constructor(
     @Inject(DRIZZLE) private db: any,
     private jwt: JwtService,
+    private config: ConfigService,
   ) {}
 
   private async loadPermissions(userId: string) {
@@ -39,10 +41,13 @@ export class AuthService {
     const { roles, perms } = await this.loadPermissions(user.id);
 
     const payload = { sub: user.id, companyId: user.companyId, email: user.email, roles, permissions: perms };
-    const accessToken = await this.jwt.signAsync(payload as any, { expiresIn: (process.env.JWT_EXPIRES_IN ?? '15m') as any });
+    const accessToken = await this.jwt.signAsync(payload as any, {
+      secret: this.config.get<string>('JWT_SECRET') ?? 'dev-secret',
+      expiresIn: (this.config.get<string>('JWT_EXPIRES_IN') ?? '15m') as any
+    });
     const refreshToken = await this.jwt.signAsync(
       { sub: user.id, type: 'refresh' } as any,
-      { secret: process.env.JWT_REFRESH_SECRET ?? process.env.JWT_SECRET ?? 'dev-secret', expiresIn: (process.env.JWT_REFRESH_EXPIRES_IN ?? '7d') as any },
+      { secret: this.config.get<string>('JWT_REFRESH_SECRET') ?? this.config.get<string>('JWT_SECRET') ?? 'dev-secret', expiresIn: (this.config.get<string>('JWT_REFRESH_EXPIRES_IN') ?? '7d') as any },
     );
 
     await this.db.update(schema.users).set({ lastLoginAt: new Date() }).where(eq(schema.users.id, user.id));
@@ -70,7 +75,7 @@ export class AuthService {
   async refresh(refreshToken: string) {
     try {
       const payload: any = await this.jwt.verifyAsync(refreshToken, {
-        secret: process.env.JWT_REFRESH_SECRET ?? process.env.JWT_SECRET ?? 'dev-secret',
+        secret: this.config.get<string>('JWT_REFRESH_SECRET') ?? this.config.get<string>('JWT_SECRET') ?? 'dev-secret',
       });
       if (payload.type !== 'refresh') throw new BadRequestException('Invalid refresh token');
       const user: any = await this.db.query.users.findFirst({ where: (u: any, { eq }: any) => eq(u.id, payload.sub) });

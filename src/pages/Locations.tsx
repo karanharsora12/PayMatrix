@@ -4,76 +4,77 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { DataGrid } from "@/components/common/DataGrid";
-import { Plus, Pencil, Trash2, Building2, MapPin } from "lucide-react";
+import { Plus, Pencil, Trash2, MapPin } from "lucide-react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { toast } from "sonner";
-import { branchApi } from "@/api/branches";
+import { locationApi } from "@/api/locations";
 import type { ColDef } from "ag-grid-community";
 
-export default function Branches() {
+export default function Locations() {
   const [open, setOpen] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
-  const [formData, setFormData] = useState({ code: "", name: "", city: "", state: "", email: "", phone: "" });
+  const [formData, setFormData] = useState({ code: "", name: "", address: "", city: "", state: "", country: "", postalCode: "" });
 
   const queryClient = useQueryClient();
 
   const { data, isLoading } = useQuery({
-    queryKey: ["branches"],
-    queryFn: () => branchApi.list(),
+    queryKey: ["locations"],
+    queryFn: () => locationApi.list(),
   });
 
   const createMutation = useMutation({
-    mutationFn: branchApi.create,
+    mutationFn: locationApi.create,
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["branches"] });
-      toast.success("Branch created successfully");
+      queryClient.invalidateQueries({ queryKey: ["locations"] });
+      toast.success("Location created successfully");
       setOpen(false);
       resetForm();
     },
-    onError: (err: any) => toast.error(err.response?.data?.message || "Error creating branch")
+    onError: (err: any) => toast.error(err.response?.data?.message || "Error creating location")
   });
 
   const updateMutation = useMutation({
-    mutationFn: ({ id, data }: { id: string, data: any }) => branchApi.update(id, data),
+    mutationFn: ({ id, data }: { id: string, data: any }) => locationApi.update(id, data),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["branches"] });
-      toast.success("Branch updated successfully");
+      queryClient.invalidateQueries({ queryKey: ["locations"] });
+      toast.success("Location updated successfully");
       setOpen(false);
       resetForm();
     },
-    onError: (err: any) => toast.error(err.response?.data?.message || "Error updating branch")
+    onError: (err: any) => toast.error(err.response?.data?.message || "Error updating location")
   });
 
   const deleteMutation = useMutation({
-    mutationFn: branchApi.remove,
+    mutationFn: locationApi.remove,
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["branches"] });
-      toast.success("Branch deleted successfully");
+      queryClient.invalidateQueries({ queryKey: ["locations"] });
+      toast.success("Location deleted successfully");
     },
-    onError: (err: any) => toast.error(err.response?.data?.message || "Error deleting branch")
+    onError: (err: any) => toast.error(err.response?.data?.message || "Error deleting location")
   });
 
   const resetForm = () => {
     setEditingId(null);
-    setFormData({ code: "", name: "", city: "", state: "", email: "", phone: "" });
+    setFormData({ code: "", name: "", address: "", city: "", state: "", country: "", postalCode: "" });
   };
 
-  const handleEdit = (branch: any) => {
-    setEditingId(branch.id);
+  const handleEdit = (loc: any) => {
+    setEditingId(loc.id);
     setFormData({
-      code: branch.code || "",
-      name: branch.name || "",
-      city: branch.city || "",
-      state: branch.state || "",
-      email: branch.email || "",
-      phone: branch.phone || "",
+      code: loc.code || "",
+      name: loc.name || "",
+      address: loc.address || "",
+      city: loc.city || "",
+      state: loc.state || "",
+      country: loc.country || "",
+      postalCode: loc.postalCode || "",
     });
     setOpen(true);
   };
 
   const handleDelete = (id: string) => {
-    if (confirm("Are you sure you want to delete this branch?")) {
+    if (confirm("Are you sure you want to delete this location?")) {
       deleteMutation.mutate(id);
     }
   };
@@ -93,8 +94,9 @@ export default function Branches() {
   const columnDefs = useMemo<ColDef[]>(() => [
     { field: "code", headerName: "Code", width: 120, cellClass: "font-mono text-xs" },
     { field: "name", headerName: "Name", flex: 1, cellClass: "font-medium" },
-    { field: "city", headerName: "City", width: 150 },
-    { field: "state", headerName: "State", width: 150 },
+    { field: "city", headerName: "City", width: 130 },
+    { field: "state", headerName: "State", width: 130 },
+    { field: "country", headerName: "Country", width: 130 },
     {
       field: "isActive",
       headerName: "Status",
@@ -123,45 +125,55 @@ export default function Branches() {
     }
   ], []);
 
-  const branches = data?.data || [];
+  const locations = data?.data || [];
 
   return (
     <div className="space-y-4">
       <div className="flex justify-between items-center">
-        <h1 className="text-xl font-semibold">Branches</h1>
+        <h1 className="text-xl font-semibold">Locations</h1>
         <Button onClick={() => { resetForm(); setOpen(true); }}>
-          <Plus className="h-4 w-4 mr-2" />Add Branch
+          <Plus className="h-4 w-4 mr-2" />Add Location
         </Button>
       </div>
       <div className="h-[500px]">
-        <DataGrid rowData={branches} columnDefs={columnDefs} />
+        <DataGrid rowData={locations} columnDefs={columnDefs} />
       </div>
 
       <Dialog open={open} onOpenChange={(v) => { if (!v) resetForm(); setOpen(v); }}>
         <DialogContent>
-          <DialogHeader><DialogTitle>{editingId ? "Edit Branch" : "Add Branch"}</DialogTitle></DialogHeader>
+          <DialogHeader><DialogTitle>{editingId ? "Edit Location" : "Add Location"}</DialogTitle></DialogHeader>
           <div className="space-y-3 mt-4">
-            <div>
-              <label className="text-xs font-medium mb-1 block">Branch Code</label>
-              <Input
-                placeholder="e.g. BR-HQ"
-                value={formData.code}
-                onChange={e => setFormData(p => ({ ...p, code: e.target.value }))}
-              />
+            <div className="grid grid-cols-2 gap-3">
+              <div>
+                <label className="text-xs font-medium mb-1 block">Location Code</label>
+                <Input
+                  placeholder="e.g. LOC-01"
+                  value={formData.code}
+                  onChange={e => setFormData(p => ({ ...p, code: e.target.value }))}
+                />
+              </div>
+              <div>
+                <label className="text-xs font-medium mb-1 block">Location Name</label>
+                <Input
+                  placeholder="e.g. South Office"
+                  value={formData.name}
+                  onChange={e => setFormData(p => ({ ...p, name: e.target.value }))}
+                />
+              </div>
             </div>
             <div>
-              <label className="text-xs font-medium mb-1 block">Branch Name</label>
+              <label className="text-xs font-medium mb-1 block">Address</label>
               <Input
-                placeholder="e.g. Headquarters"
-                value={formData.name}
-                onChange={e => setFormData(p => ({ ...p, name: e.target.value }))}
+                placeholder="Street address"
+                value={formData.address}
+                onChange={e => setFormData(p => ({ ...p, address: e.target.value }))}
               />
             </div>
             <div className="grid grid-cols-2 gap-3">
               <div>
                 <label className="text-xs font-medium mb-1 block">City</label>
                 <Input
-                  placeholder="e.g. Mumbai"
+                  placeholder="City"
                   value={formData.city}
                   onChange={e => setFormData(p => ({ ...p, city: e.target.value }))}
                 />
@@ -169,7 +181,7 @@ export default function Branches() {
               <div>
                 <label className="text-xs font-medium mb-1 block">State</label>
                 <Input
-                  placeholder="e.g. Maharashtra"
+                  placeholder="State/Province"
                   value={formData.state}
                   onChange={e => setFormData(p => ({ ...p, state: e.target.value }))}
                 />
@@ -177,20 +189,19 @@ export default function Branches() {
             </div>
             <div className="grid grid-cols-2 gap-3">
               <div>
-                <label className="text-xs font-medium mb-1 block">Email</label>
+                <label className="text-xs font-medium mb-1 block">Country</label>
                 <Input
-                  placeholder="Branch email"
-                  type="email"
-                  value={formData.email}
-                  onChange={e => setFormData(p => ({ ...p, email: e.target.value }))}
+                  placeholder="Country"
+                  value={formData.country}
+                  onChange={e => setFormData(p => ({ ...p, country: e.target.value }))}
                 />
               </div>
               <div>
-                <label className="text-xs font-medium mb-1 block">Phone</label>
+                <label className="text-xs font-medium mb-1 block">Postal Code</label>
                 <Input
-                  placeholder="Contact number"
-                  value={formData.phone}
-                  onChange={e => setFormData(p => ({ ...p, phone: e.target.value }))}
+                  placeholder="ZIP / PIN code"
+                  value={formData.postalCode}
+                  onChange={e => setFormData(p => ({ ...p, postalCode: e.target.value }))}
                 />
               </div>
             </div>

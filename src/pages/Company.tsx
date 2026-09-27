@@ -4,76 +4,74 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { DataGrid } from "@/components/common/DataGrid";
-import { Plus, Pencil, Trash2, Building2, MapPin } from "lucide-react";
+import { Plus, Pencil, Trash2 } from "lucide-react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { toast } from "sonner";
-import { branchApi } from "@/api/branches";
+import { companyApi } from "@/api/companies";
 import type { ColDef } from "ag-grid-community";
 
-export default function Branches() {
+export default function Company() {
   const [open, setOpen] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
-  const [formData, setFormData] = useState({ code: "", name: "", city: "", state: "", email: "", phone: "" });
+  const [formData, setFormData] = useState({ code: "", name: "", email: "", city: "" });
 
   const queryClient = useQueryClient();
 
   const { data, isLoading } = useQuery({
-    queryKey: ["branches"],
-    queryFn: () => branchApi.list(),
+    queryKey: ["companies"],
+    queryFn: () => companyApi.list(),
   });
 
   const createMutation = useMutation({
-    mutationFn: branchApi.create,
+    mutationFn: companyApi.create,
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["branches"] });
-      toast.success("Branch created successfully");
+      queryClient.invalidateQueries({ queryKey: ["companies"] });
+      toast.success("Company created successfully");
       setOpen(false);
       resetForm();
     },
-    onError: (err: any) => toast.error(err.response?.data?.message || "Error creating branch")
+    onError: (err: any) => toast.error(err.response?.data?.message || "Error creating company")
   });
 
   const updateMutation = useMutation({
-    mutationFn: ({ id, data }: { id: string, data: any }) => branchApi.update(id, data),
+    mutationFn: ({ id, data }: { id: string, data: any }) => companyApi.update(id, data),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["branches"] });
-      toast.success("Branch updated successfully");
+      queryClient.invalidateQueries({ queryKey: ["companies"] });
+      toast.success("Company updated successfully");
       setOpen(false);
       resetForm();
     },
-    onError: (err: any) => toast.error(err.response?.data?.message || "Error updating branch")
+    onError: (err: any) => toast.error(err.response?.data?.message || "Error updating company")
   });
 
   const deleteMutation = useMutation({
-    mutationFn: branchApi.remove,
+    mutationFn: companyApi.remove,
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["branches"] });
-      toast.success("Branch deleted successfully");
+      queryClient.invalidateQueries({ queryKey: ["companies"] });
+      toast.success("Company deleted successfully");
     },
-    onError: (err: any) => toast.error(err.response?.data?.message || "Error deleting branch")
+    onError: (err: any) => toast.error(err.response?.data?.message || "Error deleting company")
   });
 
   const resetForm = () => {
     setEditingId(null);
-    setFormData({ code: "", name: "", city: "", state: "", email: "", phone: "" });
+    setFormData({ code: "", name: "", email: "", city: "" });
   };
 
-  const handleEdit = (branch: any) => {
-    setEditingId(branch.id);
+  const handleEdit = (company: any) => {
+    setEditingId(company.id);
     setFormData({
-      code: branch.code || "",
-      name: branch.name || "",
-      city: branch.city || "",
-      state: branch.state || "",
-      email: branch.email || "",
-      phone: branch.phone || "",
+      code: company.code || "",
+      name: company.name || "",
+      email: company.email || "",
+      city: company.city || "",
     });
     setOpen(true);
   };
 
   const handleDelete = (id: string) => {
-    if (confirm("Are you sure you want to delete this branch?")) {
+    if (confirm("Are you sure you want to delete this company?")) {
       deleteMutation.mutate(id);
     }
   };
@@ -93,8 +91,8 @@ export default function Branches() {
   const columnDefs = useMemo<ColDef[]>(() => [
     { field: "code", headerName: "Code", width: 120, cellClass: "font-mono text-xs" },
     { field: "name", headerName: "Name", flex: 1, cellClass: "font-medium" },
+    { field: "email", headerName: "Email", flex: 1 },
     { field: "city", headerName: "City", width: 150 },
-    { field: "state", headerName: "State", width: 150 },
     {
       field: "isActive",
       headerName: "Status",
@@ -123,76 +121,62 @@ export default function Branches() {
     }
   ], []);
 
-  const branches = data?.data || [];
+  const companies = data?.data || [];
 
   return (
     <div className="space-y-4">
+
       <div className="flex justify-between items-center">
-        <h1 className="text-xl font-semibold">Branches</h1>
+        <h1 className="text-xl font-semibold">Companies</h1>
         <Button onClick={() => { resetForm(); setOpen(true); }}>
-          <Plus className="h-4 w-4 mr-2" />Add Branch
+          <Plus className="h-4 w-4 mr-2" />Add Company
         </Button>
       </div>
+
       <div className="h-[500px]">
-        <DataGrid rowData={branches} columnDefs={columnDefs} />
+        {isLoading ? (
+          <div className="h-full flex items-center justify-center text-muted-foreground">Loading companies...</div>
+        ) : (
+          <DataGrid rowData={companies} columnDefs={columnDefs} />
+        )}
       </div>
 
       <Dialog open={open} onOpenChange={(v) => { if (!v) resetForm(); setOpen(v); }}>
         <DialogContent>
-          <DialogHeader><DialogTitle>{editingId ? "Edit Branch" : "Add Branch"}</DialogTitle></DialogHeader>
+          <DialogHeader><DialogTitle>{editingId ? "Edit Company" : "Add Company"}</DialogTitle></DialogHeader>
           <div className="space-y-3 mt-4">
             <div>
-              <label className="text-xs font-medium mb-1 block">Branch Code</label>
+              <label className="text-xs font-medium mb-1 block">Company Code</label>
               <Input
-                placeholder="e.g. BR-HQ"
+                placeholder="e.g. PMX"
                 value={formData.code}
                 onChange={e => setFormData(p => ({ ...p, code: e.target.value }))}
               />
             </div>
             <div>
-              <label className="text-xs font-medium mb-1 block">Branch Name</label>
+              <label className="text-xs font-medium mb-1 block">Company Name</label>
               <Input
-                placeholder="e.g. Headquarters"
+                placeholder="e.g. PayMatrix Technologies"
                 value={formData.name}
                 onChange={e => setFormData(p => ({ ...p, name: e.target.value }))}
               />
             </div>
-            <div className="grid grid-cols-2 gap-3">
-              <div>
-                <label className="text-xs font-medium mb-1 block">City</label>
-                <Input
-                  placeholder="e.g. Mumbai"
-                  value={formData.city}
-                  onChange={e => setFormData(p => ({ ...p, city: e.target.value }))}
-                />
-              </div>
-              <div>
-                <label className="text-xs font-medium mb-1 block">State</label>
-                <Input
-                  placeholder="e.g. Maharashtra"
-                  value={formData.state}
-                  onChange={e => setFormData(p => ({ ...p, state: e.target.value }))}
-                />
-              </div>
+            <div>
+              <label className="text-xs font-medium mb-1 block">Email</label>
+              <Input
+                placeholder="e.g. contact@paymatrix.com"
+                type="email"
+                value={formData.email}
+                onChange={e => setFormData(p => ({ ...p, email: e.target.value }))}
+              />
             </div>
-            <div className="grid grid-cols-2 gap-3">
-              <div>
-                <label className="text-xs font-medium mb-1 block">Email</label>
-                <Input
-                  placeholder="Branch email"
-                  type="email"
-                  value={formData.email}
-                  onChange={e => setFormData(p => ({ ...p, email: e.target.value }))}
-                />
-              </div>
-              <div>
-                <label className="text-xs font-medium mb-1 block">Phone</label>
-                <Input
-                  placeholder="Contact number"
-                  value={formData.phone}
-                  onChange={e => setFormData(p => ({ ...p, phone: e.target.value }))}
-                />
-              </div>
+            <div>
+              <label className="text-xs font-medium mb-1 block">City</label>
+              <Input
+                placeholder="e.g. Mumbai"
+                value={formData.city}
+                onChange={e => setFormData(p => ({ ...p, city: e.target.value }))}
+              />
             </div>
 
             <Button
