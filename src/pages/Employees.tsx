@@ -1,4 +1,4 @@
-import { useState, useMemo, useCallback } from "react";
+import { useState, useMemo, useCallback, useRef } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -17,9 +17,14 @@ import { useEmployees } from "@/hooks/useEmployees";
 import { employees as mockEmployees } from "@/mock/data";
 import { DataGrid } from "@/components/common/DataGrid";
 import { GridDeleteCell } from "@/components/common/GridDeleteCell";
+import { ListingHeader } from "@/components/common/ListingHeader";
+import { ListingCard } from "@/components/common/ListingCard";
+import { gridExportExcel, gridExportPdf, gridPrint } from "@/lib/gridExport";
 import type { ColDef } from "ag-grid-community";
+import type { AgGridReact } from "ag-grid-react";
 
 export default function Employees() {
+  const gridRef = useRef<AgGridReact>(null);
   const nav = useNavigate();
   const [searchParams, setSearchParams] = useSearchParams();
   const q = searchParams.get("search") ?? "";
@@ -44,7 +49,7 @@ export default function Employees() {
     [q, dept, status],
   );
 
-  const { data, isLoading, isError } = useEmployees(filters);
+  const { data, isLoading, isError, refetch } = useEmployees(filters);
 
   // Fallback to mock if API not reachable (dev without backend)
   const useMock = isError && !data;
@@ -165,14 +170,28 @@ export default function Employees() {
 
   return (
     <div className="space-y-4">
-      {/* Page Header */}
-      <div className="flex flex-wrap justify-between gap-3">
-        <div>
-          <h1 className="text-xl font-bold tracking-tight text-slate-900 dark:text-slate-100">
-            Employees
-          </h1>
-        </div>
-        <div className="flex gap-2">
+      <ListingCard>
+        <ListingHeader
+          title="Employees"
+          searchValue={q}
+          onSearchChange={(v) => setParam("search", v)}
+          onAddNew={() => nav("/employees/new")}
+          addButtonText="Add Employee"
+          onRefresh={refetch}
+          onExportExcel={() =>
+            gridRef.current?.api &&
+            gridExportExcel(gridRef.current.api, "employees.csv")
+          }
+          onExportPdf={() =>
+            gridRef.current?.api &&
+            gridExportPdf(gridRef.current.api, "Employees")
+          }
+          onPrint={() =>
+            gridRef.current?.api && gridPrint(gridRef.current.api, "Employees")
+          }
+        />
+
+        <div className="flex gap-2 mb-3">
           <Button
             variant="outline"
             size="sm"
@@ -181,38 +200,11 @@ export default function Employees() {
             <Upload className="h-3.5 w-3.5 mr-1.5" />
             Import
           </Button>
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={() => toast.success("Exported employees to Excel")}
-          >
-            <Download className="h-3.5 w-3.5 mr-1.5" />
-            Export
-          </Button>
-          <Button size="sm" onClick={() => nav("/employees/new")}>
-            <Plus className="h-3.5 w-3.5 mr-1.5" />
-            Add Employee
-          </Button>
-        </div>
-      </div>
-
-      {/* Filter bar */}
-      <Card>
-        <CardContent className="p-3 flex flex-wrap items-center gap-3">
-          <div className="relative flex-1 min-w-[220px]">
-            <Search className="absolute left-3 top-2.5 h-4 w-4 text-muted-foreground" />
-            <Input
-              placeholder="Search by name, ID, email..."
-              className="pl-9 h-8 text-xs"
-              value={q}
-              onChange={(e) => setParam("search", e.target.value)}
-            />
-          </div>
           <NativeSelect
             value={dept}
             onChange={(v) => setParam("department", v)}
             placeholder="All Departments"
-            className="w-[180px] h-8 text-xs"
+            className="w-[180px] h-8 text-xs bg-white"
           >
             <option value="">All Departments</option>
             <option>Engineering</option>
@@ -225,7 +217,7 @@ export default function Employees() {
             value={status}
             onChange={(v) => setParam("status", v)}
             placeholder="All Status"
-            className="w-[160px] h-8 text-xs"
+            className="w-[160px] h-8 text-xs bg-white"
           >
             <option value="">All Status</option>
             <option>Active</option>
@@ -233,25 +225,26 @@ export default function Employees() {
             <option>Probation</option>
             <option>Inactive</option>
           </NativeSelect>
-        </CardContent>
-      </Card>
+        </div>
 
-      <div className="w-full" style={{ height: "450px" }}>
-        <DataGrid
-          rowData={employeeList}
-          columnDefs={columnDefs}
-          pageSize={15}
-          gridOptions={{
-            onRowDoubleClicked: (e) => {
-              if (e.data?.id) nav(`/employees/${e.data.id}`);
-            },
-          }}
-        />
-      </div>
+        <div className="w-full" style={{ height: "450px" }}>
+          <DataGrid
+            ref={gridRef}
+            rowData={employeeList}
+            columnDefs={columnDefs}
+            pageSize={15}
+            gridOptions={{
+              onRowDoubleClicked: (e) => {
+                if (e.data?.id) nav(`/employees/${e.data.id}`);
+              },
+            }}
+          />
+        </div>
+      </ListingCard>
 
       {/* Import Modal */}
       <Dialog open={showImport} onOpenChange={setShowImport}>
-        <DialogContent onClose={() => setShowImport(false)}>
+        <DialogContent>
           <DialogHeader>
             <DialogTitle>Import Employees</DialogTitle>
           </DialogHeader>

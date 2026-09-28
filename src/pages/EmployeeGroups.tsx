@@ -1,17 +1,23 @@
-import { useState, useMemo } from "react";
+import { useState, useMemo, useRef } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { DataGrid } from "@/components/common/DataGrid";
-import { Plus, Pencil, Trash2 } from "lucide-react";
+import { ListingHeader } from "@/components/common/ListingHeader";
+import { ListingCard } from "@/components/common/ListingCard";
+import { Trash2 } from "lucide-react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { toast } from "sonner";
 import { employeeGroupApi } from "@/api/employeeGroups";
+import { gridExportExcel, gridExportPdf, gridPrint } from "@/lib/gridExport";
 import type { ColDef } from "ag-grid-community";
+import type { AgGridReact } from "ag-grid-react";
 
 export default function EmployeeGroups() {
+  const gridRef = useRef<AgGridReact>(null);
   const [open, setOpen] = useState(false);
+  const [searchQuery, setSearchQuery] = useState("");
   const [editingId, setEditingId] = useState<string | null>(null);
   const [formData, setFormData] = useState({ code: "", name: "", description: "" });
 
@@ -115,26 +121,37 @@ export default function EmployeeGroups() {
     }
   ], []);
 
-  const groups = data?.data || [];
+  const allGroups = data?.data || [];
+  const groups = allGroups.filter(
+    (g: any) =>
+      !searchQuery ||
+      g.name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      g.code?.toLowerCase().includes(searchQuery.toLowerCase())
+  );
 
   return (
     <div className="space-y-4">
-      <div className="flex justify-between items-center">
-        <h1 className="text-xl font-semibold">Employee Groups</h1>
-        <Button onClick={() => { resetForm(); setOpen(true); }}>
-          <Plus className="h-4 w-4 mr-2" />Add Group
-        </Button>
-      </div>
-
-      <div className="h-[500px]">
-        <DataGrid 
-          rowData={groups} 
-          columnDefs={columnDefs} 
-          gridOptions={{
-            onRowDoubleClicked: (e) => handleEdit(e.data)
-          }}
+      <ListingCard>
+        <ListingHeader
+          title="Employee Groups"
+          searchValue={searchQuery}
+          onSearchChange={setSearchQuery}
+          onAddNew={() => { resetForm(); setOpen(true); }}
+          addButtonText="Add Group"
+          onRefresh={() => queryClient.invalidateQueries({ queryKey: ["employeeGroups"] })}
+          onExportExcel={() => gridRef.current?.api && gridExportExcel(gridRef.current.api, "groups.csv")}
+          onExportPdf={() => gridRef.current?.api && gridExportPdf(gridRef.current.api, "Employee Groups")}
+          onPrint={() => gridRef.current?.api && gridPrint(gridRef.current.api, "Employee Groups")}
         />
-      </div>
+        <div className="h-[500px]">
+          <DataGrid 
+            ref={gridRef}
+            rowData={groups} 
+            columnDefs={columnDefs} 
+            gridOptions={{ onRowDoubleClicked: (e) => handleEdit(e.data) }}
+          />
+        </div>
+      </ListingCard>
 
       <Dialog open={open} onOpenChange={(v) => { if (!v) resetForm(); setOpen(v); }}>
         <DialogContent>

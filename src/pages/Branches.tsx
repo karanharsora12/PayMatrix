@@ -1,18 +1,23 @@
-import { useState, useMemo } from "react";
+import { useState, useMemo, useRef } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { DataGrid } from "@/components/common/DataGrid";
-import { Plus, Pencil, Trash2, Building2, MapPin } from "lucide-react";
+import { ListingHeader } from "@/components/common/ListingHeader";
+import { ListingCard } from "@/components/common/ListingCard";
+import { Trash2, Building2, MapPin } from "lucide-react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { toast } from "sonner";
 import { branchApi } from "@/api/branches";
+import { gridExportExcel, gridExportPdf, gridPrint } from "@/lib/gridExport";
 import type { ColDef } from "ag-grid-community";
+import type { AgGridReact } from "ag-grid-react";
 
 export default function Branches() {
+  const gridRef = useRef<AgGridReact>(null);
   const [open, setOpen] = useState(false);
+  const [searchQuery, setSearchQuery] = useState("");
   const [editingId, setEditingId] = useState<string | null>(null);
   const [formData, setFormData] = useState({ code: "", name: "", city: "", state: "", email: "", phone: "" });
 
@@ -120,25 +125,37 @@ export default function Branches() {
     }
   ], []);
 
-  const branches = data?.data || [];
+  const allBranches = data?.data || [];
+  const branches = allBranches.filter(
+    (b: any) =>
+      !searchQuery ||
+      b.name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      b.code?.toLowerCase().includes(searchQuery.toLowerCase())
+  );
 
   return (
     <div className="space-y-4">
-      <div className="flex justify-between items-center">
-        <h1 className="text-xl font-semibold">Branches</h1>
-        <Button onClick={() => { resetForm(); setOpen(true); }}>
-          <Plus className="h-4 w-4 mr-2" />Add Branch
-        </Button>
-      </div>
-      <div className="h-[500px]">
-        <DataGrid 
-          rowData={branches} 
-          columnDefs={columnDefs} 
-          gridOptions={{
-            onRowDoubleClicked: (e) => handleEdit(e.data)
-          }}
+      <ListingCard>
+        <ListingHeader
+          title="Branches"
+          searchValue={searchQuery}
+          onSearchChange={setSearchQuery}
+          onAddNew={() => { resetForm(); setOpen(true); }}
+          addButtonText="Add Branch"
+          onRefresh={() => queryClient.invalidateQueries({ queryKey: ["branches"] })}
+          onExportExcel={() => gridRef.current?.api && gridExportExcel(gridRef.current.api, "branches.csv")}
+          onExportPdf={() => gridRef.current?.api && gridExportPdf(gridRef.current.api, "Branches")}
+          onPrint={() => gridRef.current?.api && gridPrint(gridRef.current.api, "Branches")}
         />
-      </div>
+        <div className="h-[500px]">
+          <DataGrid 
+            ref={gridRef}
+            rowData={branches} 
+            columnDefs={columnDefs} 
+            gridOptions={{ onRowDoubleClicked: (e) => handleEdit(e.data) }}
+          />
+        </div>
+      </ListingCard>
 
       <Dialog open={open} onOpenChange={(v) => { if (!v) resetForm(); setOpen(v); }}>
         <DialogContent>

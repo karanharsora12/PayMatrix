@@ -1,20 +1,34 @@
-import { useState, useMemo } from "react";
+import { useState, useMemo, useRef } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { DataGrid } from "@/components/common/DataGrid";
-import { Plus, Pencil, Trash2 } from "lucide-react";
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { ListingHeader } from "@/components/common/ListingHeader";
+import { ListingCard } from "@/components/common/ListingCard";
+import { Trash2 } from "lucide-react";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { toast } from "sonner";
 import { departmentApi } from "@/api/departments";
+import { gridExportExcel, gridExportPdf, gridPrint } from "@/lib/gridExport";
 import type { ColDef } from "ag-grid-community";
+import type { AgGridReact } from "ag-grid-react";
 
 export default function Departments() {
+  const gridRef = useRef<AgGridReact>(null);
   const [open, setOpen] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
-  const [formData, setFormData] = useState({ code: "", name: "", description: "" });
+  const [formData, setFormData] = useState({
+    code: "",
+    name: "",
+    description: "",
+  });
+  const [searchQuery, setSearchQuery] = useState("");
 
   const queryClient = useQueryClient();
 
@@ -31,18 +45,21 @@ export default function Departments() {
       setOpen(false);
       resetForm();
     },
-    onError: (err: any) => toast.error(err.response?.data?.message || "Error creating department")
+    onError: (err: any) =>
+      toast.error(err.response?.data?.message || "Error creating department"),
   });
 
   const updateMutation = useMutation({
-    mutationFn: ({ id, data }: { id: string, data: any }) => departmentApi.update(id, data),
+    mutationFn: ({ id, data }: { id: string; data: any }) =>
+      departmentApi.update(id, data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["departments"] });
       toast.success("Department updated successfully");
       setOpen(false);
       resetForm();
     },
-    onError: (err: any) => toast.error(err.response?.data?.message || "Error updating department")
+    onError: (err: any) =>
+      toast.error(err.response?.data?.message || "Error updating department"),
   });
 
   const deleteMutation = useMutation({
@@ -51,7 +68,8 @@ export default function Departments() {
       queryClient.invalidateQueries({ queryKey: ["departments"] });
       toast.success("Department deleted successfully");
     },
-    onError: (err: any) => toast.error(err.response?.data?.message || "Error deleting department")
+    onError: (err: any) =>
+      toast.error(err.response?.data?.message || "Error deleting department"),
   });
 
   const resetForm = () => {
@@ -87,83 +105,135 @@ export default function Departments() {
     }
   };
 
-  const columnDefs = useMemo<ColDef[]>(() => [
-    { field: "code", headerName: "Code", width: 120 },
-    { field: "name", headerName: "Name", flex: 1 },
-    { field: "description", headerName: "Description", flex: 1 },
-    {
-      field: "isActive",
-      headerName: "Status",
-      width: 120,
-      cellRenderer: (p: any) => (
-        <div className="flex items-center h-full">
-          <div className={`h-2.5 w-2.5 rounded-full ${p.value ? "bg-emerald-500" : "bg-red-500"}`} title={p.value ? "Active" : "Inactive"} />
-        </div>
-      )
-    },
-    { field: "createdAt", headerName: "Created", width: 150, valueFormatter: (params) => new Date(params.value).toLocaleDateString() },
-    {
-      headerName: "",
-      width: 80,
-      sortable: false,
-      filter: false,
-      cellRenderer: (params: any) => (
-        <div className="flex gap-1 items-center justify-center h-full">
-          <Button variant="ghost" size="icon" className="h-8 w-8 text-red-500 hover:text-red-600" onClick={(e) => { e.stopPropagation(); handleDelete(params.data.id); }}>
-            <Trash2 className="h-4 w-4" />
-          </Button>
-        </div>
-      )
-    }
-  ], []);
+  const columnDefs = useMemo<ColDef[]>(
+    () => [
+      { field: "code", headerName: "Code", width: 120 },
+      { field: "name", headerName: "Name", flex: 1 },
+      { field: "description", headerName: "Description", flex: 1 },
+      {
+        field: "isActive",
+        headerName: "Status",
+        width: 120,
+        cellRenderer: (p: any) => (
+          <div className="flex items-center h-full">
+            <div
+              className={`h-2.5 w-2.5 rounded-full ${p.value ? "bg-emerald-500" : "bg-red-500"}`}
+              title={p.value ? "Active" : "Inactive"}
+            />
+          </div>
+        ),
+      },
+      {
+        field: "createdAt",
+        headerName: "Created",
+        width: 150,
+        valueFormatter: (params) => new Date(params.value).toLocaleDateString(),
+      },
+      {
+        headerName: "",
+        width: 80,
+        sortable: false,
+        filter: false,
+        cellRenderer: (params: any) => (
+          <div className="flex gap-1 items-center justify-center h-full">
+            <Button
+              variant="ghost"
+              size="icon"
+              className="h-8 w-8 text-red-500 hover:text-red-600"
+              onClick={(e) => {
+                e.stopPropagation();
+                handleDelete(params.data.id);
+              }}
+            >
+              <Trash2 className="h-4 w-4" />
+            </Button>
+          </div>
+        ),
+      },
+    ],
+    [],
+  );
 
-  const departments = data?.data || [];
+  const allDepartments = data?.data || [];
+  const departments = allDepartments.filter(
+    (d: any) =>
+      !searchQuery ||
+      d.name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      d.code?.toLowerCase().includes(searchQuery.toLowerCase()),
+  );
 
   return (
-    <div className="space-y-4">
-      <div className="flex justify-between items-center">
-        <h1 className="text-xl font-semibold">Departments</h1>
-        <Button onClick={() => { resetForm(); setOpen(true); }}>
-          <Plus className="h-4 w-4 mr-2" />Add Department
-        </Button>
-      </div>
-
-      <div className="h-[500px]">
-        <DataGrid 
-          rowData={departments} 
-          columnDefs={columnDefs} 
-          gridOptions={{
-            onRowDoubleClicked: (e) => handleEdit(e.data)
-          }}
+    <>
+      <ListingCard>
+        <ListingHeader
+          title="Departments"
+          searchValue={searchQuery}
+          onSearchChange={setSearchQuery}
+          onAddNew={() => { resetForm(); setOpen(true); }}
+          addButtonText="Add Department"
+          onRefresh={() => queryClient.invalidateQueries({ queryKey: ["departments"] })}
+          onExportExcel={() => gridRef.current?.api && gridExportExcel(gridRef.current.api, "departments.csv")}
+          onExportPdf={() => gridRef.current?.api && gridExportPdf(gridRef.current.api, "Departments")}
+          onPrint={() => gridRef.current?.api && gridPrint(gridRef.current.api, "Departments")}
         />
-      </div>
+        <div className="h-[500px]">
+          <DataGrid
+            ref={gridRef}
+            rowData={departments}
+            columnDefs={columnDefs}
+            gridOptions={{ onRowDoubleClicked: (e) => handleEdit(e.data) }}
+          />
+        </div>
+      </ListingCard>
 
-      <Dialog open={open} onOpenChange={(v) => { if (!v) resetForm(); setOpen(v); }}>
+      <Dialog
+        open={open}
+        onOpenChange={(v) => {
+          if (!v) resetForm();
+          setOpen(v);
+        }}
+      >
         <DialogContent>
-          <DialogHeader><DialogTitle>{editingId ? "Edit Department" : "Add Department"}</DialogTitle></DialogHeader>
+          <DialogHeader>
+            <DialogTitle>
+              {editingId ? "Edit Department" : "Add Department"}
+            </DialogTitle>
+          </DialogHeader>
           <div className="space-y-3 mt-4">
             <div>
-              <label className="text-xs font-medium mb-1 block">Department Code</label>
+              <label className="text-xs font-medium mb-1 block">
+                Department Code
+              </label>
               <Input
                 placeholder="e.g. ENG"
                 value={formData.code}
-                onChange={e => setFormData(p => ({ ...p, code: e.target.value }))}
+                onChange={(e) =>
+                  setFormData((p) => ({ ...p, code: e.target.value }))
+                }
               />
             </div>
             <div>
-              <label className="text-xs font-medium mb-1 block">Department Name</label>
+              <label className="text-xs font-medium mb-1 block">
+                Department Name
+              </label>
               <Input
                 placeholder="e.g. Engineering"
                 value={formData.name}
-                onChange={e => setFormData(p => ({ ...p, name: e.target.value }))}
+                onChange={(e) =>
+                  setFormData((p) => ({ ...p, name: e.target.value }))
+                }
               />
             </div>
             <div>
-              <label className="text-xs font-medium mb-1 block">Description</label>
+              <label className="text-xs font-medium mb-1 block">
+                Description
+              </label>
               <Input
                 placeholder="Brief description"
                 value={formData.description}
-                onChange={e => setFormData(p => ({ ...p, description: e.target.value }))}
+                onChange={(e) =>
+                  setFormData((p) => ({ ...p, description: e.target.value }))
+                }
               />
             </div>
 
@@ -172,11 +242,13 @@ export default function Departments() {
               onClick={handleSave}
               disabled={createMutation.isPending || updateMutation.isPending}
             >
-              {createMutation.isPending || updateMutation.isPending ? "Saving..." : "Save"}
+              {createMutation.isPending || updateMutation.isPending
+                ? "Saving..."
+                : "Save"}
             </Button>
           </div>
         </DialogContent>
       </Dialog>
-    </div>
+    </>
   );
 }

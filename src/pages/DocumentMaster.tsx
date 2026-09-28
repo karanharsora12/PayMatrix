@@ -1,4 +1,4 @@
-import { useState, useMemo, useEffect } from "react";
+import { useState, useMemo, useEffect, useRef } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -8,13 +8,16 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import { Input } from "@/components/ui/input";
 import { toast } from "sonner";
 import { documentMasterApi } from "@/api/documentMaster";
+import { ListingCard } from "@/components/common/ListingCard";
+import { ListingHeader } from "@/components/common/ListingHeader";
+import { gridExportExcel, gridExportPdf, gridPrint } from "@/lib/gridExport";
 import type { ColDef } from "ag-grid-community";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import type { AgGridReact } from "ag-grid-react";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useEditor, EditorContent } from '@tiptap/react';
 import StarterKit from '@tiptap/starter-kit';
 
-function DocumentTypesTab({ data, queryClient }: { data: any[], queryClient: any }) {
+function DocumentTypesTab({ data, queryClient, isAddOpen, setIsAddOpen, gridRef }: { data: any[], queryClient: any, isAddOpen: boolean, setIsAddOpen: (v: boolean) => void, gridRef: any }) {
   const [open, setOpen] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [formData, setFormData] = useState({ code: "", name: "", description: "", fields: [] as string[] });
@@ -25,7 +28,7 @@ function DocumentTypesTab({ data, queryClient }: { data: any[], queryClient: any
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["documentMaster"] });
       toast.success("Document type created");
-      setOpen(false);
+      setIsAddOpen(false);
     }
   });
 
@@ -34,7 +37,7 @@ function DocumentTypesTab({ data, queryClient }: { data: any[], queryClient: any
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["documentMaster"] });
       toast.success("Document type updated");
-      setOpen(false);
+      setIsAddOpen(false);
     }
   });
 
@@ -60,7 +63,7 @@ function DocumentTypesTab({ data, queryClient }: { data: any[], queryClient: any
       description: doc.description || "",
       fields: doc.fields || [],
     });
-    setOpen(true);
+    setIsAddOpen(true);
   };
 
   const handleDelete = (id: string) => {
@@ -107,13 +110,9 @@ function DocumentTypesTab({ data, queryClient }: { data: any[], queryClient: any
 
   return (
     <div className="space-y-4">
-      <div className="flex justify-end">
-        <Button onClick={() => { resetForm(); setOpen(true); }}>
-          <Plus className="h-4 w-4 mr-2" />Add Document Type
-        </Button>
-      </div>
       <div className="h-[500px]">
         <DataGrid 
+          ref={gridRef}
           rowData={data} 
           columnDefs={columnDefs} 
           gridOptions={{
@@ -122,7 +121,7 @@ function DocumentTypesTab({ data, queryClient }: { data: any[], queryClient: any
         />
       </div>
 
-      <Dialog open={open} onOpenChange={(v) => { if (!v) resetForm(); setOpen(v); }}>
+      <Dialog open={isAddOpen} onOpenChange={(v) => { if (!v) resetForm(); setIsAddOpen(v); }}>
         <DialogContent className="max-w-2xl">
           <DialogHeader><DialogTitle>{editingId ? "Edit Document Type" : "Add Document Type"}</DialogTitle></DialogHeader>
           <div className="space-y-4 mt-2">
@@ -173,7 +172,7 @@ function DocumentTypesTab({ data, queryClient }: { data: any[], queryClient: any
   );
 }
 
-function DocumentMasterTab({ data, queryClient }: { data: any[], queryClient: any }) {
+function DocumentMasterTab({ data, queryClient, gridRef }: { data: any[], queryClient: any, gridRef: any }) {
   const [selectedDocId, setSelectedDocId] = useState<string | null>(null);
 
   const selectedDoc = useMemo(() => data.find(d => d.id === selectedDocId), [data, selectedDocId]);
@@ -310,6 +309,7 @@ function DocumentMasterTab({ data, queryClient }: { data: any[], queryClient: an
     <div className="space-y-4">
       <div className="h-[500px]">
         <DataGrid 
+          ref={gridRef}
           rowData={data} 
           columnDefs={columnDefs} 
           gridOptions={{
@@ -323,30 +323,53 @@ function DocumentMasterTab({ data, queryClient }: { data: any[], queryClient: an
 
 export default function DocumentMaster() {
   const queryClient = useQueryClient();
+  const [activeTab, setActiveTab] = useState("types");
+  const [isAddOpen, setIsAddOpen] = useState(false);
+  const [searchQuery, setSearchQuery] = useState("");
+  const gridRef = useRef<AgGridReact>(null);
 
   const { data } = useQuery({
     queryKey: ["documentMaster"],
     queryFn: () => documentMasterApi.list(),
   });
 
-  const docs = data?.data || [];
+  const allDocs = data?.data || [];
+  const docs = allDocs.filter(
+    (d: any) =>
+      !searchQuery ||
+      d.name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      d.code?.toLowerCase().includes(searchQuery.toLowerCase())
+  );
 
   return (
     <div className="space-y-4">
-      <h1 className="text-xl font-semibold">Document Management</h1>
-      
-      <Tabs defaultValue="types" className="w-full">
-        <TabsList>
-          <TabsTrigger value="types">Document Types</TabsTrigger>
-          <TabsTrigger value="master">Document Master</TabsTrigger>
-        </TabsList>
-        <TabsContent value="types" className="mt-4">
-          <DocumentTypesTab data={docs} queryClient={queryClient} />
-        </TabsContent>
-        <TabsContent value="master" className="mt-4">
-          <DocumentMasterTab data={docs} queryClient={queryClient} />
-        </TabsContent>
-      </Tabs>
+      <ListingCard>
+        <ListingHeader
+          title="Document Management"
+          searchValue={searchQuery}
+          onSearchChange={setSearchQuery}
+          tabs={{
+            options: [
+              { label: "Document Types", value: "types" },
+              { label: "Document Master", value: "master" }
+            ],
+            value: activeTab,
+            onChange: setActiveTab
+          }}
+          onAddNew={activeTab === "types" ? () => setIsAddOpen(true) : undefined}
+          addButtonText="Add Document Type"
+          onRefresh={() => queryClient.invalidateQueries({ queryKey: ["documentMaster"] })}
+          onExportExcel={() => gridRef.current?.api && gridExportExcel(gridRef.current.api, "documents.csv")}
+          onExportPdf={() => gridRef.current?.api && gridExportPdf(gridRef.current.api, "Documents")}
+          onPrint={() => gridRef.current?.api && gridPrint(gridRef.current.api, "Documents")}
+        />
+
+        {activeTab === "types" ? (
+          <DocumentTypesTab data={docs} queryClient={queryClient} isAddOpen={isAddOpen} setIsAddOpen={setIsAddOpen} gridRef={gridRef} />
+        ) : (
+          <DocumentMasterTab data={docs} queryClient={queryClient} gridRef={gridRef} />
+        )}
+      </ListingCard>
     </div>
   );
 }
