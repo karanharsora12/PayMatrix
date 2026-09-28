@@ -31,7 +31,7 @@ export function AppShell({ onOpenCommand }: { onOpenCommand: () => void }) {
           onToggleMobile={() => setMobileOpen(!mobileOpen)}
           onOpenCommand={onOpenCommand}
         />
-        <main className="flex-1 overflow-auto p-3">
+        <main className="flex-1 overflow-auto">
           <Outlet />
         </main>
       </div>

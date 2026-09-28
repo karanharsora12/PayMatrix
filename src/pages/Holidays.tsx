@@ -339,13 +339,7 @@ export default function Holidays() {
       <Dialog open={modalOpen} onOpenChange={setModalOpen}>
         <DialogContent onClose={() => setModalOpen(false)}>
           <DialogHeader>
-            <DialogTitle>
-              {editingHoliday ? "Edit Holiday" : "Add Company Holiday"}
-            </DialogTitle>
-            <DialogDescription>
-              Holidays automatically exempt working day deductions in leave
-              calculation.
-            </DialogDescription>
+            <DialogTitle>Holiday</DialogTitle>
           </DialogHeader>
           <form onSubmit={handleSaveHoliday} className="space-y-4">
             <div>

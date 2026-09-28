@@ -74,10 +74,7 @@ const nav = [
   {
     group: "Leave",
     items: [
-      { label: "Leave Types", icon: Palmtree, path: "/leave-types" },
-      { label: "Leave Requests", icon: FileText, path: "/leave-requests" },
-      { label: "Leave Balances", icon: Scale, path: "/leave-balances" },
-      { label: "Leave Calendar", icon: CalendarDays, path: "/leave-calendar" },
+      { label: "Leave Management", icon: Palmtree, path: "/leave" },
     ],
   },
   {

@@ -6,7 +6,13 @@ import { DataGrid } from "@/components/common/DataGrid";
 import { ListingHeader } from "@/components/common/ListingHeader";
 import { ListingCard } from "@/components/common/ListingCard";
 import { Trash2 } from "lucide-react";
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import {
+  Dialog,
+  DialogContent,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { toast } from "sonner";
 import { companyApi } from "@/api/companies";
@@ -19,7 +25,12 @@ export default function Company() {
   const [open, setOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
   const [editingId, setEditingId] = useState<string | null>(null);
-  const [formData, setFormData] = useState({ code: "", name: "", email: "", city: "" });
+  const [formData, setFormData] = useState({
+    code: "",
+    name: "",
+    email: "",
+    city: "",
+  });
 
   const queryClient = useQueryClient();
 
@@ -36,18 +47,21 @@ export default function Company() {
       setOpen(false);
       resetForm();
     },
-    onError: (err: any) => toast.error(err.response?.data?.message || "Error creating company")
+    onError: (err: any) =>
+      toast.error(err.response?.data?.message || "Error creating company"),
   });
 
   const updateMutation = useMutation({
-    mutationFn: ({ id, data }: { id: string, data: any }) => companyApi.update(id, data),
+    mutationFn: ({ id, data }: { id: string; data: any }) =>
+      companyApi.update(id, data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["companies"] });
       toast.success("Company updated successfully");
       setOpen(false);
       resetForm();
     },
-    onError: (err: any) => toast.error(err.response?.data?.message || "Error updating company")
+    onError: (err: any) =>
+      toast.error(err.response?.data?.message || "Error updating company"),
   });
 
   const deleteMutation = useMutation({
@@ -56,7 +70,8 @@ export default function Company() {
       queryClient.invalidateQueries({ queryKey: ["companies"] });
       toast.success("Company deleted successfully");
     },
-    onError: (err: any) => toast.error(err.response?.data?.message || "Error deleting company")
+    onError: (err: any) =>
+      toast.error(err.response?.data?.message || "Error deleting company"),
   });
 
   const resetForm = () => {
@@ -93,42 +108,56 @@ export default function Company() {
     }
   };
 
-  const columnDefs = useMemo<ColDef[]>(() => [
-    { field: "code", headerName: "Code", width: 120 },
-    { field: "name", headerName: "Name", flex: 1 },
-    { field: "email", headerName: "Email", flex: 1 },
-    { field: "city", headerName: "City", width: 150 },
-    {
-      field: "isActive",
-      headerName: "Status",
-      width: 120,
-      cellRenderer: (p: any) => (
-        <div className="flex items-center h-full">
-          <div className={`h-2.5 w-2.5 rounded-full ${p.value ? "bg-emerald-500" : "bg-red-500"}`} title={p.value ? "Active" : "Inactive"} />
-        </div>
-      )
-    },
-    {
-      headerName: "",
-      width: 80,
-      sortable: false,
-      filter: false,
-      cellRenderer: (params: any) => (
-        <div className="flex gap-1 items-center justify-center h-full">
-          <Button variant="ghost" size="icon" className="h-8 w-8 text-red-500 hover:text-red-600" onClick={(e) => { e.stopPropagation(); handleDelete(params.data.id); }}>
-            <Trash2 className="h-4 w-4" />
-          </Button>
-        </div>
-      )
-    }
-  ], []);
+  const columnDefs = useMemo<ColDef[]>(
+    () => [
+      { field: "code", headerName: "Code", width: 120 },
+      { field: "name", headerName: "Name", flex: 1 },
+      { field: "email", headerName: "Email", flex: 1 },
+      { field: "city", headerName: "City", width: 150 },
+      {
+        field: "isActive",
+        headerName: "Status",
+        width: 120,
+        cellRenderer: (p: any) => (
+          <div className="flex items-center h-full">
+            <div
+              className={`h-2.5 w-2.5 rounded-full ${p.value ? "bg-emerald-500" : "bg-red-500"}`}
+              title={p.value ? "Active" : "Inactive"}
+            />
+          </div>
+        ),
+      },
+      {
+        headerName: "",
+        width: 80,
+        sortable: false,
+        filter: false,
+        cellRenderer: (params: any) => (
+          <div className="flex gap-1 items-center justify-center h-full">
+            <Button
+              variant="ghost"
+              size="icon"
+              className="h-8 w-8 text-red-500 hover:text-red-600"
+              onClick={(e) => {
+                e.stopPropagation();
+                handleDelete(params.data.id);
+              }}
+            >
+              <Trash2 className="h-4 w-4" />
+            </Button>
+          </div>
+        ),
+      },
+    ],
+    [],
+  );
 
   const allCompanies = data?.data || [];
   const companies = allCompanies.filter(
     (c: any) =>
       !searchQuery ||
       c.name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      c.code?.toLowerCase().includes(searchQuery.toLowerCase())
+      c.code?.toLowerCase().includes(searchQuery.toLowerCase()),
   );
 
   return (
@@ -138,46 +167,77 @@ export default function Company() {
           title="Companies"
           searchValue={searchQuery}
           onSearchChange={setSearchQuery}
-          onAddNew={() => { resetForm(); setOpen(true); }}
+          onAddNew={() => {
+            resetForm();
+            setOpen(true);
+          }}
           addButtonText="Add Company"
-          onRefresh={() => queryClient.invalidateQueries({ queryKey: ["companies"] })}
-          onExportExcel={() => gridRef.current?.api && gridExportExcel(gridRef.current.api, "companies.csv")}
-          onExportPdf={() => gridRef.current?.api && gridExportPdf(gridRef.current.api, "Companies")}
-          onPrint={() => gridRef.current?.api && gridPrint(gridRef.current.api, "Companies")}
+          onRefresh={() =>
+            queryClient.invalidateQueries({ queryKey: ["companies"] })
+          }
+          onExportExcel={() =>
+            gridRef.current?.api &&
+            gridExportExcel(gridRef.current.api, "companies.csv")
+          }
+          onExportPdf={() =>
+            gridRef.current?.api &&
+            gridExportPdf(gridRef.current.api, "Companies")
+          }
+          onPrint={() =>
+            gridRef.current?.api && gridPrint(gridRef.current.api, "Companies")
+          }
         />
 
         <div className="h-[500px]">
           {isLoading ? (
-            <div className="h-full flex items-center justify-center text-muted-foreground">Loading companies...</div>
+            <div className="h-full flex items-center justify-center text-muted-foreground">
+              Loading companies...
+            </div>
           ) : (
-            <DataGrid 
+            <DataGrid
               ref={gridRef}
-              rowData={companies} 
-              columnDefs={columnDefs} 
+              rowData={companies}
+              columnDefs={columnDefs}
               gridOptions={{ onRowDoubleClicked: (e) => handleEdit(e.data) }}
             />
           )}
         </div>
       </ListingCard>
 
-      <Dialog open={open} onOpenChange={(v) => { if (!v) resetForm(); setOpen(v); }}>
+      <Dialog
+        open={open}
+        onOpenChange={(v) => {
+          if (!v) resetForm();
+          setOpen(v);
+        }}
+      >
         <DialogContent>
-          <DialogHeader><DialogTitle>{editingId ? "Edit Company" : "Add Company"}</DialogTitle></DialogHeader>
+          <DialogHeader>
+            <DialogTitle>Company</DialogTitle>
+          </DialogHeader>
           <div className="space-y-3 mt-4">
             <div>
-              <label className="text-xs font-medium mb-1 block">Company Code</label>
+              <label className="text-xs font-medium mb-1 block">
+                Company Code
+              </label>
               <Input
                 placeholder="e.g. PMX"
                 value={formData.code}
-                onChange={e => setFormData(p => ({ ...p, code: e.target.value }))}
+                onChange={(e) =>
+                  setFormData((p) => ({ ...p, code: e.target.value }))
+                }
               />
             </div>
             <div>
-              <label className="text-xs font-medium mb-1 block">Company Name</label>
+              <label className="text-xs font-medium mb-1 block">
+                Company Name
+              </label>
               <Input
                 placeholder="e.g. PayMatrix Technologies"
                 value={formData.name}
-                onChange={e => setFormData(p => ({ ...p, name: e.target.value }))}
+                onChange={(e) =>
+                  setFormData((p) => ({ ...p, name: e.target.value }))
+                }
               />
             </div>
             <div>
@@ -186,7 +246,9 @@ export default function Company() {
                 placeholder="e.g. contact@paymatrix.com"
                 type="email"
                 value={formData.email}
-                onChange={e => setFormData(p => ({ ...p, email: e.target.value }))}
+                onChange={(e) =>
+                  setFormData((p) => ({ ...p, email: e.target.value }))
+                }
               />
             </div>
             <div>
@@ -194,17 +256,29 @@ export default function Company() {
               <Input
                 placeholder="e.g. Mumbai"
                 value={formData.city}
-                onChange={e => setFormData(p => ({ ...p, city: e.target.value }))}
+                onChange={(e) =>
+                  setFormData((p) => ({ ...p, city: e.target.value }))
+                }
               />
             </div>
 
-            <Button
-              className="w-full mt-4"
-              onClick={handleSave}
-              disabled={createMutation.isPending || updateMutation.isPending}
-            >
-              {createMutation.isPending || updateMutation.isPending ? "Saving..." : "Save"}
-            </Button>
+            <DialogFooter className="mt-4">
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => setOpen(false)}
+              >
+                Close
+              </Button>
+              <Button
+                onClick={handleSave}
+                disabled={createMutation.isPending || updateMutation.isPending}
+              >
+                {createMutation.isPending || updateMutation.isPending
+                  ? "Saving..."
+                  : "Save"}
+              </Button>
+            </DialogFooter>
           </div>
         </DialogContent>
       </Dialog>

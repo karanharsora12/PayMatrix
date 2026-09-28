@@ -4,7 +4,7 @@ import { Input } from "@/components/ui/input"
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs"
 
 export default function Settings(){
-  return <div className="space-y-4">
+  return <div className="space-y-4 p-4 md:p-6 lg:p-8 max-w-screen-2xl mx-auto">
     <h1 className="text-xl font-semibold">Settings</h1>
     <Tabs defaultValue="company"><TabsList className="flex-wrap h-auto"><TabsTrigger value="company">Company</TabsTrigger><TabsTrigger value="payroll">Payroll</TabsTrigger><TabsTrigger value="attendance">Attendance</TabsTrigger><TabsTrigger value="leave">Leave</TabsTrigger><TabsTrigger value="tax">Tax</TabsTrigger><TabsTrigger value="notifications">Notifications</TabsTrigger><TabsTrigger value="security">Security</TabsTrigger></TabsList>
       <TabsContent value="company"><Card><CardHeader><CardTitle>Company Information</CardTitle></CardHeader><CardContent className="grid md:grid-cols-2 gap-4"><Input defaultValue="PayMatrix Technologies Pvt Ltd"/><Input defaultValue="info@paymatrix.com"/><Input defaultValue="Bandra Kurla Complex, Mumbai"/><Input defaultValue="22AAAAA0000A1Z5" placeholder="GSTIN"/><Button className="md:col-span-2 w-fit">Save Changes</Button></CardContent></Card></TabsContent>

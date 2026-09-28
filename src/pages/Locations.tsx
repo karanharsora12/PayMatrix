@@ -6,7 +6,13 @@ import { DataGrid } from "@/components/common/DataGrid";
 import { ListingHeader } from "@/components/common/ListingHeader";
 import { ListingCard } from "@/components/common/ListingCard";
 import { Trash2, MapPin } from "lucide-react";
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import {
+  Dialog,
+  DialogContent,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { toast } from "sonner";
 import { locationApi } from "@/api/locations";
@@ -19,7 +25,15 @@ export default function Locations() {
   const [open, setOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
   const [editingId, setEditingId] = useState<string | null>(null);
-  const [formData, setFormData] = useState({ code: "", name: "", address: "", city: "", state: "", country: "", postalCode: "" });
+  const [formData, setFormData] = useState({
+    code: "",
+    name: "",
+    address: "",
+    city: "",
+    state: "",
+    country: "",
+    postalCode: "",
+  });
 
   const queryClient = useQueryClient();
 
@@ -36,18 +50,21 @@ export default function Locations() {
       setOpen(false);
       resetForm();
     },
-    onError: (err: any) => toast.error(err.response?.data?.message || "Error creating location")
+    onError: (err: any) =>
+      toast.error(err.response?.data?.message || "Error creating location"),
   });
 
   const updateMutation = useMutation({
-    mutationFn: ({ id, data }: { id: string, data: any }) => locationApi.update(id, data),
+    mutationFn: ({ id, data }: { id: string; data: any }) =>
+      locationApi.update(id, data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["locations"] });
       toast.success("Location updated successfully");
       setOpen(false);
       resetForm();
     },
-    onError: (err: any) => toast.error(err.response?.data?.message || "Error updating location")
+    onError: (err: any) =>
+      toast.error(err.response?.data?.message || "Error updating location"),
   });
 
   const deleteMutation = useMutation({
@@ -56,12 +73,21 @@ export default function Locations() {
       queryClient.invalidateQueries({ queryKey: ["locations"] });
       toast.success("Location deleted successfully");
     },
-    onError: (err: any) => toast.error(err.response?.data?.message || "Error deleting location")
+    onError: (err: any) =>
+      toast.error(err.response?.data?.message || "Error deleting location"),
   });
 
   const resetForm = () => {
     setEditingId(null);
-    setFormData({ code: "", name: "", address: "", city: "", state: "", country: "", postalCode: "" });
+    setFormData({
+      code: "",
+      name: "",
+      address: "",
+      city: "",
+      state: "",
+      country: "",
+      postalCode: "",
+    });
   };
 
   const handleEdit = (loc: any) => {
@@ -96,43 +122,57 @@ export default function Locations() {
     }
   };
 
-  const columnDefs = useMemo<ColDef[]>(() => [
-    { field: "code", headerName: "Code", width: 120 },
-    { field: "name", headerName: "Name", flex: 1 },
-    { field: "city", headerName: "City", width: 130 },
-    { field: "state", headerName: "State", width: 130 },
-    { field: "country", headerName: "Country", width: 130 },
-    {
-      field: "isActive",
-      headerName: "Status",
-      width: 120,
-      cellRenderer: (p: any) => (
-        <div className="flex items-center h-full">
-          <div className={`h-2.5 w-2.5 rounded-full ${p.value ? "bg-emerald-500" : "bg-red-500"}`} title={p.value ? "Active" : "Inactive"} />
-        </div>
-      )
-    },
-    {
-      headerName: "",
-      width: 80,
-      sortable: false,
-      filter: false,
-      cellRenderer: (params: any) => (
-        <div className="flex gap-1 items-center justify-center h-full">
-          <Button variant="ghost" size="icon" className="h-8 w-8 text-red-500 hover:text-red-600" onClick={(e) => { e.stopPropagation(); handleDelete(params.data.id); }}>
-            <Trash2 className="h-4 w-4" />
-          </Button>
-        </div>
-      )
-    }
-  ], []);
+  const columnDefs = useMemo<ColDef[]>(
+    () => [
+      { field: "code", headerName: "Code", width: 120 },
+      { field: "name", headerName: "Name", flex: 1 },
+      { field: "city", headerName: "City", width: 130 },
+      { field: "state", headerName: "State", width: 130 },
+      { field: "country", headerName: "Country", width: 130 },
+      {
+        field: "isActive",
+        headerName: "Status",
+        width: 120,
+        cellRenderer: (p: any) => (
+          <div className="flex items-center h-full">
+            <div
+              className={`h-2.5 w-2.5 rounded-full ${p.value ? "bg-emerald-500" : "bg-red-500"}`}
+              title={p.value ? "Active" : "Inactive"}
+            />
+          </div>
+        ),
+      },
+      {
+        headerName: "",
+        width: 80,
+        sortable: false,
+        filter: false,
+        cellRenderer: (params: any) => (
+          <div className="flex gap-1 items-center justify-center h-full">
+            <Button
+              variant="ghost"
+              size="icon"
+              className="h-8 w-8 text-red-500 hover:text-red-600"
+              onClick={(e) => {
+                e.stopPropagation();
+                handleDelete(params.data.id);
+              }}
+            >
+              <Trash2 className="h-4 w-4" />
+            </Button>
+          </div>
+        ),
+      },
+    ],
+    [],
+  );
 
   const allLocations = data?.data || [];
   const locations = allLocations.filter(
     (l: any) =>
       !searchQuery ||
       l.name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      l.code?.toLowerCase().includes(searchQuery.toLowerCase())
+      l.code?.toLowerCase().includes(searchQuery.toLowerCase()),
   );
 
   return (
@@ -142,42 +182,71 @@ export default function Locations() {
           title="Locations"
           searchValue={searchQuery}
           onSearchChange={setSearchQuery}
-          onAddNew={() => { resetForm(); setOpen(true); }}
+          onAddNew={() => {
+            resetForm();
+            setOpen(true);
+          }}
           addButtonText="Add Location"
-          onRefresh={() => queryClient.invalidateQueries({ queryKey: ["locations"] })}
-          onExportExcel={() => gridRef.current?.api && gridExportExcel(gridRef.current.api, "locations.csv")}
-          onExportPdf={() => gridRef.current?.api && gridExportPdf(gridRef.current.api, "Locations")}
-          onPrint={() => gridRef.current?.api && gridPrint(gridRef.current.api, "Locations")}
+          onRefresh={() =>
+            queryClient.invalidateQueries({ queryKey: ["locations"] })
+          }
+          onExportExcel={() =>
+            gridRef.current?.api &&
+            gridExportExcel(gridRef.current.api, "locations.csv")
+          }
+          onExportPdf={() =>
+            gridRef.current?.api &&
+            gridExportPdf(gridRef.current.api, "Locations")
+          }
+          onPrint={() =>
+            gridRef.current?.api && gridPrint(gridRef.current.api, "Locations")
+          }
         />
         <div className="h-[500px]">
-          <DataGrid 
+          <DataGrid
             ref={gridRef}
-            rowData={locations} 
-            columnDefs={columnDefs} 
+            rowData={locations}
+            columnDefs={columnDefs}
             gridOptions={{ onRowDoubleClicked: (e) => handleEdit(e.data) }}
           />
         </div>
       </ListingCard>
 
-      <Dialog open={open} onOpenChange={(v) => { if (!v) resetForm(); setOpen(v); }}>
+      <Dialog
+        open={open}
+        onOpenChange={(v) => {
+          if (!v) resetForm();
+          setOpen(v);
+        }}
+      >
         <DialogContent>
-          <DialogHeader><DialogTitle>{editingId ? "Edit Location" : "Add Location"}</DialogTitle></DialogHeader>
+          <DialogHeader>
+            <DialogTitle>Location</DialogTitle>
+          </DialogHeader>
           <div className="space-y-3 mt-4">
             <div className="grid grid-cols-2 gap-3">
               <div>
-                <label className="text-xs font-medium mb-1 block">Location Code</label>
+                <label className="text-xs font-medium mb-1 block">
+                  Location Code
+                </label>
                 <Input
                   placeholder="e.g. LOC-01"
                   value={formData.code}
-                  onChange={e => setFormData(p => ({ ...p, code: e.target.value }))}
+                  onChange={(e) =>
+                    setFormData((p) => ({ ...p, code: e.target.value }))
+                  }
                 />
               </div>
               <div>
-                <label className="text-xs font-medium mb-1 block">Location Name</label>
+                <label className="text-xs font-medium mb-1 block">
+                  Location Name
+                </label>
                 <Input
                   placeholder="e.g. South Office"
                   value={formData.name}
-                  onChange={e => setFormData(p => ({ ...p, name: e.target.value }))}
+                  onChange={(e) =>
+                    setFormData((p) => ({ ...p, name: e.target.value }))
+                  }
                 />
               </div>
             </div>
@@ -186,7 +255,9 @@ export default function Locations() {
               <Input
                 placeholder="Street address"
                 value={formData.address}
-                onChange={e => setFormData(p => ({ ...p, address: e.target.value }))}
+                onChange={(e) =>
+                  setFormData((p) => ({ ...p, address: e.target.value }))
+                }
               />
             </div>
             <div className="grid grid-cols-2 gap-3">
@@ -195,7 +266,9 @@ export default function Locations() {
                 <Input
                   placeholder="City"
                   value={formData.city}
-                  onChange={e => setFormData(p => ({ ...p, city: e.target.value }))}
+                  onChange={(e) =>
+                    setFormData((p) => ({ ...p, city: e.target.value }))
+                  }
                 />
               </div>
               <div>
@@ -203,36 +276,56 @@ export default function Locations() {
                 <Input
                   placeholder="State/Province"
                   value={formData.state}
-                  onChange={e => setFormData(p => ({ ...p, state: e.target.value }))}
+                  onChange={(e) =>
+                    setFormData((p) => ({ ...p, state: e.target.value }))
+                  }
                 />
               </div>
             </div>
             <div className="grid grid-cols-2 gap-3">
               <div>
-                <label className="text-xs font-medium mb-1 block">Country</label>
+                <label className="text-xs font-medium mb-1 block">
+                  Country
+                </label>
                 <Input
                   placeholder="Country"
                   value={formData.country}
-                  onChange={e => setFormData(p => ({ ...p, country: e.target.value }))}
+                  onChange={(e) =>
+                    setFormData((p) => ({ ...p, country: e.target.value }))
+                  }
                 />
               </div>
               <div>
-                <label className="text-xs font-medium mb-1 block">Postal Code</label>
+                <label className="text-xs font-medium mb-1 block">
+                  Postal Code
+                </label>
                 <Input
                   placeholder="ZIP / PIN code"
                   value={formData.postalCode}
-                  onChange={e => setFormData(p => ({ ...p, postalCode: e.target.value }))}
+                  onChange={(e) =>
+                    setFormData((p) => ({ ...p, postalCode: e.target.value }))
+                  }
                 />
               </div>
             </div>
 
-            <Button
-              className="w-full mt-4"
-              onClick={handleSave}
-              disabled={createMutation.isPending || updateMutation.isPending}
-            >
-              {createMutation.isPending || updateMutation.isPending ? "Saving..." : "Save"}
-            </Button>
+            <DialogFooter className="mt-4">
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => setOpen(false)}
+              >
+                Close
+              </Button>
+              <Button
+                onClick={handleSave}
+                disabled={createMutation.isPending || updateMutation.isPending}
+              >
+                {createMutation.isPending || updateMutation.isPending
+                  ? "Saving..."
+                  : "Save"}
+              </Button>
+            </DialogFooter>
           </div>
         </DialogContent>
       </Dialog>

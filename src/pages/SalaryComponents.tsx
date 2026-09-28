@@ -68,7 +68,11 @@ export default function SalaryComponents() {
   const gridRef = useRef<AgGridReact>(null);
 
   // Queries & Mutations
-  const { data: resp, isLoading, refetch } = useSalaryComponents({
+  const {
+    data: resp,
+    isLoading,
+    refetch,
+  } = useSalaryComponents({
     limit: 100,
     search: search || undefined,
     componentType: activeTab === "ALL" ? undefined : activeTab,
@@ -326,19 +330,31 @@ export default function SalaryComponents() {
           onAddNew={handleOpenAdd}
           addButtonText="Add Component"
           onRefresh={refetch}
-          onExportExcel={() => gridRef.current?.api && gridExportExcel(gridRef.current.api, "salary_components.csv")}
-          onExportPdf={() => gridRef.current?.api && gridExportPdf(gridRef.current.api, "Salary Components")}
-          onPrint={() => gridRef.current?.api && gridPrint(gridRef.current.api, "Salary Components")}
+          onExportExcel={() =>
+            gridRef.current?.api &&
+            gridExportExcel(gridRef.current.api, "salary_components.csv")
+          }
+          onExportPdf={() =>
+            gridRef.current?.api &&
+            gridExportPdf(gridRef.current.api, "Salary Components")
+          }
+          onPrint={() =>
+            gridRef.current?.api &&
+            gridPrint(gridRef.current.api, "Salary Components")
+          }
           tabs={{
             options: [
               { label: "All", value: "ALL" },
               { label: "Earnings", value: "EARNING" },
               { label: "Deductions", value: "DEDUCTION" },
-              { label: "Employer Contributions", value: "EMPLOYER_CONTRIBUTION" },
-              { label: "Reimbursements", value: "REIMBURSEMENT" }
+              {
+                label: "Employer Contributions",
+                value: "EMPLOYER_CONTRIBUTION",
+              },
+              { label: "Reimbursements", value: "REIMBURSEMENT" },
             ],
             value: activeTab,
-            onChange: setActiveTab
+            onChange: setActiveTab,
           }}
         />
 
@@ -356,17 +372,17 @@ export default function SalaryComponents() {
             <p className="text-sm mt-1">
               Get started by creating your first salary component.
             </p>
-            <Button
-              onClick={handleOpenAdd}
-              variant="outline"
-              className="mt-4"
-            >
+            <Button onClick={handleOpenAdd} variant="outline" className="mt-4">
               <Plus className="h-4 w-4 mr-2" /> Add Component
             </Button>
           </div>
         ) : (
           <div className="h-[500px]">
-            <DataGrid ref={gridRef} rowData={components} columnDefs={componentsColDefs} />
+            <DataGrid
+              ref={gridRef}
+              rowData={components}
+              columnDefs={componentsColDefs}
+            />
           </div>
         )}
       </ListingCard>
@@ -378,11 +394,7 @@ export default function SalaryComponents() {
           onClose={() => setIsModalOpen(false)}
         >
           <DialogHeader>
-            <DialogTitle>
-              {editingComponent
-                ? `Edit Component: ${editingComponent.code}`
-                : "Create Salary Component"}
-            </DialogTitle>
+            <DialogTitle>Salary Component</DialogTitle>
           </DialogHeader>
 
           <form onSubmit={handleSubmit} className="space-y-4">

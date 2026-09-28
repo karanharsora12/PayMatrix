@@ -32,10 +32,10 @@ export default function Dashboard(){
   ];
 
   if (isLoading) {
-    return <div className="space-y-4"><div className="grid grid-cols-6 gap-4">{Array.from({length:6}).map((_,i)=><Card key={i} className="h-[110px] animate-pulse bg-muted"/> )}</div><Card className="h-[300px] animate-pulse bg-muted"/></div>
+    return <div className="space-y-4 p-4 md:p-6 lg:p-8"><div className="grid grid-cols-6 gap-4">{Array.from({length:6}).map((_,i)=><Card key={i} className="h-[110px] animate-pulse bg-muted"/> )}</div><Card className="h-[300px] animate-pulse bg-muted"/></div>
   }
 
-  return <div className="space-y-6">
+  return <div className="space-y-6 p-4 md:p-6 lg:p-8 max-w-screen-2xl mx-auto">
     <div className="flex flex-wrap items-start justify-between gap-4">
       <div><h1 className="text-2xl font-semibold tracking-tight">Good Morning, Admin</h1><p className="text-sm text-muted-foreground">Here's what's happening with your workforce today.{isError && <span className="text-amber-600"> (showing cached data — API unavailable)</span>}</p></div>
       <Button>Process Payroll</Button>

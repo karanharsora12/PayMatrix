@@ -707,9 +707,6 @@ export default function PayrollDetails() {
                 {selectedDetails?.employee?.code}
               </span>
             </DialogTitle>
-            <DialogDescription>
-              {selectedDetails?.employee?.department} • {selectedDetails?.employee?.designation}
-            </DialogDescription>
           </DialogHeader>
 
           {selectedDetails && (
@@ -832,10 +829,7 @@ export default function PayrollDetails() {
       <Dialog open={isAdjModalOpen} onOpenChange={setIsAdjModalOpen}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>Add Payroll Adjustment</DialogTitle>
-            <DialogDescription>
-              Add pre-finalization Arrear, Bonus, or Recovery with a mandatory reason.
-            </DialogDescription>
+            <DialogTitle>Payroll Adjustment</DialogTitle>
           </DialogHeader>
 
           <form onSubmit={handleAddAdjustment} className="space-y-4">

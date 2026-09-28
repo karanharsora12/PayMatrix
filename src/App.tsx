@@ -77,12 +77,12 @@ function CommandPalette({
   const [q, setQ] = useState("");
   const results = q
     ? mockEmployees
-      .filter((e) =>
-        `${e.firstName} ${e.lastName} ${e.employeeId}`
-          .toLowerCase()
-          .includes(q.toLowerCase()),
-      )
-      .slice(0, 5)
+        .filter((e) =>
+          `${e.firstName} ${e.lastName} ${e.employeeId}`
+            .toLowerCase()
+            .includes(q.toLowerCase()),
+        )
+        .slice(0, 5)
     : [];
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -139,6 +139,7 @@ export default function App() {
             <Route path="/" element={<Dashboard />} />
             <Route path="/employees" element={<Employees />} />
             <Route path="/employees/new" element={<AddEmployee />} />
+            <Route path="/employees/:id/edit" element={<AddEmployee />} />
             <Route path="/employees/:id" element={<EmployeeProfile />} />
             <Route path="/departments" element={<Departments />} />
             <Route path="/designations" element={<Designations />} />
@@ -151,10 +152,7 @@ export default function App() {
               path="/overtime"
               element={<Placeholder title="Overtime" />}
             />
-            <Route path="/leave-types" element={<Leave />} />
-            <Route path="/leave-requests" element={<Leave />} />
-            <Route path="/leave-balances" element={<Leave />} />
-            <Route path="/leave-calendar" element={<Leave />} />
+            <Route path="/leave" element={<Leave />} />
             <Route path="/salary-components" element={<SalaryComponents />} />
             <Route path="/salary-structures" element={<SalaryStructures />} />
             <Route path="/employee-salary" element={<EmployeeSalary />} />
@@ -176,22 +174,10 @@ export default function App() {
               element={<Placeholder title="Audit Logs" />}
             />
             <Route path="/settings" element={<Settings />} />
-            <Route
-              path="/organization/company"
-              element={<Company />}
-            />
-            <Route
-              path="/locations"
-              element={<Locations />}
-            />
-            <Route
-              path="/employee-groups"
-              element={<EmployeeGroups />}
-            />
-            <Route
-              path="/documents"
-              element={<DocumentMaster />}
-            />
+            <Route path="/organization/company" element={<Company />} />
+            <Route path="/locations" element={<Locations />} />
+            <Route path="/employee-groups" element={<EmployeeGroups />} />
+            <Route path="/documents" element={<DocumentMaster />} />
             <Route
               path="/bank-accounts"
               element={<Placeholder title="Bank Accounts" />}

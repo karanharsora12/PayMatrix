@@ -9,6 +9,7 @@ import { Trash2 } from "lucide-react";
 import {
   Dialog,
   DialogContent,
+  DialogFooter,
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
@@ -169,12 +170,26 @@ export default function Departments() {
           title="Departments"
           searchValue={searchQuery}
           onSearchChange={setSearchQuery}
-          onAddNew={() => { resetForm(); setOpen(true); }}
+          onAddNew={() => {
+            resetForm();
+            setOpen(true);
+          }}
           addButtonText="Add Department"
-          onRefresh={() => queryClient.invalidateQueries({ queryKey: ["departments"] })}
-          onExportExcel={() => gridRef.current?.api && gridExportExcel(gridRef.current.api, "departments.csv")}
-          onExportPdf={() => gridRef.current?.api && gridExportPdf(gridRef.current.api, "Departments")}
-          onPrint={() => gridRef.current?.api && gridPrint(gridRef.current.api, "Departments")}
+          onRefresh={() =>
+            queryClient.invalidateQueries({ queryKey: ["departments"] })
+          }
+          onExportExcel={() =>
+            gridRef.current?.api &&
+            gridExportExcel(gridRef.current.api, "departments.csv")
+          }
+          onExportPdf={() =>
+            gridRef.current?.api &&
+            gridExportPdf(gridRef.current.api, "Departments")
+          }
+          onPrint={() =>
+            gridRef.current?.api &&
+            gridPrint(gridRef.current.api, "Departments")
+          }
         />
         <div className="h-[500px]">
           <DataGrid
@@ -195,9 +210,7 @@ export default function Departments() {
       >
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>
-              {editingId ? "Edit Department" : "Add Department"}
-            </DialogTitle>
+            <DialogTitle>Department</DialogTitle>
           </DialogHeader>
           <div className="space-y-3 mt-4">
             <div>
@@ -237,15 +250,23 @@ export default function Departments() {
               />
             </div>
 
-            <Button
-              className="w-full mt-4"
-              onClick={handleSave}
-              disabled={createMutation.isPending || updateMutation.isPending}
-            >
-              {createMutation.isPending || updateMutation.isPending
-                ? "Saving..."
-                : "Save"}
-            </Button>
+            <DialogFooter className="mt-4">
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => setModalOpen(false)}
+              >
+                Close
+              </Button>
+              <Button
+                onClick={handleSave}
+                disabled={createMutation.isPending || updateMutation.isPending}
+              >
+                {createMutation.isPending || updateMutation.isPending
+                  ? "Saving..."
+                  : "Save"}
+              </Button>
+            </DialogFooter>
           </div>
         </DialogContent>
       </Dialog>

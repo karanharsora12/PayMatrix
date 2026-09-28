@@ -235,7 +235,7 @@ export default function Employees() {
             pageSize={15}
             gridOptions={{
               onRowDoubleClicked: (e) => {
-                if (e.data?.id) nav(`/employees/${e.data.id}`);
+                if (e.data?.id) nav(`/employees/${e.data.id}/edit`);
               },
             }}
           />

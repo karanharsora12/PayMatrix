@@ -9,6 +9,7 @@ import { Plus, Trash2 } from "lucide-react";
 import {
   Dialog,
   DialogContent,
+  DialogFooter,
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
@@ -229,12 +230,26 @@ export default function Designations() {
           title="Designations"
           searchValue={searchQuery}
           onSearchChange={setSearchQuery}
-          onAddNew={() => { resetForm(); setOpen(true); }}
+          onAddNew={() => {
+            resetForm();
+            setOpen(true);
+          }}
           addButtonText="Add Designation"
-          onRefresh={() => queryClient.invalidateQueries({ queryKey: ["designations"] })}
-          onExportExcel={() => gridRef.current?.api && gridExportExcel(gridRef.current.api, "designations.csv")}
-          onExportPdf={() => gridRef.current?.api && gridExportPdf(gridRef.current.api, "Designations")}
-          onPrint={() => gridRef.current?.api && gridPrint(gridRef.current.api, "Designations")}
+          onRefresh={() =>
+            queryClient.invalidateQueries({ queryKey: ["designations"] })
+          }
+          onExportExcel={() =>
+            gridRef.current?.api &&
+            gridExportExcel(gridRef.current.api, "designations.csv")
+          }
+          onExportPdf={() =>
+            gridRef.current?.api &&
+            gridExportPdf(gridRef.current.api, "Designations")
+          }
+          onPrint={() =>
+            gridRef.current?.api &&
+            gridPrint(gridRef.current.api, "Designations")
+          }
         />
         <div className="h-[500px]">
           <DataGrid
@@ -255,9 +270,7 @@ export default function Designations() {
       >
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>
-              {editingId ? "Edit Designation" : "Add Designation"}
-            </DialogTitle>
+            <DialogTitle>Designation</DialogTitle>
           </DialogHeader>
           <div className="space-y-3 mt-4">
             <div className="grid grid-cols-2 gap-3">
@@ -357,15 +370,23 @@ export default function Designations() {
               </div>
             </div>
 
-            <Button
-              className="w-full mt-4"
-              onClick={handleSave}
-              disabled={createMutation.isPending || updateMutation.isPending}
-            >
-              {createMutation.isPending || updateMutation.isPending
-                ? "Saving..."
-                : "Save"}
-            </Button>
+            <DialogFooter className="mt-4">
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => setOpen(false)}
+              >
+                Close
+              </Button>
+              <Button
+                onClick={handleSave}
+                disabled={createMutation.isPending || updateMutation.isPending}
+              >
+                {createMutation.isPending || updateMutation.isPending
+                  ? "Saving..."
+                  : "Save"}
+              </Button>
+            </DialogFooter>
           </div>
         </DialogContent>
       </Dialog>

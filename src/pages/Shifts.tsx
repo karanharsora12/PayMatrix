@@ -359,10 +359,7 @@ export default function Shifts() {
       <Dialog open={createOpen} onOpenChange={setCreateOpen}>
         <DialogContent onClose={() => setCreateOpen(false)}>
           <DialogHeader>
-            <DialogTitle>{editingShift ? 'Edit Shift Schedule' : 'Create New Shift'}</DialogTitle>
-            <DialogDescription>
-              Set shift hours, overnight parameters, grace period, and overtime allowances.
-            </DialogDescription>
+            <DialogTitle>Shift</DialogTitle>
           </DialogHeader>
           <form onSubmit={handleSaveShift} className="space-y-4">
             <div className="grid grid-cols-2 gap-3">
@@ -488,10 +485,7 @@ export default function Shifts() {
       <Dialog open={assignOpen} onOpenChange={setAssignOpen}>
         <DialogContent onClose={() => setAssignOpen(false)}>
           <DialogHeader>
-            <DialogTitle>Assign Shift to Employee</DialogTitle>
-            <DialogDescription>
-              Assign a work schedule to an employee. Overlapping assignment periods will be rejected.
-            </DialogDescription>
+            <DialogTitle>Assign Shift</DialogTitle>
           </DialogHeader>
           <form onSubmit={handleSaveAssign} className="space-y-4">
             <div>

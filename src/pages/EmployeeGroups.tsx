@@ -6,7 +6,13 @@ import { DataGrid } from "@/components/common/DataGrid";
 import { ListingHeader } from "@/components/common/ListingHeader";
 import { ListingCard } from "@/components/common/ListingCard";
 import { Trash2 } from "lucide-react";
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import {
+  Dialog,
+  DialogContent,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { toast } from "sonner";
 import { employeeGroupApi } from "@/api/employeeGroups";
@@ -19,7 +25,11 @@ export default function EmployeeGroups() {
   const [open, setOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
   const [editingId, setEditingId] = useState<string | null>(null);
-  const [formData, setFormData] = useState({ code: "", name: "", description: "" });
+  const [formData, setFormData] = useState({
+    code: "",
+    name: "",
+    description: "",
+  });
 
   const queryClient = useQueryClient();
 
@@ -36,18 +46,21 @@ export default function EmployeeGroups() {
       setOpen(false);
       resetForm();
     },
-    onError: (err: any) => toast.error(err.response?.data?.message || "Error creating group")
+    onError: (err: any) =>
+      toast.error(err.response?.data?.message || "Error creating group"),
   });
 
   const updateMutation = useMutation({
-    mutationFn: ({ id, data }: { id: string, data: any }) => employeeGroupApi.update(id, data),
+    mutationFn: ({ id, data }: { id: string; data: any }) =>
+      employeeGroupApi.update(id, data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["employeeGroups"] });
       toast.success("Group updated successfully");
       setOpen(false);
       resetForm();
     },
-    onError: (err: any) => toast.error(err.response?.data?.message || "Error updating group")
+    onError: (err: any) =>
+      toast.error(err.response?.data?.message || "Error updating group"),
   });
 
   const deleteMutation = useMutation({
@@ -56,7 +69,8 @@ export default function EmployeeGroups() {
       queryClient.invalidateQueries({ queryKey: ["employeeGroups"] });
       toast.success("Group deleted successfully");
     },
-    onError: (err: any) => toast.error(err.response?.data?.message || "Error deleting group")
+    onError: (err: any) =>
+      toast.error(err.response?.data?.message || "Error deleting group"),
   });
 
   const resetForm = () => {
@@ -92,41 +106,55 @@ export default function EmployeeGroups() {
     }
   };
 
-  const columnDefs = useMemo<ColDef[]>(() => [
-    { field: "code", headerName: "Code", width: 120 },
-    { field: "name", headerName: "Name", flex: 1 },
-    { field: "description", headerName: "Description", flex: 1 },
-    {
-      field: "isActive",
-      headerName: "Status",
-      width: 120,
-      cellRenderer: (p: any) => (
-        <div className="flex items-center h-full">
-          <div className={`h-2.5 w-2.5 rounded-full ${p.value ? "bg-emerald-500" : "bg-red-500"}`} title={p.value ? "Active" : "Inactive"} />
-        </div>
-      )
-    },
-    {
-      headerName: "",
-      width: 80,
-      sortable: false,
-      filter: false,
-      cellRenderer: (params: any) => (
-        <div className="flex gap-1 items-center justify-center h-full">
-          <Button variant="ghost" size="icon" className="h-8 w-8 text-red-500 hover:text-red-600" onClick={(e) => { e.stopPropagation(); handleDelete(params.data.id); }}>
-            <Trash2 className="h-4 w-4" />
-          </Button>
-        </div>
-      )
-    }
-  ], []);
+  const columnDefs = useMemo<ColDef[]>(
+    () => [
+      { field: "code", headerName: "Code", width: 120 },
+      { field: "name", headerName: "Name", flex: 1 },
+      { field: "description", headerName: "Description", flex: 1 },
+      {
+        field: "isActive",
+        headerName: "Status",
+        width: 120,
+        cellRenderer: (p: any) => (
+          <div className="flex items-center h-full">
+            <div
+              className={`h-2.5 w-2.5 rounded-full ${p.value ? "bg-emerald-500" : "bg-red-500"}`}
+              title={p.value ? "Active" : "Inactive"}
+            />
+          </div>
+        ),
+      },
+      {
+        headerName: "",
+        width: 80,
+        sortable: false,
+        filter: false,
+        cellRenderer: (params: any) => (
+          <div className="flex gap-1 items-center justify-center h-full">
+            <Button
+              variant="ghost"
+              size="icon"
+              className="h-8 w-8 text-red-500 hover:text-red-600"
+              onClick={(e) => {
+                e.stopPropagation();
+                handleDelete(params.data.id);
+              }}
+            >
+              <Trash2 className="h-4 w-4" />
+            </Button>
+          </div>
+        ),
+      },
+    ],
+    [],
+  );
 
   const allGroups = data?.data || [];
   const groups = allGroups.filter(
     (g: any) =>
       !searchQuery ||
       g.name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      g.code?.toLowerCase().includes(searchQuery.toLowerCase())
+      g.code?.toLowerCase().includes(searchQuery.toLowerCase()),
   );
 
   return (
@@ -136,59 +164,103 @@ export default function EmployeeGroups() {
           title="Employee Groups"
           searchValue={searchQuery}
           onSearchChange={setSearchQuery}
-          onAddNew={() => { resetForm(); setOpen(true); }}
+          onAddNew={() => {
+            resetForm();
+            setOpen(true);
+          }}
           addButtonText="Add Group"
-          onRefresh={() => queryClient.invalidateQueries({ queryKey: ["employeeGroups"] })}
-          onExportExcel={() => gridRef.current?.api && gridExportExcel(gridRef.current.api, "groups.csv")}
-          onExportPdf={() => gridRef.current?.api && gridExportPdf(gridRef.current.api, "Employee Groups")}
-          onPrint={() => gridRef.current?.api && gridPrint(gridRef.current.api, "Employee Groups")}
+          onRefresh={() =>
+            queryClient.invalidateQueries({ queryKey: ["employeeGroups"] })
+          }
+          onExportExcel={() =>
+            gridRef.current?.api &&
+            gridExportExcel(gridRef.current.api, "groups.csv")
+          }
+          onExportPdf={() =>
+            gridRef.current?.api &&
+            gridExportPdf(gridRef.current.api, "Employee Groups")
+          }
+          onPrint={() =>
+            gridRef.current?.api &&
+            gridPrint(gridRef.current.api, "Employee Groups")
+          }
         />
         <div className="h-[500px]">
-          <DataGrid 
+          <DataGrid
             ref={gridRef}
-            rowData={groups} 
-            columnDefs={columnDefs} 
+            rowData={groups}
+            columnDefs={columnDefs}
             gridOptions={{ onRowDoubleClicked: (e) => handleEdit(e.data) }}
           />
         </div>
       </ListingCard>
 
-      <Dialog open={open} onOpenChange={(v) => { if (!v) resetForm(); setOpen(v); }}>
+      <Dialog
+        open={open}
+        onOpenChange={(v) => {
+          if (!v) resetForm();
+          setOpen(v);
+        }}
+      >
         <DialogContent>
-          <DialogHeader><DialogTitle>{editingId ? "Edit Group" : "Add Group"}</DialogTitle></DialogHeader>
+          <DialogHeader>
+            <DialogTitle>Employee Group</DialogTitle>
+          </DialogHeader>
           <div className="space-y-3 mt-4">
             <div>
-              <label className="text-xs font-medium mb-1 block">Group Code</label>
+              <label className="text-xs font-medium mb-1 block">
+                Group Code
+              </label>
               <Input
                 placeholder="e.g. GRP-A"
                 value={formData.code}
-                onChange={e => setFormData(p => ({ ...p, code: e.target.value }))}
+                onChange={(e) =>
+                  setFormData((p) => ({ ...p, code: e.target.value }))
+                }
               />
             </div>
             <div>
-              <label className="text-xs font-medium mb-1 block">Group Name</label>
+              <label className="text-xs font-medium mb-1 block">
+                Group Name
+              </label>
               <Input
                 placeholder="e.g. Senior Management"
                 value={formData.name}
-                onChange={e => setFormData(p => ({ ...p, name: e.target.value }))}
+                onChange={(e) =>
+                  setFormData((p) => ({ ...p, name: e.target.value }))
+                }
               />
             </div>
             <div>
-              <label className="text-xs font-medium mb-1 block">Description</label>
+              <label className="text-xs font-medium mb-1 block">
+                Description
+              </label>
               <Input
                 placeholder="Brief description"
                 value={formData.description}
-                onChange={e => setFormData(p => ({ ...p, description: e.target.value }))}
+                onChange={(e) =>
+                  setFormData((p) => ({ ...p, description: e.target.value }))
+                }
               />
             </div>
 
-            <Button
-              className="w-full mt-4"
-              onClick={handleSave}
-              disabled={createMutation.isPending || updateMutation.isPending}
-            >
-              {createMutation.isPending || updateMutation.isPending ? "Saving..." : "Save"}
-            </Button>
+            <DialogFooter className="mt-4">
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => setOpen(false)}
+              >
+                Close
+              </Button>
+              <Button
+                onClick={handleSave}
+                disabled={createMutation.isPending || updateMutation.isPending}
+              >
+                {createMutation.isPending || updateMutation.isPending
+                  ? "Saving..."
+                  : "Save"}
+              </Button>
+            </DialogFooter>
           </div>
         </DialogContent>
       </Dialog>

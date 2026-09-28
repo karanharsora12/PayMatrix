@@ -1,11 +1,14 @@
-import { useState } from 'react';
+import { useState, useRef } from 'react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { DataGrid } from '@/components/common/DataGrid';
+import { ListingCard } from '@/components/common/ListingCard';
+import { ListingHeader } from '@/components/common/ListingHeader';
+import { gridExportExcel, gridExportPdf, gridPrint } from '@/lib/gridExport';
+import type { AgGridReact } from 'ag-grid-react';
 import type { ColDef } from 'ag-grid-community';
 import { useMemo } from 'react';
-import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
 import { Input } from '@/components/ui/input';
 import { NativeSelect } from '@/components/ui/select';
 import {
@@ -48,6 +51,10 @@ export default function Leave() {
   const currentYear = new Date().getFullYear();
   const todayStr = new Date().toISOString().substring(0, 10);
   const currentMonthStr = todayStr.substring(0, 7);
+
+  const [activeTab, setActiveTab] = useState('requests');
+  const [searchQuery, setSearchQuery] = useState('');
+  const gridRef = useRef<AgGridReact>(null);
 
   // Filter States
   const [filterStatus, setFilterStatus] = useState('');
@@ -426,188 +433,158 @@ export default function Leave() {
 
   return (
     <div className="space-y-6">
-      {/* Header */}
-      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
-        <div>
-          <h1 className="text-2xl font-bold tracking-tight">Leave Management</h1>
-          <p className="text-sm text-muted-foreground mt-1">
-            Manage leave types, review approval workflows, calculate working day deductions, and track employee balances.
-          </p>
+      <ListingCard>
+        <ListingHeader
+        title="Leave Management"
+        searchValue={searchQuery}
+        onSearchChange={setSearchQuery}
+        onAddNew={activeTab === 'types' ? () => handleOpenTypeModal() : activeTab === 'requests' ? handleOpenRequest : undefined}
+        addButtonText={activeTab === 'types' ? 'Add Leave Type' : 'Request Leave'}
+        onRefresh={() => { }}
+        onExportExcel={() => gridRef.current?.api && gridExportExcel(gridRef.current.api, 'leave.csv')}
+        onExportPdf={() => gridRef.current?.api && gridExportPdf(gridRef.current.api, 'Leave')}
+        onPrint={() => gridRef.current?.api && gridPrint(gridRef.current.api, 'Leave')}
+        tabs={{
+          options: [
+            { label: 'Leave Requests', value: 'requests' },
+            { label: 'Leave Types', value: 'types' },
+            { label: 'Balances', value: 'balances' },
+            { label: 'Calendar', value: 'calendar' },
+          ],
+          value: activeTab,
+          onChange: setActiveTab,
+        }}
+      />
+
+      {/* Requests Tab */}
+      {activeTab === 'requests' && (
+        <div className="space-y-3">
+          <div className="flex flex-wrap items-center gap-3">
+            <div className="flex-1 min-w-[200px]">
+              <NativeSelect
+                placeholder="All Employees"
+                value={filterEmployeeId}
+                onChange={(val) => setFilterEmployeeId(val || '')}
+              >
+                {employees.map((e) => (
+                  <option key={e.id} value={e.id}>
+                    {e.firstName} {e.lastName} ({e.employeeCode})
+                  </option>
+                ))}
+              </NativeSelect>
+            </div>
+            <div className="w-40">
+              <NativeSelect
+                placeholder="All Statuses"
+                value={filterStatus}
+                onChange={(val) => setFilterStatus(val || '')}
+              >
+                <option value="PENDING">Pending</option>
+                <option value="APPROVED">Approved</option>
+                <option value="REJECTED">Rejected</option>
+                <option value="CANCELLED">Cancelled</option>
+              </NativeSelect>
+            </div>
+            <Button size="sm" variant="ghost" onClick={() => { setFilterEmployeeId(''); setFilterStatus(''); }}>
+              Reset Filters
+            </Button>
+          </div>
+          <div className="h-[500px]">
+            <DataGrid ref={gridRef} rowData={requests} columnDefs={requestsColDefs} />
+          </div>
         </div>
-        <div className="flex gap-2">
-          <Button variant="outline" onClick={() => handleOpenTypeModal()}>
-            <Plus className="h-4 w-4 mr-2" /> Add Leave Type
-          </Button>
-          <Button onClick={handleOpenRequest}>
-            <CalendarIcon className="h-4 w-4 mr-2" /> Request Leave
-          </Button>
+      )}
+
+      {/* Types Tab */}
+      {activeTab === 'types' && (
+        <div className="h-[500px]">
+          <DataGrid
+            ref={gridRef}
+            rowData={leaveTypes}
+            columnDefs={typesColDefs}
+            gridOptions={{ onRowDoubleClicked: (e) => handleOpenTypeModal(e.data) }}
+          />
         </div>
-      </div>
+      )}
 
-      {/* Main Tabs */}
-      <Tabs defaultValue="requests">
-        <TabsList>
-          <TabsTrigger value="requests">Leave Requests</TabsTrigger>
-          <TabsTrigger value="types">Leave Types</TabsTrigger>
-          <TabsTrigger value="balances">Balances</TabsTrigger>
-          <TabsTrigger value="calendar">Leave Calendar</TabsTrigger>
-        </TabsList>
+      {/* Balances Tab */}
+      {activeTab === 'balances' && (
+        <div className="space-y-3">
+          <div className="flex items-center justify-between">
+            <p className="text-sm font-medium text-slate-600 dark:text-slate-400">Employee Leave Balances ({currentYear})</p>
+            <div className="w-64">
+              <NativeSelect
+                value={balanceEmpId || (employees[0]?.id ?? '')}
+                onChange={(val) => setBalanceEmpId(val || '')}
+              >
+                {employees.map((e) => (
+                  <option key={e.id} value={e.id}>
+                    {e.firstName} {e.lastName} ({e.employeeCode})
+                  </option>
+                ))}
+              </NativeSelect>
+            </div>
+          </div>
+          <div className="h-[400px]">
+            <DataGrid ref={gridRef} rowData={balances} columnDefs={balancesColDefs} />
+          </div>
+        </div>
+      )}
 
-        {/* Tab 1: Leave Requests */}
-        <TabsContent value="requests" className="space-y-4">
-          <Card>
-            <CardContent className="p-3 flex flex-wrap items-center gap-3">
-              <div className="flex-1 min-w-[200px]">
-                <NativeSelect
-                  placeholder="All Employees"
-                  value={filterEmployeeId}
-                  onChange={(val) => setFilterEmployeeId(val || '')}
+      {/* Calendar Tab */}
+      {activeTab === 'calendar' && (
+        <div className="space-y-3">
+          <div className="flex items-center justify-between">
+            <p className="text-sm font-medium text-slate-600 dark:text-slate-400">Monthly Leave Calendar</p>
+            <Input
+              type="month"
+              className="w-40 h-9 text-xs"
+              value={calendarMonth}
+              onChange={(e) => setCalendarMonth(e.target.value)}
+            />
+          </div>
+          <div className="grid grid-cols-7 gap-2 text-center text-xs font-semibold text-muted-foreground mb-2">
+            <div>Sun</div><div>Mon</div><div>Tue</div><div>Wed</div><div>Thu</div><div>Fri</div><div>Sat</div>
+          </div>
+          <div className="grid grid-cols-7 gap-2">
+            {Array.from({ length: 31 }).map((_, idx) => {
+              const dayNum = idx + 1;
+              const dateStr = `${calendarMonth}-${String(dayNum).padStart(2, '0')}`;
+              const dayLeaves = (calendarEvents ?? []).filter(
+                (e) => e.fromDate <= dateStr && e.toDate >= dateStr,
+              );
+              return (
+                <div
+                  key={idx}
+                  className={`min-h-[85px] border rounded-lg p-1.5 flex flex-col justify-between transition-colors ${
+                    dayLeaves.length > 0 ? 'bg-purple-50/40 border-purple-200 dark:bg-purple-950/20' : 'bg-card'
+                  }`}
                 >
-                  {employees.map((e) => (
-                    <option key={e.id} value={e.id}>
-                      {e.firstName} {e.lastName} ({e.employeeCode})
-                    </option>
-                  ))}
-                </NativeSelect>
-              </div>
-              <div className="w-40">
-                <NativeSelect
-                  placeholder="All Statuses"
-                  value={filterStatus}
-                  onChange={(val) => setFilterStatus(val || '')}
-                >
-                  <option value="PENDING">Pending</option>
-                  <option value="APPROVED">Approved</option>
-                  <option value="REJECTED">Rejected</option>
-                  <option value="CANCELLED">Cancelled</option>
-                </NativeSelect>
-              </div>
-              <Button size="sm" variant="ghost" onClick={() => { setFilterEmployeeId(''); setFilterStatus(''); }}>
-                Reset Filters
-              </Button>
-            </CardContent>
-          </Card>
-
-          <Card>
-            <div className="h-[500px]">
-              <DataGrid rowData={requests} columnDefs={requestsColDefs} />
-            </div>
-          </Card>
-        </TabsContent>
-
-        {/* Tab 2: Leave Types */}
-        <TabsContent value="types" className="space-y-4">
-          <Card>
-            <div className="h-[500px]">
-              <DataGrid 
-                rowData={leaveTypes} 
-                columnDefs={typesColDefs} 
-                gridOptions={{
-                  onRowDoubleClicked: (e) => handleOpenTypeModal(e.data)
-                }}
-              />
-            </div>
-          </Card>
-        </TabsContent>
-
-        {/* Tab 3: Leave Balances */}
-        <TabsContent value="balances" className="space-y-4">
-          <Card>
-            <div className="p-4 border-b flex justify-between items-center">
-              <div>
-                <h3 className="font-semibold text-sm">Employee Leave Balances ({currentYear})</h3>
-                <p className="text-xs text-muted-foreground">Yearly allocations, approved leaves taken, and remaining quotas</p>
-              </div>
-              <div className="w-64">
-                <NativeSelect
-                  value={balanceEmpId || (employees[0]?.id ?? '')}
-                  onChange={(val) => setBalanceEmpId(val || '')}
-                >
-                  {employees.map((e) => (
-                    <option key={e.id} value={e.id}>
-                      {e.firstName} {e.lastName} ({e.employeeCode})
-                    </option>
-                  ))}
-                </NativeSelect>
-              </div>
-            </div>
-            <CardContent className="p-0">
-              <div className="h-[300px]">
-                <DataGrid rowData={balances} columnDefs={balancesColDefs} />
-              </div>
-            </CardContent>
-          </Card>
-        </TabsContent>
-
-        {/* Tab 4: Leave Calendar */}
-        <TabsContent value="calendar" className="space-y-4">
-          <Card>
-            <div className="p-4 border-b flex justify-between items-center">
-              <div>
-                <h3 className="font-semibold text-sm">Monthly Leave Calendar</h3>
-                <p className="text-xs text-muted-foreground">View all scheduled and approved employee leaves</p>
-              </div>
-              <Input
-                type="month"
-                className="w-40 h-9 text-xs"
-                value={calendarMonth}
-                onChange={(e) => setCalendarMonth(e.target.value)}
-              />
-            </div>
-            <CardContent className="p-6">
-              <div className="grid grid-cols-7 gap-2 text-center text-xs font-semibold text-muted-foreground mb-2">
-                <div>Sun</div>
-                <div>Mon</div>
-                <div>Tue</div>
-                <div>Wed</div>
-                <div>Thu</div>
-                <div>Fri</div>
-                <div>Sat</div>
-              </div>
-              <div className="grid grid-cols-7 gap-2">
-                {Array.from({ length: 31 }).map((_, idx) => {
-                  const dayNum = idx + 1;
-                  const dateStr = `${calendarMonth}-${String(dayNum).padStart(2, '0')}`;
-                  const dayLeaves = (calendarEvents ?? []).filter(
-                    (e) => e.fromDate <= dateStr && e.toDate >= dateStr,
-                  );
-
-                  return (
-                    <div
-                      key={idx}
-                      className={`min-h-[85px] border rounded-lg p-1.5 flex flex-col justify-between transition-colors ${
-                        dayLeaves.length > 0 ? 'bg-purple-50/40 border-purple-200 dark:bg-purple-950/20' : 'bg-card'
-                      }`}
-                    >
-                      <div className="text-xs font-semibold text-muted-foreground">{dayNum}</div>
-                      <div className="space-y-1 overflow-hidden">
-                        {dayLeaves.map((l) => (
-                          <div
-                            key={l.id}
-                            className="text-[10px] bg-purple-200 text-purple-900 dark:bg-purple-900 dark:text-purple-100 rounded px-1 py-0.5 font-medium truncate"
-                            title={`${l.employee?.firstName} ${l.employee?.lastName} - ${l.leaveType?.name}`}
-                          >
-                            {l.employee?.firstName} ({l.leaveType?.code})
-                          </div>
-                        ))}
+                  <div className="text-xs font-semibold text-muted-foreground">{dayNum}</div>
+                  <div className="space-y-1 overflow-hidden">
+                    {dayLeaves.map((l) => (
+                      <div
+                        key={l.id}
+                        className="text-[10px] bg-purple-200 text-purple-900 dark:bg-purple-900 dark:text-purple-100 rounded px-1 py-0.5 font-medium truncate"
+                        title={`${l.employee?.firstName} ${l.employee?.lastName} - ${l.leaveType?.name}`}
+                      >
+                        {l.employee?.firstName} ({l.leaveType?.code})
                       </div>
-                    </div>
-                  );
-                })}
-              </div>
-            </CardContent>
-          </Card>
-        </TabsContent>
-      </Tabs>
+                    ))}
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      )}
+      </ListingCard>
 
       {/* Request Leave Modal */}
       <Dialog open={requestModalOpen} onOpenChange={setRequestModalOpen}>
         <DialogContent onClose={() => setRequestModalOpen(false)}>
           <DialogHeader>
-            <DialogTitle>Submit Leave Request</DialogTitle>
-            <DialogDescription>
-              Working days are automatically calculated excluding weekends and company holidays.
-            </DialogDescription>
+            <DialogTitle>Leave Request</DialogTitle>
           </DialogHeader>
           <form onSubmit={handleSaveRequest} className="space-y-4">
             <div>
@@ -686,10 +663,7 @@ export default function Leave() {
       <Dialog open={rejectModalOpen} onOpenChange={setRejectModalOpen}>
         <DialogContent onClose={() => setRejectModalOpen(false)}>
           <DialogHeader>
-            <DialogTitle>Reject Leave Request</DialogTitle>
-            <DialogDescription>
-              A valid rejection reason is required so the employee understands why their request was denied.
-            </DialogDescription>
+            <DialogTitle>Reject Request</DialogTitle>
           </DialogHeader>
           <form onSubmit={handleConfirmReject} className="space-y-4">
             <div>
@@ -717,8 +691,7 @@ export default function Leave() {
       <Dialog open={typeModalOpen} onOpenChange={setTypeModalOpen}>
         <DialogContent onClose={() => setTypeModalOpen(false)}>
           <DialogHeader>
-            <DialogTitle>{editingType ? 'Edit Leave Type' : 'Create Leave Type'}</DialogTitle>
-            <DialogDescription>Configure quotas, carry-forward limits, and approval policies.</DialogDescription>
+            <DialogTitle>Leave Type</DialogTitle>
           </DialogHeader>
           <form onSubmit={handleSaveType} className="space-y-4">
             <div className="grid grid-cols-2 gap-3">

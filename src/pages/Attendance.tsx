@@ -6,6 +6,8 @@ import { useMemo } from 'react';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
+import { ListingCard } from '@/components/common/ListingCard';
+import { ListingHeader } from '@/components/common/ListingHeader';
 import { Input } from '@/components/ui/input';
 import {
   Select,
@@ -130,6 +132,7 @@ export default function Attendance() {
   const [manualOpen, setManualOpen] = useState(false);
   const [editingRecord, setEditingRecord] = useState<AttendanceRecord | null>(null);
   const [punchOpen, setPunchOpen] = useState(false);
+  const [activeTab, setActiveTab] = useState("register");
 
   // Manual Form
   const [manualForm, setManualForm] = useState({
@@ -346,29 +349,48 @@ export default function Attendance() {
   ], []);
 
   return (
-    <div className="space-y-6">
-      {/* Header */}
-      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
-        <div>
-          <h1 className="text-2xl font-bold tracking-tight">Attendance & Timesheets</h1>
-          <p className="text-sm text-muted-foreground mt-1">
-            Real-time workforce attendance tracking, shift calculations, grace evaluations, and leave resolution.
-          </p>
-        </div>
-        <div className="flex gap-2">
-          <Button variant="outline" onClick={() => { setPunchForm({ employeeId: employees[0]?.id || '', punchType: 'IN', punchTime: new Date().toISOString().substring(0, 16) }); setPunchOpen(true); }}>
-            <Fingerprint className="h-4 w-4 mr-2" />
-            Quick Punch
-          </Button>
-          <Button onClick={handleOpenManualCreate}>
-            <Plus className="h-4 w-4 mr-2" />
-            Record Attendance
-          </Button>
-        </div>
-      </div>
+    <div className="space-y-4">
+      <ListingCard>
+        <ListingHeader
+          title="Attendance & Timesheets"
+          subtitle="Real-time tracking, shift calculations, and leave resolution"
+          onRefresh={refetch}
+          tabs={{
+            value: activeTab,
+            onChange: setActiveTab,
+            options: [
+              { label: "Attendance Register", value: "register" },
+              { label: "Calendar View", value: "calendar" },
+              { label: "Raw Punch Logs", value: "punches" },
+            ],
+          }}
+        />
 
+        <div className="flex justify-between items-center mb-4">
+          <div className="flex gap-2">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => {
+                setPunchForm({
+                  employeeId: employees[0]?.id || "",
+                  punchType: "IN",
+                  punchTime: new Date().toISOString().substring(0, 16),
+                });
+                setPunchOpen(true);
+              }}
+            >
+              <Fingerprint className="h-3.5 w-3.5 mr-1.5" />
+              Quick Punch
+            </Button>
+            <Button size="sm" onClick={handleOpenManualCreate}>
+              <Plus className="h-3.5 w-3.5 mr-1.5" />
+              Record Attendance
+            </Button>
+          </div>
+        </div>
       {/* KPI Summary Cards */}
-      <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3">
+      <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3 mb-6">
         <Card>
           <CardContent className="p-4">
             <div className="flex items-center justify-between text-xs text-muted-foreground font-medium">
@@ -435,19 +457,11 @@ export default function Attendance() {
         </Card>
       </div>
 
-      {/* Main Tabs */}
-      <Tabs defaultValue="register">
-        <TabsList>
-          <TabsTrigger value="register">Attendance Register</TabsTrigger>
-          <TabsTrigger value="calendar">Calendar View</TabsTrigger>
-          <TabsTrigger value="punches">Raw Punch Logs</TabsTrigger>
-        </TabsList>
-
         {/* Tab 1: Attendance Register */}
-        <TabsContent value="register" className="space-y-4">
-          {/* Server-side Filter Bar */}
-          <Card>
-            <CardContent className="p-3 flex flex-wrap items-center gap-3">
+        {activeTab === "register" && (
+          <div className="space-y-4">
+            {/* Server-side Filter Bar */}
+            <div className="p-3 flex flex-wrap items-center gap-3 rounded-lg border border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-900/50">
               <div className="flex-1 min-w-[200px]">
                 <Select value={filterEmployeeId || "ALL"} onValueChange={(val) => setFilterEmployeeId(val === "ALL" ? "" : val)}>
                   <SelectTrigger>
@@ -496,24 +510,25 @@ export default function Attendance() {
               <Button size="sm" variant="outline" onClick={() => refetch()}>
                 <RefreshCw className="h-3.5 w-3.5 mr-1" /> Refresh
               </Button>
-            </CardContent>
-          </Card>
+            </div>
 
-          {/* Table */}
-          <div className="h-[500px]">
-            <DataGrid 
-              rowData={records} 
-              columnDefs={recordsColDefs} 
-              gridOptions={{
-                onRowDoubleClicked: (e) => handleOpenEdit(e.data)
-              }}
-            />
+            {/* Table */}
+            <div className="h-[500px]">
+              <DataGrid 
+                rowData={records} 
+                columnDefs={recordsColDefs} 
+                gridOptions={{
+                  onRowDoubleClicked: (e) => handleOpenEdit(e.data)
+                }}
+              />
+            </div>
           </div>
-        </TabsContent>
+        )}
 
         {/* Tab 2: Monthly Calendar View */}
-        <TabsContent value="calendar" className="space-y-4">
-          <Card>
+        {activeTab === "calendar" && (
+          <div className="space-y-4">
+            <div className="rounded-lg border border-slate-200 dark:border-slate-800">
             <div className="p-4 border-b flex justify-between items-center">
               <div>
                 <h3 className="font-semibold text-sm">Attendance Calendar Grid</h3>
@@ -528,7 +543,7 @@ export default function Attendance() {
                 />
               </div>
             </div>
-            <CardContent className="p-6">
+            <div className="p-6">
               <div className="grid grid-cols-7 gap-2 text-center text-xs font-semibold text-muted-foreground mb-2">
                 <div>Sun</div>
                 <div>Mon</div>
@@ -568,13 +583,15 @@ export default function Attendance() {
                   );
                 })}
               </div>
-            </CardContent>
-          </Card>
-        </TabsContent>
+            </div>
+          </div>
+        </div>
+        )}
 
         {/* Tab 3: Raw Attendance Punches / Logs */}
-        <TabsContent value="punches" className="space-y-4">
-          <Card>
+        {activeTab === "punches" && (
+          <div className="space-y-4">
+            <div className="rounded-lg border border-slate-200 dark:border-slate-800">
             <div className="p-4 border-b flex justify-between items-center">
               <div>
                 <h3 className="font-semibold text-sm">Biometric & Web Punch Stream</h3>
@@ -587,18 +604,16 @@ export default function Attendance() {
             <div className="h-[400px]">
               <DataGrid rowData={punchLogs || []} columnDefs={punchLogsColDefs} />
             </div>
-          </Card>
-        </TabsContent>
-      </Tabs>
+          </div>
+        </div>
+        )}
+      </ListingCard>
 
       {/* Manual Attendance Dialog */}
       <Dialog open={manualOpen} onOpenChange={setManualOpen}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>{editingRecord ? 'Edit Attendance Record' : 'Record Manual Attendance'}</DialogTitle>
-            <DialogDescription>
-              Working hours, grace rules, and overtime will be auto-calculated using the assigned shift.
-            </DialogDescription>
+            <DialogTitle>Attendance</DialogTitle>
           </DialogHeader>
           <form onSubmit={handleSaveManual} className="space-y-4">
             <div>
@@ -702,8 +717,7 @@ export default function Attendance() {
       <Dialog open={punchOpen} onOpenChange={setPunchOpen}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>Log Attendance Punch</DialogTitle>
-            <DialogDescription>Simulate or record an employee check-in or check-out punch timestamp.</DialogDescription>
+            <DialogTitle>Log Punch</DialogTitle>
           </DialogHeader>
           <form onSubmit={handleSavePunch} className="space-y-4">
             <div>
