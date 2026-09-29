@@ -10,6 +10,7 @@ import {
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { useAlert } from "@/components/common";
 import { Label } from "@/components/ui/label";
 import { NativeSelect } from "@/components/ui/select";
 import {
@@ -65,6 +66,7 @@ import {
 export default function PayrollDetails() {
   const { id } = useParams<{ id: string }>();
   const nav = useNavigate();
+  const { confirm } = useAlert();
 
   const [searchTerm, setSearchTerm] = useState<string>("");
   const [departmentFilter, setDepartmentFilter] = useState<string>("ALL");
@@ -160,7 +162,13 @@ export default function PayrollDetails() {
 
   const handleFinalize = async () => {
     if (!id) return;
-    if (!window.confirm("Finalizing will freeze this payroll run and generate payslips. Proceed?")) return;
+    const ok = await confirm({
+      title: "Finalize Payroll?",
+      message: "This will freeze the payroll run and generate payslips for all employees. This cannot be undone.",
+      confirmText: "Yes, Finalize",
+      cancelText: "Not yet",
+    });
+    if (!ok) return;
     try {
       await finalizeMutation.mutateAsync(id);
       toast.success("Payroll finalized & payslips generated");
@@ -174,7 +182,13 @@ export default function PayrollDetails() {
 
   const handleCancel = async () => {
     if (!id) return;
-    if (!window.confirm("Are you sure you want to cancel this payroll run?")) return;
+    const ok = await confirm({
+      title: "Cancel Payroll Run?",
+      message: "This payroll run will be cancelled and all computed data will be discarded.",
+      confirmText: "Yes, Cancel Run",
+      cancelText: "Keep it",
+    });
+    if (!ok) return;
     try {
       await cancelMutation.mutateAsync(id);
       toast.success("Payroll run cancelled");

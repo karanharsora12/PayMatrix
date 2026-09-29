@@ -130,7 +130,6 @@ export default function Holidays() {
   };
 
   const handleDeleteHoliday = async (id: string, name: string) => {
-    if (!confirm(`Are you sure you want to delete "${name}"?`)) return;
     try {
       await deleteHolidayMutation.mutateAsync(id);
       toast.success("Holiday deleted");

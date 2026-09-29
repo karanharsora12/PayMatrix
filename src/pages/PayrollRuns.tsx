@@ -12,6 +12,7 @@ import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { NativeSelect } from "@/components/ui/select";
 import { DataGrid } from "@/components/common/DataGrid";
+import { useAlert } from "@/components/common";
 import type { ColDef } from "ag-grid-community";
 import { useMemo } from "react";
 import {
@@ -41,6 +42,7 @@ import { toast } from "sonner";
 
 export default function PayrollRuns() {
   const nav = useNavigate();
+  const { confirm } = useAlert();
   const [yearFilter, setYearFilter] = useState<string>("ALL");
   const [statusFilter, setStatusFilter] = useState<string>("ALL");
   const [searchTerm, setSearchTerm] = useState<string>("");
@@ -107,8 +109,13 @@ export default function PayrollRuns() {
 
   const handleCancel = async (id: string, e: React.MouseEvent) => {
     e.stopPropagation();
-    if (!window.confirm("Are you sure you want to cancel this payroll run?"))
-      return;
+    const ok = await confirm({
+      title: "Cancel Payroll Run?",
+      message: "This payroll run will be cancelled. Any computed data will be discarded.",
+      confirmText: "Yes, Cancel Run",
+      cancelText: "Keep it",
+    });
+    if (!ok) return;
     try {
       await cancelMutation.mutateAsync(id);
       toast.success("Payroll run cancelled");

@@ -5,6 +5,7 @@ import { Badge } from '@/components/ui/badge';
 import { DataGrid } from '@/components/common/DataGrid';
 import { ListingCard } from '@/components/common/ListingCard';
 import { ListingHeader } from '@/components/common/ListingHeader';
+import { useAlert } from '@/components/common';
 import { gridExportExcel, gridExportPdf, gridPrint } from '@/lib/gridExport';
 import type { AgGridReact } from 'ag-grid-react';
 import type { ColDef } from 'ag-grid-community';
@@ -48,6 +49,7 @@ import { useEmployees } from '@/hooks/useEmployees';
 import type { LeaveType, LeaveRequest } from '@/api/leave';
 
 export default function Leave() {
+  const { confirm } = useAlert();
   const currentYear = new Date().getFullYear();
   const todayStr = new Date().toISOString().substring(0, 10);
   const currentMonthStr = todayStr.substring(0, 7);
@@ -211,7 +213,6 @@ export default function Leave() {
   };
 
   const handleDeleteType = async (id: string, name: string) => {
-    if (!confirm(`Delete leave type "${name}"?`)) return;
     try {
       await deleteTypeMutation.mutateAsync(id);
       toast.success('Leave type deleted');
@@ -256,7 +257,13 @@ export default function Leave() {
   };
 
   const handleCancel = async (id: string) => {
-    if (!confirm('Are you sure you want to cancel this leave request? If approved, balance will be restored.')) return;
+    const ok = await confirm({
+      title: 'Cancel Leave Request?',
+      message: 'If approved, the leave balance will be restored. This cannot be undone.',
+      confirmText: 'Yes, Cancel Request',
+      cancelText: 'Keep it',
+    });
+    if (!ok) return;
     try {
       await cancelMutation.mutateAsync(id);
       toast.success('Leave request cancelled and balance restored');

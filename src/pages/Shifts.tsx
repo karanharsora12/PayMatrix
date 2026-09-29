@@ -140,7 +140,6 @@ export default function Shifts() {
   };
 
   const handleDeleteShift = async (id: string, name: string) => {
-    if (!confirm(`Are you sure you want to delete shift "${name}"?`)) return;
     try {
       await deleteShiftMutation.mutateAsync(id);
       toast.success("Shift deleted");
