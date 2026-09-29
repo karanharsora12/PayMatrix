@@ -262,17 +262,13 @@ export default function SalaryStructures() {
   };
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 p-3">
       {/* Top Header */}
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
         <div>
           <h1 className="text-2xl font-bold tracking-tight">
             Salary Structure Builder
           </h1>
-          <p className="text-sm text-muted-foreground">
-            Design configurable salary templates with live mathematical preview
-            and dependency validation.
-          </p>
         </div>
         <Button onClick={() => setIsCreateOpen(true)} className="shadow-sm">
           <Plus className="h-4 w-4 mr-2" /> Create Structure

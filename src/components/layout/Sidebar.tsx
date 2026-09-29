@@ -54,7 +54,6 @@ const nav = [
       { label: "Employees", icon: Users, path: "/employees" },
       { label: "Employee Groups", icon: UsersRound, path: "/employee-groups" },
       { label: "Documents", icon: File, path: "/documents" },
-      { label: "Bank Accounts", icon: Landmark, path: "/bank-accounts" },
     ],
   },
   {
@@ -68,14 +67,11 @@ const nav = [
       },
       { label: "Shifts", icon: Timer, path: "/shifts" },
       { label: "Holidays", icon: CalendarRange, path: "/holidays" },
-      { label: "Overtime", icon: Timer, path: "/overtime" },
     ],
   },
   {
     group: "Leave",
-    items: [
-      { label: "Leave Management", icon: Palmtree, path: "/leave" },
-    ],
+    items: [{ label: "Leave Management", icon: Palmtree, path: "/leave" }],
   },
   {
     group: "Payroll",
@@ -89,27 +85,7 @@ const nav = [
       { label: "Employee Salary", icon: UserCheck, path: "/employee-salary" },
       { label: "Payroll Runs", icon: Wallet, path: "/payroll" },
       { label: "Payslips", icon: Receipt, path: "/payslips" },
-      { label: "Bonuses", icon: Gift, path: "/bonuses" },
-      { label: "Deductions", icon: MinusCircle, path: "/deductions" },
-      { label: "Loans", icon: Banknote, path: "/loans" },
-      { label: "Advances", icon: Banknote, path: "/advances" },
     ],
-  },
-  {
-    group: "Compliance",
-    items: [
-      { label: "Tax", icon: Scale, path: "/compliance/tax" },
-      {
-        label: "PF / Provident Fund",
-        icon: ShieldCheck,
-        path: "/compliance/pf",
-      },
-      { label: "ESI", icon: ShieldCheck, path: "/compliance/esi" },
-    ],
-  },
-  {
-    group: "Reports",
-    items: [{ label: "Reports", icon: BarChart3, path: "/reports" }],
   },
   {
     group: "Administration",

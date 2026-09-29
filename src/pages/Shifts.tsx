@@ -1,19 +1,21 @@
-import { useState } from 'react';
-import { Card, CardContent } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
-import { DataGrid } from '@/components/common/DataGrid';
-import type { ColDef } from 'ag-grid-community';
-import { useMemo } from 'react';
+import { useState } from "react";
+import { Card, CardContent } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
+import { DataGrid } from "@/components/common/DataGrid";
+import { ListingCard } from "@/components/common/ListingCard";
+import { ListingHeader } from "@/components/common/ListingHeader";
+import type { ColDef } from "ag-grid-community";
+import { useMemo } from "react";
 import {
   Dialog,
   DialogContent,
   DialogHeader,
   DialogTitle,
   DialogDescription,
-} from '@/components/ui/dialog';
-import { Input } from '@/components/ui/input';
-import { NativeSelect } from '@/components/ui/select';
+} from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
+import { NativeSelect } from "@/components/ui/select";
 import {
   Plus,
   Clock,
@@ -23,8 +25,8 @@ import {
   Trash2,
   UserCheck,
   History,
-} from 'lucide-react';
-import { toast } from 'sonner';
+} from "lucide-react";
+import { toast } from "sonner";
 import {
   useShifts,
   useCreateShift,
@@ -32,9 +34,9 @@ import {
   useDeleteShift,
   useAssignShift,
   useEmployeeShifts,
-} from '@/hooks/useShifts';
-import { useEmployees } from '@/hooks/useEmployees';
-import type { Shift } from '@/api/shifts';
+} from "@/hooks/useShifts";
+import { useEmployees } from "@/hooks/useEmployees";
+import type { Shift } from "@/api/shifts";
 
 export default function Shifts() {
   const { data: shiftsData, isLoading } = useShifts({ pageSize: 50 });
@@ -52,15 +54,17 @@ export default function Shifts() {
   const [createOpen, setCreateOpen] = useState(false);
   const [editingShift, setEditingShift] = useState<Shift | null>(null);
   const [assignOpen, setAssignOpen] = useState(false);
-  const [selectedShiftForAssign, setSelectedShiftForAssign] = useState<Shift | null>(null);
+  const [selectedShiftForAssign, setSelectedShiftForAssign] =
+    useState<Shift | null>(null);
   const [historyEmpId, setHistoryEmpId] = useState<string | null>(null);
+  const [activeTab, setActiveTab] = useState("shifts");
 
   // Form states
   const [form, setForm] = useState({
-    code: '',
-    name: '',
-    startTime: '09:30',
-    endTime: '18:30',
+    code: "",
+    name: "",
+    startTime: "09:30",
+    endTime: "18:30",
     breakMinutes: 60,
     workingHours: 8,
     graceMinutes: 15,
@@ -70,20 +74,22 @@ export default function Shifts() {
   });
 
   const [assignForm, setAssignForm] = useState({
-    employeeId: '',
-    shiftId: '',
+    employeeId: "",
+    shiftId: "",
     effectiveFrom: new Date().toISOString().substring(0, 10),
-    effectiveTo: '',
+    effectiveTo: "",
   });
 
-  const { data: historyData, isLoading: historyLoading } = useEmployeeShifts(historyEmpId ?? undefined);
+  const { data: historyData, isLoading: historyLoading } = useEmployeeShifts(
+    historyEmpId ?? undefined,
+  );
 
   const resetForm = () => {
     setForm({
-      code: '',
-      name: '',
-      startTime: '09:30',
-      endTime: '18:30',
+      code: "",
+      name: "",
+      startTime: "09:30",
+      endTime: "18:30",
       breakMinutes: 60,
       workingHours: 8,
       graceMinutes: 15,
@@ -119,7 +125,7 @@ export default function Shifts() {
   const handleSaveShift = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!form.code.trim() || !form.name.trim()) {
-      toast.error('Code and Name are required');
+      toast.error("Code and Name are required");
       return;
     }
 
@@ -129,15 +135,19 @@ export default function Shifts() {
           id: editingShift.id,
           payload: form,
         });
-        toast.success('Shift updated successfully');
+        toast.success("Shift updated successfully");
       } else {
         await createShiftMutation.mutateAsync(form);
-        toast.success('Shift created successfully');
+        toast.success("Shift created successfully");
       }
       setCreateOpen(false);
       resetForm();
     } catch (err: any) {
-      toast.error(err.response?.data?.error?.message || err.message || 'Failed to save shift');
+      toast.error(
+        err.response?.data?.error?.message ||
+          err.message ||
+          "Failed to save shift",
+      );
     }
   };
 
@@ -145,27 +155,35 @@ export default function Shifts() {
     if (!confirm(`Are you sure you want to delete shift "${name}"?`)) return;
     try {
       await deleteShiftMutation.mutateAsync(id);
-      toast.success('Shift deleted');
+      toast.success("Shift deleted");
     } catch (err: any) {
-      toast.error(err.response?.data?.error?.message || err.message || 'Failed to delete shift');
+      toast.error(
+        err.response?.data?.error?.message ||
+          err.message ||
+          "Failed to delete shift",
+      );
     }
   };
 
   const handleOpenAssign = (shift?: Shift) => {
     setSelectedShiftForAssign(shift ?? null);
     setAssignForm({
-      employeeId: '',
-      shiftId: shift?.id ?? (shifts[0]?.id || ''),
+      employeeId: "",
+      shiftId: shift?.id ?? (shifts[0]?.id || ""),
       effectiveFrom: new Date().toISOString().substring(0, 10),
-      effectiveTo: '',
+      effectiveTo: "",
     });
     setAssignOpen(true);
   };
 
   const handleSaveAssign = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!assignForm.employeeId || !assignForm.shiftId || !assignForm.effectiveFrom) {
-      toast.error('Employee, Shift and Effective Date are required');
+    if (
+      !assignForm.employeeId ||
+      !assignForm.shiftId ||
+      !assignForm.effectiveFrom
+    ) {
+      toast.error("Employee, Shift and Effective Date are required");
       return;
     }
 
@@ -178,182 +196,255 @@ export default function Shifts() {
           effectiveTo: assignForm.effectiveTo || undefined,
         },
       });
-      toast.success('Shift assigned to employee successfully');
+      toast.success("Shift assigned to employee successfully");
       setAssignOpen(false);
     } catch (err: any) {
       toast.error(
         err.response?.data?.error?.message ||
           err.message ||
-          'Failed to assign shift. Overlapping assignment may exist.',
+          "Failed to assign shift. Overlapping assignment may exist.",
       );
     }
   };
 
-  const shiftsColDefs = useMemo<ColDef[]>(() => [
-    { field: "code", headerName: "Code", width: 100 },
-    { field: "name", headerName: "Name", flex: 1 },
-    { 
-      field: "timing", 
-      headerName: "Timing", 
-      width: 150,
-      valueGetter: (p) => p.data.startTime ? `${p.data.startTime.substring(0, 5)} - ${p.data.endTime.substring(0, 5)}` : '',
-      cellRenderer: (p: any) => (
-        <div className="flex items-center gap-1.5 text-sm h-full">
-          <Clock className="h-3.5 w-3.5 text-muted-foreground" />
-          <span>{p.value}</span>
-        </div>
-      )
-    },
-    { field: "workingHours", headerName: "Work Hours", width: 120, valueFormatter: (p) => `${Number(p.value)}h` },
-    { field: "breakMinutes", headerName: "Break", width: 100, valueFormatter: (p) => `${p.value}m` },
-    { field: "graceMinutes", headerName: "Grace", width: 100, valueFormatter: (p) => `${p.value}m` },
-    { 
-      field: "overtimeAllowed", 
-      headerName: "Overtime", 
-      width: 120,
-      cellRenderer: (p: any) => (
-        <div className="flex items-center h-full">
-          <div className={`h-2.5 w-2.5 rounded-full ${p.value ? "bg-emerald-500" : "bg-red-500"}`} title={p.value ? "Active" : "Inactive"} />
-        </div>
-      )
-    },
-    {
-      field: "isNightShift",
-      headerName: "Type",
-      width: 120,
-      cellRenderer: (p: any) => p.value ? (
-        <span className="inline-flex items-center gap-1 text-xs font-medium px-2 py-0.5 rounded bg-indigo-50 text-indigo-700 dark:bg-indigo-950 dark:text-indigo-300">
-          <Moon className="h-3 w-3" /> Night
-        </span>
-      ) : <span className="text-xs text-muted-foreground">Regular</span>
-    },
-    { 
-      field: "isActive", 
-      headerName: "Status", 
-      width: 100,
-      cellRenderer: (p: any) => (
-        <div className="flex items-center h-full">
-          <div className={`h-2.5 w-2.5 rounded-full ${p.value ? "bg-emerald-500" : "bg-red-500"}`} title={p.value ? "Active" : "Inactive"} />
-        </div>
-      )
-    },
-    {
-      headerName: "",
-      width: 110,
-      sortable: false,
-      filter: false,
-      cellRenderer: (p: any) => (
-        <div className="flex items-center justify-end gap-1 h-full">
-          <Button size="sm" variant="ghost" title="Assign to Employee" className="h-8 w-8" onClick={(e) => { e.stopPropagation(); handleOpenAssign(p.data); }}>
-            <UserCheck className="h-3.5 w-3.5 text-muted-foreground" />
-          </Button>
-          <Button size="sm" variant="ghost" title="Delete Shift" className="h-8 w-8" onClick={(e) => { e.stopPropagation(); handleDeleteShift(p.data.id, p.data.name); }}>
-            <Trash2 className="h-3.5 w-3.5 text-red-500" />
-          </Button>
-        </div>
-      )
-    }
-  ], []);
+  const shiftsColDefs = useMemo<ColDef[]>(
+    () => [
+      { field: "code", headerName: "Code", width: 100 },
+      { field: "name", headerName: "Name", flex: 1 },
+      {
+        field: "timing",
+        headerName: "Timing",
+        width: 150,
+        valueGetter: (p) =>
+          p.data.startTime
+            ? `${p.data.startTime.substring(0, 5)} - ${p.data.endTime.substring(0, 5)}`
+            : "",
+        cellRenderer: (p: any) => (
+          <div className="flex items-center gap-1.5 text-sm h-full">
+            <Clock className="h-3.5 w-3.5 text-muted-foreground" />
+            <span>{p.value}</span>
+          </div>
+        ),
+      },
+      {
+        field: "workingHours",
+        headerName: "Work Hours",
+        width: 120,
+        valueFormatter: (p) => `${Number(p.value)}h`,
+      },
+      {
+        field: "breakMinutes",
+        headerName: "Break",
+        width: 100,
+        valueFormatter: (p) => `${p.value}m`,
+      },
+      {
+        field: "graceMinutes",
+        headerName: "Grace",
+        width: 100,
+        valueFormatter: (p) => `${p.value}m`,
+      },
+      {
+        field: "overtimeAllowed",
+        headerName: "Overtime",
+        width: 120,
+        cellRenderer: (p: any) => (
+          <div className="flex items-center h-full">
+            <div
+              className={`h-2.5 w-2.5 rounded-full ${p.value ? "bg-emerald-500" : "bg-red-500"}`}
+              title={p.value ? "Active" : "Inactive"}
+            />
+          </div>
+        ),
+      },
+      {
+        field: "isNightShift",
+        headerName: "Type",
+        width: 120,
+        cellRenderer: (p: any) =>
+          p.value ? (
+            <span className="inline-flex items-center gap-1 text-xs font-medium px-2 py-0.5 rounded bg-indigo-50 text-indigo-700 dark:bg-indigo-950 dark:text-indigo-300">
+              <Moon className="h-3 w-3" /> Night
+            </span>
+          ) : (
+            <span className="text-xs text-muted-foreground">Regular</span>
+          ),
+      },
+      {
+        field: "isActive",
+        headerName: "Status",
+        width: 100,
+        cellRenderer: (p: any) => (
+          <div className="flex items-center h-full">
+            <div
+              className={`h-2.5 w-2.5 rounded-full ${p.value ? "bg-emerald-500" : "bg-red-500"}`}
+              title={p.value ? "Active" : "Inactive"}
+            />
+          </div>
+        ),
+      },
+      {
+        headerName: "",
+        width: 110,
+        sortable: false,
+        filter: false,
+        cellRenderer: (p: any) => (
+          <div className="flex items-center justify-end gap-1 h-full">
+            <Button
+              size="sm"
+              variant="ghost"
+              title="Delete Shift"
+              className="h-8 w-8"
+              onClick={(e) => {
+                e.stopPropagation();
+                handleDeleteShift(p.data.id, p.data.name);
+              }}
+            >
+              <Trash2 className="h-3.5 w-3.5 text-red-500" />
+            </Button>
+          </div>
+        ),
+      },
+    ],
+    [],
+  );
 
-  const historyColDefs = useMemo<ColDef[]>(() => [
-    { 
-      field: "shiftName", 
-      headerName: "Shift", 
-      flex: 1,
-      valueGetter: (p) => p.data.shift ? `${p.data.shift.name} (${p.data.shift.code})` : '—'
-    },
-    { 
-      field: "timings", 
-      headerName: "Timings", 
-      flex: 1,
-      valueGetter: (p) => p.data.shift ? `${p.data.shift.startTime.substring(0, 5)} - ${p.data.shift.endTime.substring(0, 5)}` : '—'
-    },
-    { field: "effectiveFrom", headerName: "Effective From", flex: 1 },
-    { 
-      field: "effectiveTo", 
-      headerName: "Effective To", 
-      flex: 1,
-      valueFormatter: (p) => p.value || 'Ongoing / Indefinite'
-    },
-    { 
-      field: "status", 
-      headerName: "Status", 
-      width: 120,
-      valueGetter: (p) => !p.data.effectiveTo || p.data.effectiveTo >= new Date().toISOString().substring(0, 10),
-      cellRenderer: (p: any) => (
-        <div className="flex items-center h-full">
-          <div className={`h-2.5 w-2.5 rounded-full ${p.value ? "bg-emerald-500" : "bg-red-500"}`} title={p.value ? "Active" : "Inactive"} />
-        </div>
-      )
-    }
-  ], []);
+  const historyColDefs = useMemo<ColDef[]>(
+    () => [
+      {
+        field: "shiftName",
+        headerName: "Shift",
+        flex: 1,
+        valueGetter: (p) =>
+          p.data.shift ? `${p.data.shift.name} (${p.data.shift.code})` : "—",
+      },
+      {
+        field: "timings",
+        headerName: "Timings",
+        flex: 1,
+        valueGetter: (p) =>
+          p.data.shift
+            ? `${p.data.shift.startTime.substring(0, 5)} - ${p.data.shift.endTime.substring(0, 5)}`
+            : "—",
+      },
+      { field: "effectiveFrom", headerName: "Effective From", flex: 1 },
+      {
+        field: "effectiveTo",
+        headerName: "Effective To",
+        flex: 1,
+        valueFormatter: (p) => p.value || "Ongoing / Indefinite",
+      },
+      {
+        field: "status",
+        headerName: "Status",
+        width: 120,
+        valueGetter: (p) =>
+          !p.data.effectiveTo ||
+          p.data.effectiveTo >= new Date().toISOString().substring(0, 10),
+        cellRenderer: (p: any) => (
+          <div className="flex items-center h-full">
+            <div
+              className={`h-2.5 w-2.5 rounded-full ${p.value ? "bg-emerald-500" : "bg-red-500"}`}
+              title={p.value ? "Active" : "Inactive"}
+            />
+          </div>
+        ),
+      },
+    ],
+    [],
+  );
 
   return (
-    <div className="space-y-6">
-      {/* Header */}
-      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
-        <div>
-          <h1 className="text-2xl font-bold tracking-tight">Shift Management</h1>
-          <p className="text-sm text-muted-foreground mt-1">
-            Configure work schedules, overnight night shifts, grace periods, and assign shifts to employees.
-          </p>
-        </div>
-        <div className="flex gap-2">
-          <Button variant="outline" onClick={() => handleOpenAssign()}>
-            <UserCheck className="h-4 w-4 mr-2" />
-            Assign Shift
-          </Button>
-          <Button onClick={handleOpenCreate}>
-            <Plus className="h-4 w-4 mr-2" />
-            Add Shift
-          </Button>
-        </div>
-      </div>
-
-      {/* Shifts Table Card */}
-      <div className="h-[500px]">
-        <DataGrid 
-          rowData={shifts} 
-          columnDefs={shiftsColDefs} 
-          gridOptions={{
-            onRowDoubleClicked: (e) => handleOpenEdit(e.data)
+    <div className="space-y-4">
+      <ListingCard>
+        <ListingHeader
+          title="Shift Management"
+          subtitle="Configure work schedules, overnight night shifts, and grace periods."
+          onAddNew={activeTab === "shifts" ? handleOpenCreate : undefined}
+          addButtonText="Add Shift"
+          tabs={{
+            value: activeTab,
+            onChange: setActiveTab,
+            options: [
+              { label: "Shifts Configuration", value: "shifts" },
+              { label: "Employee Shift History", value: "history" },
+            ],
           }}
         />
-      </div>
 
-      {/* Employee Shift History Quick View */}
-      <Card>
-        <div className="p-4 border-b flex justify-between items-center">
-          <div className="flex items-center gap-2">
-            <History className="h-4 w-4 text-muted-foreground" />
-            <h3 className="font-semibold text-sm">Employee Shift History Lookup</h3>
-          </div>
-          <div className="w-64">
-            <NativeSelect
-              placeholder="Select employee to view history"
-              value={historyEmpId ?? ''}
-              onChange={(val) => setHistoryEmpId(val || null)}
-            >
-              {employees.map((e) => (
-                <option key={e.id} value={e.id}>
-                  {e.firstName} {e.lastName} ({e.employeeCode})
-                </option>
-              ))}
-            </NativeSelect>
-          </div>
-        </div>
-        <CardContent className="p-0">
-          {historyEmpId ? (
-            <div className="h-[300px]">
-              <DataGrid rowData={historyData || []} columnDefs={historyColDefs} />
+        {activeTab === "shifts" && (
+          <div className="space-y-4 mt-2">
+            {/* Shifts Table Card */}
+            <div className="h-[500px]">
+              <DataGrid
+                rowData={shifts}
+                columnDefs={shiftsColDefs}
+                gridOptions={{
+                  onRowDoubleClicked: (e) => handleOpenEdit(e.data),
+                  getContextMenuItems: (params) => {
+                    return [
+                      {
+                        name: "Assign Shift",
+                        action: () => {
+                          if (params.node?.data) {
+                            handleOpenAssign(params.node.data);
+                          }
+                        },
+                      },
+                      "separator",
+                      "copy",
+                      "export",
+                    ];
+                  },
+                }}
+              />
             </div>
-          ) : (
-            <div className="p-8 text-center text-sm text-muted-foreground">
-              Select an employee above to inspect their shift allocation timeline.
+          </div>
+        )}
+
+        {activeTab === "history" && (
+          <div className="space-y-4 mt-2">
+            <div className="rounded-lg border border-slate-200 dark:border-slate-800">
+              <div className="p-4 border-b border-slate-200 dark:border-slate-800 flex justify-between items-center bg-slate-50/50 dark:bg-slate-900/50">
+                <div className="flex items-center gap-2">
+                  <History className="h-4 w-4 text-muted-foreground" />
+                  <h3 className="font-semibold text-sm">
+                    Employee Shift History Lookup
+                  </h3>
+                </div>
+                <div className="w-64">
+                  <NativeSelect
+                    placeholder="Select employee to view history"
+                    value={historyEmpId ?? ""}
+                    onChange={(val) => setHistoryEmpId(val || null)}
+                  >
+                    {employees.map((e) => (
+                      <option key={e.id} value={e.id}>
+                        {e.firstName} {e.lastName} ({e.employeeCode})
+                      </option>
+                    ))}
+                  </NativeSelect>
+                </div>
+              </div>
+              <div className="p-0">
+                {historyEmpId ? (
+                  <div className="h-[400px]">
+                    <DataGrid
+                      rowData={historyData || []}
+                      columnDefs={historyColDefs}
+                    />
+                  </div>
+                ) : (
+                  <div className="p-8 text-center text-sm text-muted-foreground">
+                    Select an employee above to inspect their shift allocation
+                    timeline.
+                  </div>
+                )}
+              </div>
             </div>
-          )}
-        </CardContent>
-      </Card>
+          </div>
+        )}
+      </ListingCard>
 
       {/* Create / Edit Shift Modal */}
       <Dialog open={createOpen} onOpenChange={setCreateOpen}>
@@ -364,7 +455,9 @@ export default function Shifts() {
           <form onSubmit={handleSaveShift} className="space-y-4">
             <div className="grid grid-cols-2 gap-3">
               <div>
-                <label className="text-xs font-medium text-muted-foreground">Shift Code</label>
+                <label className="text-xs font-medium text-muted-foreground">
+                  Shift Code
+                </label>
                 <Input
                   placeholder="e.g. SH-GEN"
                   value={form.code}
@@ -373,7 +466,9 @@ export default function Shifts() {
                 />
               </div>
               <div>
-                <label className="text-xs font-medium text-muted-foreground">Shift Name</label>
+                <label className="text-xs font-medium text-muted-foreground">
+                  Shift Name
+                </label>
                 <Input
                   placeholder="e.g. General Shift"
                   value={form.name}
@@ -385,20 +480,28 @@ export default function Shifts() {
 
             <div className="grid grid-cols-2 gap-3">
               <div>
-                <label className="text-xs font-medium text-muted-foreground">Start Time (HH:mm)</label>
+                <label className="text-xs font-medium text-muted-foreground">
+                  Start Time (HH:mm)
+                </label>
                 <Input
                   type="time"
                   value={form.startTime}
-                  onChange={(e) => setForm({ ...form, startTime: e.target.value })}
+                  onChange={(e) =>
+                    setForm({ ...form, startTime: e.target.value })
+                  }
                   required
                 />
               </div>
               <div>
-                <label className="text-xs font-medium text-muted-foreground">End Time (HH:mm)</label>
+                <label className="text-xs font-medium text-muted-foreground">
+                  End Time (HH:mm)
+                </label>
                 <Input
                   type="time"
                   value={form.endTime}
-                  onChange={(e) => setForm({ ...form, endTime: e.target.value })}
+                  onChange={(e) =>
+                    setForm({ ...form, endTime: e.target.value })
+                  }
                   required
                 />
               </div>
@@ -406,33 +509,45 @@ export default function Shifts() {
 
             <div className="grid grid-cols-3 gap-3">
               <div>
-                <label className="text-xs font-medium text-muted-foreground">Work Hours</label>
+                <label className="text-xs font-medium text-muted-foreground">
+                  Work Hours
+                </label>
                 <Input
                   type="number"
                   step="0.5"
                   min="1"
                   max="24"
                   value={form.workingHours}
-                  onChange={(e) => setForm({ ...form, workingHours: Number(e.target.value) })}
+                  onChange={(e) =>
+                    setForm({ ...form, workingHours: Number(e.target.value) })
+                  }
                   required
                 />
               </div>
               <div>
-                <label className="text-xs font-medium text-muted-foreground">Break (Mins)</label>
+                <label className="text-xs font-medium text-muted-foreground">
+                  Break (Mins)
+                </label>
                 <Input
                   type="number"
                   min="0"
                   value={form.breakMinutes}
-                  onChange={(e) => setForm({ ...form, breakMinutes: Number(e.target.value) })}
+                  onChange={(e) =>
+                    setForm({ ...form, breakMinutes: Number(e.target.value) })
+                  }
                 />
               </div>
               <div>
-                <label className="text-xs font-medium text-muted-foreground">Grace (Mins)</label>
+                <label className="text-xs font-medium text-muted-foreground">
+                  Grace (Mins)
+                </label>
                 <Input
                   type="number"
                   min="0"
                   value={form.graceMinutes}
-                  onChange={(e) => setForm({ ...form, graceMinutes: Number(e.target.value) })}
+                  onChange={(e) =>
+                    setForm({ ...form, graceMinutes: Number(e.target.value) })
+                  }
                 />
               </div>
             </div>
@@ -442,7 +557,9 @@ export default function Shifts() {
                 <input
                   type="checkbox"
                   checked={form.overtimeAllowed}
-                  onChange={(e) => setForm({ ...form, overtimeAllowed: e.target.checked })}
+                  onChange={(e) =>
+                    setForm({ ...form, overtimeAllowed: e.target.checked })
+                  }
                   className="rounded border-gray-300"
                 />
                 <span>Allow Overtime calculation for this shift</span>
@@ -452,7 +569,9 @@ export default function Shifts() {
                 <input
                   type="checkbox"
                   checked={form.isNightShift}
-                  onChange={(e) => setForm({ ...form, isNightShift: e.target.checked })}
+                  onChange={(e) =>
+                    setForm({ ...form, isNightShift: e.target.checked })
+                  }
                   className="rounded border-gray-300"
                 />
                 <span>Night Shift (crosses midnight)</span>
@@ -462,7 +581,9 @@ export default function Shifts() {
                 <input
                   type="checkbox"
                   checked={form.isActive}
-                  onChange={(e) => setForm({ ...form, isActive: e.target.checked })}
+                  onChange={(e) =>
+                    setForm({ ...form, isActive: e.target.checked })
+                  }
                   className="rounded border-gray-300"
                 />
                 <span>Active</span>
@@ -470,11 +591,20 @@ export default function Shifts() {
             </div>
 
             <div className="flex justify-end gap-2 pt-4">
-              <Button type="button" variant="outline" onClick={() => setCreateOpen(false)}>
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => setCreateOpen(false)}
+              >
                 Cancel
               </Button>
-              <Button type="submit" disabled={createShiftMutation.isPending || updateShiftMutation.isPending}>
-                {editingShift ? 'Save Changes' : 'Create Shift'}
+              <Button
+                type="submit"
+                disabled={
+                  createShiftMutation.isPending || updateShiftMutation.isPending
+                }
+              >
+                {editingShift ? "Save Changes" : "Create Shift"}
               </Button>
             </div>
           </form>
@@ -489,11 +619,15 @@ export default function Shifts() {
           </DialogHeader>
           <form onSubmit={handleSaveAssign} className="space-y-4">
             <div>
-              <label className="text-xs font-medium text-muted-foreground">Select Employee</label>
+              <label className="text-xs font-medium text-muted-foreground">
+                Select Employee
+              </label>
               <NativeSelect
                 placeholder="Choose employee"
                 value={assignForm.employeeId}
-                onChange={(val) => setAssignForm({ ...assignForm, employeeId: val || '' })}
+                onChange={(val) =>
+                  setAssignForm({ ...assignForm, employeeId: val || "" })
+                }
                 required
               >
                 {employees.map((e) => (
@@ -505,16 +639,21 @@ export default function Shifts() {
             </div>
 
             <div>
-              <label className="text-xs font-medium text-muted-foreground">Select Shift</label>
+              <label className="text-xs font-medium text-muted-foreground">
+                Select Shift
+              </label>
               <NativeSelect
                 placeholder="Choose shift"
                 value={assignForm.shiftId}
-                onChange={(val) => setAssignForm({ ...assignForm, shiftId: val || '' })}
+                onChange={(val) =>
+                  setAssignForm({ ...assignForm, shiftId: val || "" })
+                }
                 required
               >
                 {shifts.map((s) => (
                   <option key={s.id} value={s.id}>
-                    {s.name} ({s.code}) — {s.startTime.substring(0, 5)} to {s.endTime.substring(0, 5)}
+                    {s.name} ({s.code}) — {s.startTime.substring(0, 5)} to{" "}
+                    {s.endTime.substring(0, 5)}
                   </option>
                 ))}
               </NativeSelect>
@@ -522,32 +661,53 @@ export default function Shifts() {
 
             <div className="grid grid-cols-2 gap-3">
               <div>
-                <label className="text-xs font-medium text-muted-foreground">Effective From</label>
+                <label className="text-xs font-medium text-muted-foreground">
+                  Effective From
+                </label>
                 <Input
                   type="date"
                   value={assignForm.effectiveFrom}
-                  onChange={(e) => setAssignForm({ ...assignForm, effectiveFrom: e.target.value })}
+                  onChange={(e) =>
+                    setAssignForm({
+                      ...assignForm,
+                      effectiveFrom: e.target.value,
+                    })
+                  }
                   required
                 />
               </div>
               <div>
                 <label className="text-xs font-medium text-muted-foreground">
-                  Effective To <span className="text-muted-foreground font-normal">(Optional)</span>
+                  Effective To{" "}
+                  <span className="text-muted-foreground font-normal">
+                    (Optional)
+                  </span>
                 </label>
                 <Input
                   type="date"
                   value={assignForm.effectiveTo}
-                  onChange={(e) => setAssignForm({ ...assignForm, effectiveTo: e.target.value })}
+                  onChange={(e) =>
+                    setAssignForm({
+                      ...assignForm,
+                      effectiveTo: e.target.value,
+                    })
+                  }
                 />
               </div>
             </div>
 
             <div className="flex justify-end gap-2 pt-4">
-              <Button type="button" variant="outline" onClick={() => setAssignOpen(false)}>
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => setAssignOpen(false)}
+              >
                 Cancel
               </Button>
               <Button type="submit" disabled={assignShiftMutation.isPending}>
-                {assignShiftMutation.isPending ? 'Assigning...' : 'Confirm Assignment'}
+                {assignShiftMutation.isPending
+                  ? "Assigning..."
+                  : "Confirm Assignment"}
               </Button>
             </div>
           </form>

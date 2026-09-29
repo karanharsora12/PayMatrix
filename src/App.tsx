@@ -148,10 +148,6 @@ export default function App() {
             <Route path="/attendance-register" element={<Attendance />} />
             <Route path="/shifts" element={<Shifts />} />
             <Route path="/holidays" element={<Holidays />} />
-            <Route
-              path="/overtime"
-              element={<Placeholder title="Overtime" />}
-            />
             <Route path="/leave" element={<Leave />} />
             <Route path="/salary-components" element={<SalaryComponents />} />
             <Route path="/salary-structures" element={<SalaryStructures />} />
@@ -178,10 +174,6 @@ export default function App() {
             <Route path="/locations" element={<Locations />} />
             <Route path="/employee-groups" element={<EmployeeGroups />} />
             <Route path="/documents" element={<DocumentMaster />} />
-            <Route
-              path="/bank-accounts"
-              element={<Placeholder title="Bank Accounts" />}
-            />
             <Route path="*" element={<Navigate to="/" replace />} />
           </Route>
         </Route>
