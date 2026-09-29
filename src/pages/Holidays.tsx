@@ -5,6 +5,7 @@ import { Badge } from "@/components/ui/badge";
 import { DataGrid } from "@/components/common/DataGrid";
 import { ListingHeader } from "@/components/common/ListingHeader";
 import { ListingCard } from "@/components/common/ListingCard";
+import { GridDateFloatingFilter } from "@/components/common/GridDateFloatingFilter";
 import { gridExportExcel, gridExportPdf, gridPrint } from "@/lib/gridExport";
 import type { ColDef } from "ag-grid-community";
 import type { AgGridReact } from "ag-grid-react";
@@ -34,6 +35,7 @@ import {
   useDeleteHoliday,
 } from "@/hooks/useHolidays";
 import type { Holiday } from "@/api/holidays";
+import { GridDeleteCell } from "@/components/common";
 
 export default function Holidays() {
   const gridRef = useRef<AgGridReact>(null);
@@ -171,20 +173,28 @@ export default function Holidays() {
       {
         field: "name",
         headerName: "Holiday Name",
-        flex: 1,
-        cellClass: "font-semibold text-sm",
+        width: 150,
       },
       {
         field: "holidayDate",
         headerName: "Date",
         width: 120,
         cellClass: "font-mono text-sm",
+        valueFormatter: (p) => {
+          if (!p.value) return "";
+          if (p.value.includes("-")) {
+            const [year, month, day] = p.value.split("T")[0].split("-");
+            return `${day}/${month}/${year}`;
+          }
+          return p.value;
+        },
+        filter: "agTextColumnFilter",
+        floatingFilterComponent: GridDateFloatingFilter,
       },
       {
         field: "day",
         headerName: "Day",
         width: 120,
-        cellClass: "text-sm text-muted-foreground",
         valueGetter: (p) =>
           p.data.holidayDate
             ? new Date(p.data.holidayDate + "T00:00:00Z").toLocaleDateString(
@@ -196,13 +206,12 @@ export default function Holidays() {
       {
         field: "holidayType",
         headerName: "Type",
-        width: 150,
-        cellRenderer: (p: any) => getTypeBadge(p.value),
+        width: 100,
       },
       {
         field: "isOptional",
         headerName: "Optional",
-        width: 120,
+        width: 150,
         cellRenderer: (p: any) => (
           <Badge variant={p.value ? "secondary" : "outline"}>
             {p.value ? "Optional" : "Mandatory"}
@@ -212,29 +221,17 @@ export default function Holidays() {
       {
         field: "description",
         headerName: "Description",
-        flex: 1,
-        cellClass: "text-xs text-muted-foreground truncate",
+        width: 150,
       },
       {
         headerName: "",
-        width: 80,
+        width: 60,
         sortable: false,
         filter: false,
-        cellRenderer: (p: any) => (
-          <div className="flex items-center justify-end gap-1 h-full">
-            <Button
-              size="sm"
-              variant="ghost"
-              className="h-8 w-8"
-              onClick={(e) => {
-                e.stopPropagation();
-                handleDeleteHoliday(p.data.id, p.data.name);
-              }}
-            >
-              <Trash2 className="h-3.5 w-3.5 text-red-500" />
-            </Button>
-          </div>
-        ),
+        cellRenderer: GridDeleteCell,
+        cellRendererParams: {
+          onDelete: handleDeleteHoliday,
+        },
       },
     ],
     [],
