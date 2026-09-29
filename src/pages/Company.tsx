@@ -4,6 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { DataGrid } from "@/components/common/DataGrid";
 import { ListingHeader } from "@/components/common/ListingHeader";
+import { GridDeleteCell, GridDateFloatingFilter } from "@/components/common";
 import { ListingCard } from "@/components/common/ListingCard";
 import { Trash2 } from "lucide-react";
 import {
@@ -128,25 +129,29 @@ export default function Company() {
         ),
       },
       {
+        field: "createdAt",
+        headerName: "Created",
+        width: 150,
+        valueFormatter: (params) => {
+          if (!params.value) return "";
+          if (params.value.includes("-")) {
+            const [year, month, day] = params.value.split("T")[0].split("-");
+            return `${day}/${month}/${year}`;
+          }
+          return new Date(params.value).toLocaleDateString();
+        },
+        filter: "agTextColumnFilter",
+        floatingFilterComponent: GridDateFloatingFilter,
+      },
+      {
         headerName: "",
-        width: 80,
+        width: 60,
         sortable: false,
         filter: false,
-        cellRenderer: (params: any) => (
-          <div className="flex gap-1 items-center justify-center h-full">
-            <Button
-              variant="ghost"
-              size="icon"
-              className="h-8 w-8 text-red-500 hover:text-red-600"
-              onClick={(e) => {
-                e.stopPropagation();
-                handleDelete(params.data.id);
-              }}
-            >
-              <Trash2 className="h-4 w-4" />
-            </Button>
-          </div>
-        ),
+        cellRenderer: GridDeleteCell,
+        cellRendererParams: {
+          onDelete: handleDelete,
+        },
       },
     ],
     [],

@@ -1,11 +1,9 @@
-import { useState, useMemo, useRef } from "react";
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
+import { departmentApi } from "@/api/departments";
+import { GridDateFloatingFilter, GridDeleteCell } from "@/components/common";
 import { DataGrid } from "@/components/common/DataGrid";
-import { ListingHeader } from "@/components/common/ListingHeader";
 import { ListingCard } from "@/components/common/ListingCard";
-import { Trash2 } from "lucide-react";
+import { ListingHeader } from "@/components/common/ListingHeader";
+import { Button } from "@/components/ui/button";
 import {
   Dialog,
   DialogContent,
@@ -14,11 +12,12 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
-import { toast } from "sonner";
-import { departmentApi } from "@/api/departments";
 import { gridExportExcel, gridExportPdf, gridPrint } from "@/lib/gridExport";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import type { ColDef } from "ag-grid-community";
 import type { AgGridReact } from "ag-grid-react";
+import { useMemo, useRef, useState } from "react";
+import { toast } from "sonner";
 
 export default function Departments() {
   const gridRef = useRef<AgGridReact>(null);
@@ -128,28 +127,26 @@ export default function Departments() {
         field: "createdAt",
         headerName: "Created",
         width: 150,
-        valueFormatter: (params) => new Date(params.value).toLocaleDateString(),
+        valueFormatter: (params) => {
+          if (!params.value) return "";
+          if (params.value.includes("-")) {
+            const [year, month, day] = params.value.split("T")[0].split("-");
+            return `${day}/${month}/${year}`;
+          }
+          return new Date(params.value).toLocaleDateString();
+        },
+        filter: "agTextColumnFilter",
+        floatingFilterComponent: GridDateFloatingFilter,
       },
       {
         headerName: "",
-        width: 80,
+        width: 60,
         sortable: false,
         filter: false,
-        cellRenderer: (params: any) => (
-          <div className="flex gap-1 items-center justify-center h-full">
-            <Button
-              variant="ghost"
-              size="icon"
-              className="h-8 w-8 text-red-500 hover:text-red-600"
-              onClick={(e) => {
-                e.stopPropagation();
-                handleDelete(params.data.id);
-              }}
-            >
-              <Trash2 className="h-4 w-4" />
-            </Button>
-          </div>
-        ),
+        cellRenderer: GridDeleteCell,
+        cellRendererParams: {
+          onDelete: handleDelete,
+        },
       },
     ],
     [],

@@ -1,42 +1,30 @@
-import { useState } from "react";
-import { Card, CardContent } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
+import type { Shift } from "@/api/shifts";
+import { GridDateFloatingFilter, GridDeleteCell } from "@/components/common";
 import { DataGrid } from "@/components/common/DataGrid";
 import { ListingCard } from "@/components/common/ListingCard";
 import { ListingHeader } from "@/components/common/ListingHeader";
-import type { ColDef } from "ag-grid-community";
-import { useMemo } from "react";
+import { Button } from "@/components/ui/button";
 import {
   Dialog,
   DialogContent,
   DialogHeader,
   DialogTitle,
-  DialogDescription,
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { NativeSelect } from "@/components/ui/select";
-import {
-  Plus,
-  Clock,
-  Moon,
-  Calendar,
-  Pencil,
-  Trash2,
-  UserCheck,
-  History,
-} from "lucide-react";
-import { toast } from "sonner";
-import {
-  useShifts,
-  useCreateShift,
-  useUpdateShift,
-  useDeleteShift,
-  useAssignShift,
-  useEmployeeShifts,
-} from "@/hooks/useShifts";
 import { useEmployees } from "@/hooks/useEmployees";
-import type { Shift } from "@/api/shifts";
+import {
+  useAssignShift,
+  useCreateShift,
+  useDeleteShift,
+  useEmployeeShifts,
+  useShifts,
+  useUpdateShift,
+} from "@/hooks/useShifts";
+import type { ColDef } from "ag-grid-community";
+import { Clock, History, Moon } from "lucide-react";
+import { useMemo, useState } from "react";
+import { toast } from "sonner";
 
 export default function Shifts() {
   const { data: shiftsData, isLoading } = useShifts({ pageSize: 50 });
@@ -285,25 +273,16 @@ export default function Shifts() {
       },
       {
         headerName: "",
-        width: 110,
+        width: 60,
         sortable: false,
         filter: false,
-        cellRenderer: (p: any) => (
-          <div className="flex items-center justify-end gap-1 h-full">
-            <Button
-              size="sm"
-              variant="ghost"
-              title="Delete Shift"
-              className="h-8 w-8"
-              onClick={(e) => {
-                e.stopPropagation();
-                handleDeleteShift(p.data.id, p.data.name);
-              }}
-            >
-              <Trash2 className="h-3.5 w-3.5 text-red-500" />
-            </Button>
-          </div>
-        ),
+        cellRenderer: GridDeleteCell,
+        cellRendererParams: {
+          onDelete: (id: string) => {
+            const shift = shifts.find((s) => s.id === id);
+            if (shift) handleDeleteShift(id, shift.name);
+          },
+        },
       },
     ],
     [],
@@ -327,12 +306,35 @@ export default function Shifts() {
             ? `${p.data.shift.startTime.substring(0, 5)} - ${p.data.shift.endTime.substring(0, 5)}`
             : "—",
       },
-      { field: "effectiveFrom", headerName: "Effective From", flex: 1 },
+      {
+        field: "effectiveFrom",
+        headerName: "Effective From",
+        flex: 1,
+        valueFormatter: (p) => {
+          if (!p.value) return "";
+          if (p.value.includes("-")) {
+            const [year, month, day] = p.value.split("T")[0].split("-");
+            return `${day}/${month}/${year}`;
+          }
+          return p.value;
+        },
+        filter: "agTextColumnFilter",
+        floatingFilterComponent: GridDateFloatingFilter,
+      },
       {
         field: "effectiveTo",
         headerName: "Effective To",
         flex: 1,
-        valueFormatter: (p) => p.value || "Ongoing / Indefinite",
+        valueFormatter: (p) => {
+          if (!p.value) return "Ongoing / Indefinite";
+          if (p.value.includes("-")) {
+            const [year, month, day] = p.value.split("T")[0].split("-");
+            return `${day}/${month}/${year}`;
+          }
+          return p.value;
+        },
+        filter: "agTextColumnFilter",
+        floatingFilterComponent: GridDateFloatingFilter,
       },
       {
         field: "status",
