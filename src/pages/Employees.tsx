@@ -12,6 +12,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
+import { useAuth } from "@/context/AuthContext";
 import { toast } from "sonner";
 import { useEmployees } from "@/hooks/useEmployees";
 import { employees as mockEmployees } from "@/mock/data";
@@ -24,6 +25,7 @@ import type { ColDef } from "ag-grid-community";
 import type { AgGridReact } from "ag-grid-react";
 
 export default function Employees() {
+  const { hasPermission } = useAuth();
   const gridRef = useRef<AgGridReact>(null);
   const nav = useNavigate();
   const [searchParams, setSearchParams] = useSearchParams();
@@ -49,15 +51,12 @@ export default function Employees() {
     [q, dept, status],
   );
 
-  const { data, isLoading, isError, refetch } = useEmployees(filters);
-
-  // Fallback to mock if API not reachable (dev without backend)
-  const useMock = isError && !data;
+  const { data, refetch } = useEmployees(filters);
 
   // Filtered list passed to DataGrid
   const employeeList = useMemo(() => {
     let source: any[] =
-      data?.data && data.data.length > 0 ? [...data.data] : [...mockEmployees];
+      data?.data && data.data.length > 0 ? [...data.data] : [];
 
     // Filter out deleted
     source = source.filter((e) => !deletedIds.has(e.id));
@@ -89,7 +88,7 @@ export default function Employees() {
   }, []);
 
   const columnDefs = useMemo<ColDef[]>(() => {
-    return [
+    const cols: ColDef[] = [
       {
         field: "employeeCode",
         headerName: "Code",
@@ -144,7 +143,10 @@ export default function Employees() {
         headerName: "Status",
         width: 115,
       },
-      {
+    ];
+
+    if (hasPermission("employees.delete")) {
+      cols.push({
         headerName: "",
         width: 60,
         sortable: false,
@@ -164,9 +166,10 @@ export default function Employees() {
             />
           );
         },
-      },
-    ];
-  }, [nav, handleDelete]);
+      });
+    }
+    return cols;
+  }, [nav, handleDelete, hasPermission]);
 
   return (
     <div className="space-y-4">
@@ -175,7 +178,7 @@ export default function Employees() {
           title="Employees"
           searchValue={q}
           onSearchChange={(v) => setParam("search", v)}
-          onAddNew={() => nav("/employees/new")}
+          onAddNew={hasPermission("employees.create") ? () => nav("/employees/new") : undefined}
           addButtonText="Add Employee"
           onRefresh={refetch}
           onExportExcel={() =>
@@ -235,7 +238,8 @@ export default function Employees() {
             pageSize={15}
             gridOptions={{
               onRowDoubleClicked: (e) => {
-                if (e.data?.id) nav(`/employees/${e.data.id}/edit`);
+                if (e.data?.id && hasPermission("employees.edit")) nav(`/employees/${e.data.id}/edit`);
+                else if (e.data?.id) nav(`/employees/${e.data.id}`);
               },
             }}
           />

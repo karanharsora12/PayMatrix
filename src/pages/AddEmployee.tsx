@@ -1,20 +1,9 @@
-﻿import { useNavigate, useParams } from "react-router-dom";
-import { useEffect } from "react";
-import { useForm, Controller } from "react-hook-form";
-import { zodResolver } from "@hookform/resolvers/zod";
-import { z } from "zod";
-import { toast } from "sonner";
-import { useQuery } from "@tanstack/react-query";
-import {
-  useCreateEmployee,
-  useUpdateEmployee,
-  useEmployee,
-} from "@/hooks/useEmployees";
-import { departmentApi } from "@/api/departments";
 import { branchApi } from "@/api/branches";
+import { departmentApi } from "@/api/departments";
 import { designationApi } from "@/api/designations";
-import { Button } from "@/components/ui/button";
+import { FormFooter } from "@/components/common/FormFooter";
 import { Input } from "@/components/ui/input";
+import { Badge } from "@/components/ui/badge";
 import {
   Select,
   SelectContent,
@@ -23,15 +12,38 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import {
-  ArrowLeft,
-  User,
-  Briefcase,
-  Phone,
-  CreditCard,
-  Banknote,
-} from "lucide-react";
+  useCreateEmployee,
+  useEmployee,
+  useUpdateEmployee,
+} from "@/hooks/useEmployees";
+import {
+  useCreateUser,
+  useRoles,
+  useUsers,
+  useAssignUserRole,
+} from "@/hooks/useUsersRoles";
 import { cn } from "@/lib/utils";
-import { FormFooter } from "@/components/common/FormFooter";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { useQuery } from "@tanstack/react-query";
+import {
+  ArrowLeft,
+  Banknote,
+  Briefcase,
+  Camera,
+  CreditCard,
+  Eye,
+  EyeOff,
+  KeyRound,
+  Phone,
+  Shield,
+  User,
+  Info,
+} from "lucide-react";
+import { useEffect, useRef, useState } from "react";
+import { Controller, useForm } from "react-hook-form";
+import { useNavigate, useParams } from "react-router-dom";
+import { toast } from "sonner";
+import { z } from "zod";
 
 const schema = z.object({
   employeeCode: z.string().min(2, "Employee code is required"),
@@ -48,10 +60,14 @@ const schema = z.object({
   branchId: z.string().optional(),
   panNumber: z.string().optional(),
   nationalIdNumber: z.string().optional(),
+  uanNumber: z.string().optional(),
+  esiNumber: z.string().optional(),
   bankName: z.string().optional(),
   accountNumber: z.string().optional(),
   ifscCode: z.string().optional(),
   accountHolder: z.string().optional(),
+  roleId: z.string().optional(),
+  password: z.string().optional(),
 });
 type FormValues = z.infer<typeof schema>;
 
@@ -59,20 +75,29 @@ function SectionHeader({
   icon: Icon,
   title,
   subtitle,
+  badge,
 }: {
   icon: React.ElementType;
   title: string;
   subtitle?: string;
+  badge?: string;
 }) {
   return (
-    <div className="flex items-center gap-3 mb-4 pb-2.5 border-b border-slate-100 dark:border-slate-800">
-      <div className="flex items-center justify-center h-8 w-8 rounded-md bg-primary/10 text-primary shrink-0">
+    <div className="flex items-center gap-3 mb-5 pb-3 border-b border-slate-100 dark:border-slate-800">
+      <div className="flex items-center justify-center h-9 w-9 rounded-lg bg-primary/10 text-primary shrink-0">
         <Icon className="h-4 w-4" />
       </div>
-      <div>
-        <p className="text-sm font-semibold text-slate-800 dark:text-slate-100 leading-none">
-          {title}
-        </p>
+      <div className="flex-1 min-w-0">
+        <div className="flex items-center gap-2">
+          <p className="text-sm font-semibold text-slate-800 dark:text-slate-100 leading-none">
+            {title}
+          </p>
+          {badge && (
+            <Badge variant="secondary" className="text-[10px] py-0 px-1.5">
+              {badge}
+            </Badge>
+          )}
+        </div>
         {subtitle && (
           <p className="text-xs text-muted-foreground mt-0.5">{subtitle}</p>
         )}
@@ -87,21 +112,28 @@ function Field({
   error,
   children,
   className,
+  hint,
 }: {
   label: string;
   required?: boolean;
   error?: string;
   children: React.ReactNode;
   className?: string;
+  hint?: string;
 }) {
   return (
     <div className={cn("space-y-1.5", className)}>
-      <label className="text-xs font-medium text-slate-500 dark:text-slate-400 uppercase tracking-wide">
+      <label className="text-[11px] font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider flex items-center gap-1">
         {label}
-        {required && <span className="text-red-500 ml-0.5">*</span>}
+        {required && <span className="text-red-500">*</span>}
       </label>
       {children}
-      {error && <p className="text-xs text-red-500 mt-0.5">{error}</p>}
+      {hint && !error && (
+        <p className="text-[10px] text-muted-foreground flex items-center gap-1">
+          <Info className="h-2.5 w-2.5 shrink-0" /> {hint}
+        </p>
+      )}
+      {error && <p className="text-[11px] text-red-500 mt-0.5">{error}</p>}
     </div>
   );
 }
@@ -113,14 +145,23 @@ export default function AddEmployee() {
 
   const createMut = useCreateEmployee();
   const updateMut = useUpdateEmployee(id || "");
-  const { data: empData, isLoading: isEmpLoading } = useEmployee(id || "");
+  const { data: empData } = useEmployee(id || "");
+  const createUser = useCreateUser();
+  const assignRole = useAssignUserRole();
+  const { data: rolesResp } = useRoles();
+  const { data: usersResp } = useUsers();
+
+  const [showPassword, setShowPassword] = useState(false);
+  const [avatarPreview, setAvatarPreview] = useState<string | null>(null);
+  const fileRef = useRef<HTMLInputElement>(null);
 
   const {
     register,
     handleSubmit,
     reset,
     control,
-    formState: { errors, isDirty },
+    watch,
+    formState: { errors },
   } = useForm<FormValues>({
     resolver: zodResolver(schema),
     defaultValues: {
@@ -138,12 +179,30 @@ export default function AddEmployee() {
       branchId: "",
       panNumber: "",
       nationalIdNumber: "",
+      uanNumber: "",
+      esiNumber: "",
       bankName: "",
       accountNumber: "",
       ifscCode: "",
       accountHolder: "",
+      roleId: "",
+      password: "PayMatrix@123",
     },
   });
+
+  const usersList: any[] = (usersResp as any)?.data ?? [];
+  const tiedUser = isEdit
+    ? usersList.find((u: any) => u.employeeId === id)
+    : null;
+  const userRole = tiedUser?.roles?.[0]?.id || "";
+
+  const watchedFirstName = watch("firstName");
+  const watchedLastName = watch("lastName");
+
+  const initials =
+    (
+      (watchedFirstName?.[0] || "") + (watchedLastName?.[0] || "")
+    ).toUpperCase() || "?";
 
   useEffect(() => {
     if (isEdit && empData) {
@@ -165,13 +224,17 @@ export default function AddEmployee() {
         branchId: e.branchId || e.branch?.id || "",
         panNumber: e.panNumber || "",
         nationalIdNumber: e.nationalIdNumber || "",
+        uanNumber: e.uanNumber || "",
+        esiNumber: e.esiNumber || "",
         bankName: e.bankName || "",
         accountNumber: e.accountNumber || "",
         ifscCode: e.ifscCode || "",
         accountHolder: e.accountHolder || "",
+        roleId: userRole,
+        password: "",
       });
     }
-  }, [isEdit, empData, reset]);
+  }, [isEdit, empData, userRole, reset]);
 
   const { data: depts } = useQuery({
     queryKey: ["departments", "list"],
@@ -196,6 +259,7 @@ export default function AddEmployee() {
   const deptList = (depts as any)?.data ?? [];
   const branchList = (branches as any)?.data ?? [];
   const desigList = (desigs as any)?.data ?? [];
+  const rolesList: any[] = (rolesResp as any)?.data ?? [];
 
   const onSubmit = async (values: FormValues) => {
     try {
@@ -205,21 +269,59 @@ export default function AddEmployee() {
         lastName: values.lastName,
         email: values.email || undefined,
         phone: values.phone || undefined,
+        address: values.address || undefined,
         joiningDate: values.joiningDate,
         branchId: values.branchId || undefined,
         departmentId: values.departmentId || undefined,
         designationId: values.designationId || undefined,
         gender: values.gender || undefined,
+        bloodGroup: values.bloodGroup || undefined,
         panNumber: values.panNumber || undefined,
         nationalIdNumber: values.nationalIdNumber || undefined,
       };
 
       if (isEdit) {
         await updateMut.mutateAsync(payload);
+        if (values.roleId && tiedUser && values.roleId !== userRole) {
+          try {
+            await assignRole.mutateAsync({
+              userId: tiedUser.id,
+              roleIds: [values.roleId],
+            });
+          } catch (err) {
+            toast.warning("Employee updated, but failed to update user role.");
+          }
+        }
         toast.success("Employee updated successfully");
       } else {
-        await createMut.mutateAsync(payload);
-        toast.success("Employee created successfully");
+        const created = await createMut.mutateAsync(payload);
+        const newEmp: any = (created as any)?.data || created;
+        if (values.email) {
+          const selectedRole = rolesList.find((r) => r.id === values.roleId);
+          const empRole =
+            selectedRole ||
+            rolesList.find(
+              (r) =>
+                r.slug === "EMPLOYEE" || r.name?.toLowerCase() === "employee",
+            );
+          const password = values.password?.trim() || "PayMatrix@123";
+          try {
+            await createUser.mutateAsync({
+              email: values.email,
+              password,
+              employeeId: newEmp?.id,
+              roleIds: empRole ? [empRole.id] : [],
+            });
+            toast.success(
+              `Employee created! Login: ${values.email} · Password: ${password}`,
+            );
+          } catch {
+            toast.success("Employee record created.");
+            toast.warning(`Could not create user login for ${values.email}.`);
+          }
+        } else {
+          toast.success("Employee created successfully.");
+        }
       }
       nav("/employees");
     } catch (e: any) {
@@ -234,8 +336,8 @@ export default function AddEmployee() {
 
   return (
     <div>
-      <div className="flex flex-col min-h-[calc(100vh-64px)] p-3 max-w-screen-2xl mx-auto">
-        {/* Page Header */}
+      <div className="flex flex-col min-h-[calc(100vh-64px)] p-4 max-w-screen-xl mx-auto">
+        {/* Header */}
         <div className="flex items-center gap-3 mb-6">
           <button
             type="button"
@@ -246,264 +348,435 @@ export default function AddEmployee() {
           </button>
           <div>
             <h1 className="text-lg font-semibold text-slate-800 dark:text-slate-100 leading-none">
-              {isEdit ? "Edit Employee" : "Add New Employee"}
+              {isEdit ? "Edit Employee" : "New Employee"}
             </h1>
             <p className="text-xs text-muted-foreground mt-0.5">
               {isEdit
-                ? "Update the employee record details below"
-                : "Fill in the details below to create a new employee record"}
+                ? "Update employee record details below"
+                : "Fill in all sections to create a complete employee profile"}
             </p>
           </div>
         </div>
 
-        {/* Form Body */}
         <form
           id="employee-form"
           onSubmit={handleSubmit(onSubmit)}
-          className="flex-1 pb-24"
+          className="flex-1 pb-28"
         >
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
-            {/* Personal Information */}
-            <div className="bg-white dark:bg-slate-900/50 border border-slate-200 dark:border-slate-800 rounded-lg p-5 shadow-sm">
-              <SectionHeader
-                icon={User}
-                title="Personal Information"
-                subtitle="Basic identity details"
-              />
-              <div className="grid grid-cols-2 gap-4">
-                <Field
-                  label="First Name"
-                  required
-                  error={errors.firstName?.message}
-                >
-                  <Input placeholder="e.g. Karan" {...register("firstName")} />
-                </Field>
-                <Field
-                  label="Last Name"
-                  required
-                  error={errors.lastName?.message}
-                >
-                  <Input placeholder="e.g. Harsora" {...register("lastName")} />
-                </Field>
-                <Field label="Gender">
-                  <Controller
-                    control={control}
-                    name="gender"
-                    render={({ field }) => (
-                      <Select
-                        onValueChange={field.onChange}
-                        value={field.value || ""}
-                      >
-                        <SelectTrigger>
-                          <SelectValue placeholder="Select gender" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="MALE">Male</SelectItem>
-                          <SelectItem value="FEMALE">Female</SelectItem>
-                          <SelectItem value="OTHER">Other</SelectItem>
-                        </SelectContent>
-                      </Select>
-                    )}
+          <div className="grid grid-cols-1 xl:grid-cols-[300px_1fr] gap-5">
+            {/* LEFT: Profile + Code + Access */}
+            <div className="space-y-5">
+              {/* Profile Card */}
+              <div className="bg-white dark:bg-slate-900/50 border border-slate-200 dark:border-slate-800 rounded-xl p-5 shadow-sm">
+                <SectionHeader
+                  icon={User}
+                  title="Profile"
+                  subtitle="Photo and basic ID"
+                />
+
+                {/* Avatar */}
+                <div className="flex flex-col items-center gap-3">
+                  <div
+                    className="relative group cursor-pointer"
+                    onClick={() => fileRef.current?.click()}
+                  >
+                    <div className="h-20 w-20 rounded-full border-2 border-dashed border-primary/30 group-hover:border-primary overflow-hidden bg-primary/5 flex items-center justify-center transition-colors">
+                      {avatarPreview ? (
+                        <img
+                          src={avatarPreview}
+                          alt="Preview"
+                          className="h-full w-full object-cover"
+                        />
+                      ) : (
+                        <span className="text-xl font-bold text-primary/60">
+                          {initials}
+                        </span>
+                      )}
+                    </div>
+                    <div className="absolute -bottom-0.5 -right-0.5 h-6 w-6 rounded-full bg-primary text-white flex items-center justify-center shadow-md group-hover:scale-110 transition-transform">
+                      <Camera className="h-3 w-3" />
+                    </div>
+                  </div>
+                  <input
+                    ref={fileRef}
+                    type="file"
+                    accept="image/*"
+                    className="hidden"
+                    onChange={(e) => {
+                      const file = e.target.files?.[0];
+                      if (file) setAvatarPreview(URL.createObjectURL(file));
+                    }}
                   />
-                </Field>
-                <Field label="Blood Group">
-                  <Input placeholder="e.g. B+" {...register("bloodGroup")} />
-                </Field>
+                  <div className="text-center">
+                    <p className="text-xs font-medium text-slate-600 dark:text-slate-300">
+                      {watchedFirstName && watchedLastName
+                        ? `${watchedFirstName} ${watchedLastName}`
+                        : "Employee Name"}
+                    </p>
+                    <p className="text-[10px] text-muted-foreground">
+                      Click to upload photo
+                    </p>
+                  </div>
+                </div>
+
+                {/* Code + Date */}
+                <div className="mt-4 pt-4 border-t border-slate-100 dark:border-slate-800 space-y-3">
+                  <Field
+                    label="Employee Code"
+                    required
+                    error={errors.employeeCode?.message}
+                  >
+                    <Input
+                      placeholder="EMP-001"
+                      className="font-mono"
+                      {...register("employeeCode")}
+                    />
+                  </Field>
+                  <Field
+                    label="Joining Date"
+                    required
+                    error={errors.joiningDate?.message}
+                  >
+                    <Input type="date" {...register("joiningDate")} />
+                  </Field>
+                </div>
+              </div>
+
+              {/* System Access */}
+              <div className="bg-white dark:bg-slate-900/50 border border-slate-200 dark:border-slate-800 rounded-xl p-5 shadow-sm">
+                <SectionHeader
+                  icon={Shield}
+                  title="System Access"
+                  subtitle={isEdit ? "Manage role" : "Role & login credentials"}
+                  badge={isEdit ? undefined : "Optional"}
+                />
+                <div className="space-y-3">
+                  <Field
+                    label={isEdit ? "Update Role" : "Assign Role"}
+                    hint={
+                      isEdit
+                        ? "Update employee's system role"
+                        : "Defaults to Employee if not selected"
+                    }
+                  >
+                    <Controller
+                      control={control}
+                      name="roleId"
+                      render={({ field }) => (
+                        <Select
+                          onValueChange={field.onChange}
+                          value={field.value || ""}
+                        >
+                          <SelectTrigger>
+                            <SelectValue placeholder="Select role..." />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {rolesList.map((r: any) => (
+                              <SelectItem key={r.id} value={r.id}>
+                                <div className="flex items-center gap-2">
+                                  <Shield className="h-3.5 w-3.5 text-muted-foreground" />
+                                  {r.name}
+                                </div>
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      )}
+                    />
+                  </Field>
+                  {!isEdit && (
+                    <>
+                      <Field
+                        label="Default Password"
+                        hint="Employee uses this to first log in"
+                      >
+                        <div className="relative">
+                          <KeyRound className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground" />
+                          <Input
+                            type={showPassword ? "text" : "password"}
+                            placeholder="PayMatrix@123"
+                            className="pl-8 pr-9 font-mono text-sm"
+                            {...register("password")}
+                          />
+                          <button
+                            type="button"
+                            className="absolute right-2.5 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors"
+                            onClick={() => setShowPassword((v) => !v)}
+                          >
+                            {showPassword ? (
+                              <EyeOff className="h-3.5 w-3.5" />
+                            ) : (
+                              <Eye className="h-3.5 w-3.5" />
+                            )}
+                          </button>
+                        </div>
+                      </Field>
+                      <div className="rounded-md bg-blue-50 dark:bg-blue-950/30 border border-blue-100 dark:border-blue-900 px-3 py-2.5 flex gap-2">
+                        <Info className="h-3.5 w-3.5 text-blue-500 mt-0.5 shrink-0" />
+                        <p className="text-[10px] text-blue-700 dark:text-blue-300 leading-relaxed">
+                          Login is only created if the employee has an email
+                          address. Ask them to change password on first login.
+                        </p>
+                      </div>
+                    </>
+                  )}
+                </div>
               </div>
             </div>
 
-            {/* Employment Details */}
-            <div className="bg-white dark:bg-slate-900/50 border border-slate-200 dark:border-slate-800 rounded-lg p-5 shadow-sm">
-              <SectionHeader
-                icon={Briefcase}
-                title="Employment Details"
-                subtitle="Role and organizational assignment"
-              />
-              <div className="grid grid-cols-2 gap-4">
-                <Field
-                  label="Employee Code"
-                  required
-                  error={errors.employeeCode?.message}
-                >
-                  <Input
-                    placeholder="e.g. EMP-001"
-                    {...register("employeeCode")}
-                  />
-                </Field>
-                <Field
-                  label="Joining Date"
-                  required
-                  error={errors.joiningDate?.message}
-                >
-                  <Input type="date" {...register("joiningDate")} />
-                </Field>
-                <Field label="Department">
-                  <Controller
-                    control={control}
-                    name="departmentId"
-                    render={({ field }) => (
-                      <Select
-                        onValueChange={field.onChange}
-                        value={field.value || ""}
-                      >
-                        <SelectTrigger>
-                          <SelectValue placeholder="Select department" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          {deptList.map((d: any) => (
-                            <SelectItem key={d.id} value={d.id}>
-                              {d.name}
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                    )}
-                  />
-                </Field>
-                <Field label="Designation">
-                  <Controller
-                    control={control}
-                    name="designationId"
-                    render={({ field }) => (
-                      <Select
-                        onValueChange={field.onChange}
-                        value={field.value || ""}
-                      >
-                        <SelectTrigger>
-                          <SelectValue placeholder="Select designation" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          {desigList.map((d: any) => (
-                            <SelectItem key={d.id} value={d.id}>
-                              {d.name}
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                    )}
-                  />
-                </Field>
-                <Field label="Branch" className="col-span-2">
-                  <Controller
-                    control={control}
-                    name="branchId"
-                    render={({ field }) => (
-                      <Select
-                        onValueChange={field.onChange}
-                        value={field.value || ""}
-                      >
-                        <SelectTrigger>
-                          <SelectValue placeholder="Select branch" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          {branchList.map((b: any) => (
-                            <SelectItem key={b.id} value={b.id}>
-                              {b.name}
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                    )}
-                  />
-                </Field>
+            {/* RIGHT: All Details */}
+            <div className="space-y-5">
+              {/* Personal Information */}
+              <div className="bg-white dark:bg-slate-900/50 border border-slate-200 dark:border-slate-800 rounded-xl p-5 shadow-sm">
+                <SectionHeader
+                  icon={User}
+                  title="Personal Information"
+                  subtitle="Basic identity details"
+                />
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                  <Field
+                    label="First Name"
+                    required
+                    error={errors.firstName?.message}
+                  >
+                    <Input placeholder="Karan" {...register("firstName")} />
+                  </Field>
+                  <Field
+                    label="Last Name"
+                    required
+                    error={errors.lastName?.message}
+                  >
+                    <Input placeholder="Harsora" {...register("lastName")} />
+                  </Field>
+                  <Field label="Gender">
+                    <Controller
+                      control={control}
+                      name="gender"
+                      render={({ field }) => (
+                        <Select
+                          onValueChange={field.onChange}
+                          value={field.value || ""}
+                        >
+                          <SelectTrigger>
+                            <SelectValue placeholder="Select..." />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="MALE">Male</SelectItem>
+                            <SelectItem value="FEMALE">Female</SelectItem>
+                            <SelectItem value="OTHER">Other</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      )}
+                    />
+                  </Field>
+                  <Field label="Blood Group">
+                    <Input placeholder="B+" {...register("bloodGroup")} />
+                  </Field>
+                </div>
               </div>
-            </div>
 
-            {/* Contact Information */}
-            <div className="bg-white dark:bg-slate-900/50 border border-slate-200 dark:border-slate-800 rounded-lg p-5 shadow-sm">
-              <SectionHeader
-                icon={Phone}
-                title="Contact Information"
-                subtitle="How to reach this employee"
-              />
-              <div className="grid grid-cols-2 gap-4">
-                <Field label="Email" error={errors.email?.message}>
-                  <Input
-                    type="email"
-                    placeholder="karan@company.com"
-                    {...register("email")}
-                  />
-                </Field>
-                <Field label="Mobile">
-                  <Input placeholder="+91 98765 43210" {...register("phone")} />
-                </Field>
-                <Field label="Address" className="col-span-2">
-                  <Input
-                    placeholder="Residential address"
-                    {...register("address")}
-                  />
-                </Field>
+              {/* Employment Details */}
+              <div className="bg-white dark:bg-slate-900/50 border border-slate-200 dark:border-slate-800 rounded-xl p-5 shadow-sm">
+                <SectionHeader
+                  icon={Briefcase}
+                  title="Employment Details"
+                  subtitle="Organizational assignment"
+                />
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                  <Field label="Department">
+                    <Controller
+                      control={control}
+                      name="departmentId"
+                      render={({ field }) => (
+                        <Select
+                          onValueChange={field.onChange}
+                          value={field.value || ""}
+                        >
+                          <SelectTrigger>
+                            <SelectValue placeholder="Department..." />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {deptList.map((d: any) => (
+                              <SelectItem key={d.id} value={d.id}>
+                                {d.name}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      )}
+                    />
+                  </Field>
+                  <Field label="Designation">
+                    <Controller
+                      control={control}
+                      name="designationId"
+                      render={({ field }) => (
+                        <Select
+                          onValueChange={field.onChange}
+                          value={field.value || ""}
+                        >
+                          <SelectTrigger>
+                            <SelectValue placeholder="Designation..." />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {desigList.map((d: any) => (
+                              <SelectItem key={d.id} value={d.id}>
+                                {d.name}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      )}
+                    />
+                  </Field>
+                  <Field label="Branch">
+                    <Controller
+                      control={control}
+                      name="branchId"
+                      render={({ field }) => (
+                        <Select
+                          onValueChange={field.onChange}
+                          value={field.value || ""}
+                        >
+                          <SelectTrigger>
+                            <SelectValue placeholder="Branch..." />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {branchList.map((b: any) => (
+                              <SelectItem key={b.id} value={b.id}>
+                                {b.name}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      )}
+                    />
+                  </Field>
+                </div>
               </div>
-            </div>
 
-            {/* Bank Account */}
-            <div className="bg-white dark:bg-slate-900/50 border border-slate-200 dark:border-slate-800 rounded-lg p-5 shadow-sm">
-              <SectionHeader
-                icon={Banknote}
-                title="Bank Account"
-                subtitle="Salary disbursement account"
-              />
-              <div className="grid grid-cols-2 gap-4">
-                <Field label="Bank Name">
-                  <Input
-                    placeholder="e.g. HDFC Bank"
-                    {...register("bankName")}
-                  />
-                </Field>
-                <Field label="IFSC Code">
-                  <Input
-                    placeholder="e.g. HDFC0001234"
-                    {...register("ifscCode")}
-                  />
-                </Field>
-                <Field label="Account Number">
-                  <Input
-                    placeholder="Account number"
-                    {...register("accountNumber")}
-                  />
-                </Field>
-                <Field label="Account Holder Name">
-                  <Input
-                    placeholder="As per bank records"
-                    {...register("accountHolder")}
-                  />
-                </Field>
+              {/* Contact Information */}
+              <div className="bg-white dark:bg-slate-900/50 border border-slate-200 dark:border-slate-800 rounded-xl p-5 shadow-sm">
+                <SectionHeader
+                  icon={Phone}
+                  title="Contact Information"
+                  subtitle="Email is used as login username"
+                />
+                <div className="grid grid-cols-2 gap-4">
+                  <Field
+                    label="Email"
+                    error={errors.email?.message}
+                    hint="Required for system login"
+                  >
+                    <Input
+                      type="email"
+                      placeholder="karan@company.com"
+                      {...register("email")}
+                    />
+                  </Field>
+                  <Field label="Mobile">
+                    <Input
+                      placeholder="+91 98765 43210"
+                      {...register("phone")}
+                    />
+                  </Field>
+                  <Field label="Address" className="col-span-2">
+                    <Input
+                      placeholder="Residential address"
+                      {...register("address")}
+                    />
+                  </Field>
+                </div>
               </div>
-            </div>
 
-            {/* Statutory & Compliance */}
-            <div className="bg-white dark:bg-slate-900/50 border border-slate-200 dark:border-slate-800 rounded-lg p-5 shadow-sm lg:col-span-2">
-              <SectionHeader
-                icon={CreditCard}
-                title="Statutory & Compliance"
-                subtitle="Tax and government identifiers"
-              />
-              <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                <Field label="PAN Number">
-                  <Input placeholder="ABCDE1234F" {...register("panNumber")} />
-                </Field>
-                <Field label="Aadhaar / National ID">
-                  <Input
-                    placeholder="1234 5678 9012"
-                    {...register("nationalIdNumber")}
-                  />
-                </Field>
-                <Field label="UAN Number">
-                  <Input placeholder="Universal Account No." />
-                </Field>
-                <Field label="ESI Number">
-                  <Input placeholder="ESI / Insurance No." />
-                </Field>
+              {/* Bank Account */}
+              <div className="bg-white dark:bg-slate-900/50 border border-slate-200 dark:border-slate-800 rounded-xl p-5 shadow-sm">
+                <SectionHeader
+                  icon={Banknote}
+                  title="Bank Account"
+                  subtitle="For salary disbursement"
+                />
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                  <Field label="Bank Name" className="md:col-span-2">
+                    <Input
+                      placeholder="e.g. HDFC Bank"
+                      {...register("bankName")}
+                    />
+                  </Field>
+                  <Field label="IFSC Code">
+                    <Input
+                      placeholder="HDFC0001234"
+                      className="font-mono"
+                      {...register("ifscCode")}
+                    />
+                  </Field>
+                  <Field label="Account Number">
+                    <Input
+                      placeholder="Account number"
+                      className="font-mono"
+                      {...register("accountNumber")}
+                    />
+                  </Field>
+                  <Field label="Account Holder" className="md:col-span-2">
+                    <Input
+                      placeholder="As per bank records"
+                      {...register("accountHolder")}
+                    />
+                  </Field>
+                </div>
+              </div>
+
+              {/* Statutory & Compliance */}
+              <div className="bg-white dark:bg-slate-900/50 border border-slate-200 dark:border-slate-800 rounded-xl p-5 shadow-sm">
+                <SectionHeader
+                  icon={CreditCard}
+                  title="Statutory & Compliance"
+                  subtitle="Tax and government identifiers"
+                />
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                  <Field label="PAN Number">
+                    <Input
+                      placeholder="ABCDE1234F"
+                      className="font-mono uppercase"
+                      {...register("panNumber")}
+                    />
+                  </Field>
+                  <Field label="Aadhaar / National ID">
+                    <Input
+                      placeholder="1234 5678 9012"
+                      className="font-mono"
+                      {...register("nationalIdNumber")}
+                    />
+                  </Field>
+                  <Field label="UAN Number">
+                    <Input
+                      placeholder="Universal Account No."
+                      className="font-mono"
+                      {...register("uanNumber")}
+                    />
+                  </Field>
+                  <Field label="ESI Number">
+                    <Input
+                      placeholder="ESI / Insurance No."
+                      className="font-mono"
+                      {...register("esiNumber")}
+                    />
+                  </Field>
+                </div>
               </div>
             </div>
           </div>
         </form>
       </div>
+
       <FormFooter
         formId="employee-form"
         isSaving={createMut.isPending || updateMut.isPending}
-        saveLabel={isEdit ? "Update Employee" : "Save Employee"}
-        onClear={() => reset()}
+        saveLabel={isEdit ? "Update Employee" : "Save & Create Employee"}
+        onClear={() => {
+          reset();
+          setAvatarPreview(null);
+        }}
         onCancel={() => nav("/employees")}
       />
     </div>

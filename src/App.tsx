@@ -24,9 +24,6 @@ import Leave from "@/pages/Leave";
 import SalaryComponents from "@/pages/SalaryComponents";
 import SalaryStructures from "@/pages/SalaryStructures";
 import EmployeeSalary from "@/pages/EmployeeSalary";
-import PayrollRuns from "@/pages/PayrollRuns";
-import PayrollWizard from "@/pages/PayrollWizard";
-import PayrollDetails from "@/pages/PayrollDetails";
 import Payslip from "@/pages/Payslip";
 import Loans from "@/pages/Loans";
 import Bonuses from "@/pages/Bonuses";
@@ -152,9 +149,6 @@ export default function App() {
             <Route path="/salary-components" element={<SalaryComponents />} />
             <Route path="/salary-structures" element={<SalaryStructures />} />
             <Route path="/employee-salary" element={<EmployeeSalary />} />
-            <Route path="/payroll" element={<PayrollRuns />} />
-            <Route path="/payroll/new" element={<PayrollWizard />} />
-            <Route path="/payroll/:id" element={<PayrollDetails />} />
             <Route path="/payslips" element={<Payslip />} />
             <Route path="/payslips/:id" element={<Payslip />} />
             <Route path="/loans" element={<Loans />} />

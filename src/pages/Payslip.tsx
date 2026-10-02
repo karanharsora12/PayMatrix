@@ -366,10 +366,6 @@ export default function Payslip() {
             Search, view, and print finalized employee payslips.
           </p>
         </div>
-        <Button variant="outline" onClick={() => nav("/payroll")}>
-          <Calendar className="h-4 w-4 mr-2" />
-          Payroll Runs
-        </Button>
       </div>
 
       <Card>

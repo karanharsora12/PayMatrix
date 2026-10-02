@@ -12,6 +12,7 @@ import { Input } from "@/components/ui/input";
 import { Dropdown, DropdownItem } from "@/components/ui/dropdown";
 import { useLocation, Link } from "react-router-dom";
 import { useEffect, useState } from "react";
+import { useAuth } from "@/context/AuthContext";
 
 export function Header({
   onToggleSidebar,
@@ -22,6 +23,7 @@ export function Header({
   onToggleMobile: () => void;
   onOpenCommand: () => void;
 }) {
+  const { user } = useAuth();
   const [dark, setDark] = useState(false);
   useEffect(() => {
     document.documentElement.classList.toggle("dark", dark);
@@ -78,7 +80,7 @@ export function Header({
                 src="https://i.pravatar.cc/150?img=12"
                 className="h-8 w-8 rounded-full"
               />
-              <span className="hidden md:block text-sm font-medium">Admin</span>
+              <span className="hidden md:block text-sm font-medium">{user?.name || user?.email?.split('@')[0] || "User"}</span>
             </button>
           }
         >

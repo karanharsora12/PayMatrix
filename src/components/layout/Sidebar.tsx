@@ -35,65 +35,65 @@ import {
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useState } from "react";
+import { useAuth } from "@/context/AuthContext";
 
 const nav = [
   { label: "Dashboard", icon: LayoutDashboard, path: "/" },
   {
     group: "Organization",
     items: [
-      { label: "Company", icon: Building, path: "/organization/company" },
-      { label: "Branches", icon: Building2, path: "/branches" },
-      { label: "Departments", icon: Layers, path: "/departments" },
-      { label: "Designations", icon: Layers2, path: "/designations" },
-      { label: "Locations", icon: MapPin, path: "/locations" },
+      { label: "Company", icon: Building, path: "/organization/company", perm: "settings.view" },
+      { label: "Branches", icon: Building2, path: "/branches", perm: "branches.view" },
+      { label: "Departments", icon: Layers, path: "/departments", perm: "departments.view" },
+      { label: "Designations", icon: Layers2, path: "/designations", perm: "designations.view" },
+      { label: "Locations", icon: MapPin, path: "/locations", perm: "settings.view" },
     ],
   },
   {
     group: "Employees",
     items: [
-      { label: "Employees", icon: Users, path: "/employees" },
-      { label: "Employee Groups", icon: UsersRound, path: "/employee-groups" },
-      { label: "Documents", icon: File, path: "/documents" },
+      { label: "Employees", icon: Users, path: "/employees", perm: "employees.view" },
+      { label: "Employee Groups", icon: UsersRound, path: "/employee-groups", perm: "employees.view" },
+      { label: "Documents", icon: File, path: "/documents", perm: "documents.view" },
     ],
   },
   {
     group: "Attendance",
     items: [
-      { label: "Attendance", icon: Clock, path: "/attendance" },
+      { label: "Attendance", icon: Clock, path: "/attendance", perm: "attendance.view" },
       {
         label: "Attendance Register",
         icon: ClipboardList,
         path: "/attendance-register",
+        perm: "attendance.view"
       },
-      { label: "Shifts", icon: Timer, path: "/shifts" },
-      { label: "Holidays", icon: CalendarRange, path: "/holidays" },
+      { label: "Shifts", icon: Timer, path: "/shifts", perm: "attendance.view" },
+      { label: "Holidays", icon: CalendarRange, path: "/holidays", perm: "attendance.view" },
     ],
   },
   {
     group: "Leave",
-    items: [{ label: "Leave Management", icon: Palmtree, path: "/leave" }],
+    items: [{ label: "Leave Management", icon: Palmtree, path: "/leave", perm: "leave.view" }],
   },
   {
     group: "Payroll",
     items: [
-      { label: "Salary Components", icon: Coins, path: "/salary-components" },
+      { label: "Salary Components", icon: Coins, path: "/salary-components", perm: "salary.view" },
       {
         label: "Salary Structures",
         icon: SlidersHorizontal,
         path: "/salary-structures",
+        perm: "salary.view"
       },
-      { label: "Employee Salary", icon: UserCheck, path: "/employee-salary" },
-      { label: "Payroll Runs", icon: Wallet, path: "/payroll" },
-      { label: "Payslips", icon: Receipt, path: "/payslips" },
+      { label: "Employee Salary", icon: UserCheck, path: "/employee-salary", perm: "salary.view" },
+      { label: "Payslips", icon: Receipt, path: "/payslips", perm: "payroll.view" },
     ],
   },
   {
     group: "Administration",
     items: [
-      { label: "Users", icon: UserCog, path: "/users" },
-      { label: "Roles & Permissions", icon: ShieldCheck, path: "/roles" },
-      { label: "Audit Logs", icon: History, path: "/audit-logs" },
-      { label: "Settings", icon: Settings, path: "/settings" },
+      { label: "Roles & Permissions", icon: ShieldCheck, path: "/roles", perm: "roles.view" },
+      { label: "Settings", icon: Settings, path: "/settings", perm: "settings.view" },
     ],
   },
 ];
@@ -109,6 +109,7 @@ export function Sidebar({
   mobileOpen: boolean;
   setMobileOpen: (v: boolean) => void;
 }) {
+  const { hasPermission } = useAuth();
   const loc = useLocation();
   const [openGroups, setOpenGroups] = useState<Record<string, boolean>>({
     Organization: true,
@@ -116,6 +117,18 @@ export function Sidebar({
     Payroll: true,
   });
   const toggle = (g: string) => setOpenGroups((s) => ({ ...s, [g]: !s[g] }));
+
+  const filteredNav = nav
+    .map((g) => {
+      if (g.items) {
+        return {
+          ...g,
+          items: g.items.filter((i) => !i.perm || hasPermission(i.perm)),
+        };
+      }
+      return g;
+    })
+    .filter((g) => !g.items || g.items.length > 0);
   const content = (
     <div
       className={cn(
@@ -137,7 +150,7 @@ export function Sidebar({
         )}
       </div>
       <div className="flex-1 overflow-y-auto py-2 px-2 space-y-4">
-        {nav.map((item: any) => {
+        {filteredNav.map((item: any) => {
           if (item.path)
             return (
               <NavLink

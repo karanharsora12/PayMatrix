@@ -194,18 +194,12 @@ export default function Company() {
         />
 
         <div className="h-[500px]">
-          {isLoading ? (
-            <div className="h-full flex items-center justify-center text-muted-foreground">
-              Loading companies...
-            </div>
-          ) : (
-            <DataGrid
-              ref={gridRef}
-              rowData={companies}
-              columnDefs={columnDefs}
-              gridOptions={{ onRowDoubleClicked: (e) => handleEdit(e.data) }}
-            />
-          )}
+          <DataGrid
+            ref={gridRef}
+            rowData={companies}
+            columnDefs={columnDefs}
+            gridOptions={{ onRowDoubleClicked: (e) => handleEdit(e.data) }}
+          />
         </div>
       </ListingCard>
 

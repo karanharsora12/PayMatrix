@@ -259,19 +259,8 @@ export default function SalaryComponents() {
         width: 120,
         cellRenderer: (p: any) => (
           <div className="flex items-center gap-1 h-full">
-            {p.data.isTaxable && (
-              <Badge variant="outline" className="text-[10px] px-1 py-0">
-                Tax
-              </Badge>
-            )}
-            {p.data.isStatutory && (
-              <Badge
-                variant="secondary"
-                className="text-[10px] px-1 py-0 bg-blue-50 text-blue-700 border-blue-200"
-              >
-                <ShieldCheck className="h-2.5 w-2.5 mr-0.5" /> Stat
-              </Badge>
-            )}
+            {p.data.isTaxable && <span>Tax</span>}
+            {p.data.isStatutory && <span>Stat</span>}
           </div>
         ),
       },
