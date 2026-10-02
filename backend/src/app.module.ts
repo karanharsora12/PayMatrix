@@ -29,6 +29,7 @@ import { EmployeeGroupsModule } from './employee-groups/employee-groups.module';
 import { DocumentMasterModule } from './document-master/document-master.module';
 import { NotificationsModule } from './notifications/notifications.module';
 import { HealthModule } from './health/health.module';
+import { UploadsModule } from './uploads/uploads.module';
 import { JwtAuthGuard } from './common/guards/jwt-auth.guard';
 import { RolesGuard } from './common/guards/roles.guard';
 
@@ -63,6 +64,7 @@ import { RolesGuard } from './common/guards/roles.guard';
     DocumentMasterModule,
     NotificationsModule,
     HealthModule,
+    UploadsModule,
   ],
   providers: [
     Reflector,

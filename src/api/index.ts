@@ -10,4 +10,4 @@ export * from './salary';
 export * from './dashboard';
 export * from './reports';
 export * from './users';
-
+export * from './uploads';

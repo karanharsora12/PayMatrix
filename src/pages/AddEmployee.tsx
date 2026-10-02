@@ -1,9 +1,10 @@
+import { uploadApi, getFileUrl } from "@/api";
 import { branchApi } from "@/api/branches";
 import { departmentApi } from "@/api/departments";
 import { designationApi } from "@/api/designations";
 import { FormFooter } from "@/components/common/FormFooter";
-import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
+import { Input } from "@/components/ui/input";
 import {
   Select,
   SelectContent,
@@ -16,12 +17,7 @@ import {
   useEmployee,
   useUpdateEmployee,
 } from "@/hooks/useEmployees";
-import {
-  useCreateUser,
-  useRoles,
-  useUsers,
-  useAssignUserRole,
-} from "@/hooks/useUsersRoles";
+import { useRoles } from "@/hooks/useUsersRoles";
 import { cn } from "@/lib/utils";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useQuery } from "@tanstack/react-query";
@@ -33,11 +29,11 @@ import {
   CreditCard,
   Eye,
   EyeOff,
+  Info,
   KeyRound,
   Phone,
   Shield,
   User,
-  Info,
 } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import { Controller, useForm } from "react-hook-form";
@@ -146,10 +142,7 @@ export default function AddEmployee() {
   const createMut = useCreateEmployee();
   const updateMut = useUpdateEmployee(id || "");
   const { data: empData } = useEmployee(id || "");
-  const createUser = useCreateUser();
-  const assignRole = useAssignUserRole();
   const { data: rolesResp } = useRoles();
-  const { data: usersResp } = useUsers();
 
   const [showPassword, setShowPassword] = useState(false);
   const [avatarPreview, setAvatarPreview] = useState<string | null>(null);
@@ -190,10 +183,8 @@ export default function AddEmployee() {
     },
   });
 
-  const usersList: any[] = (usersResp as any)?.data ?? [];
-  const tiedUser = isEdit
-    ? usersList.find((u: any) => u.employeeId === id)
-    : null;
+  const eData: any = (empData as any)?.data || empData;
+  const tiedUser = isEdit ? eData?.user : null;
   const userRole = tiedUser?.roles?.[0]?.id || "";
 
   const watchedFirstName = watch("firstName");
@@ -207,6 +198,9 @@ export default function AddEmployee() {
   useEffect(() => {
     if (isEdit && empData) {
       const e: any = (empData as any)?.data || empData;
+      if (e.profilePhotoUrl && !avatarPreview) {
+        setAvatarPreview(getFileUrl(e.profilePhotoUrl));
+      }
       reset({
         employeeCode: e.employeeCode || e.employeeId || "",
         firstName: e.firstName || "",
@@ -261,6 +255,18 @@ export default function AddEmployee() {
   const desigList = (desigs as any)?.data ?? [];
   const rolesList: any[] = (rolesResp as any)?.data ?? [];
 
+  const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      try {
+        const url = await uploadApi.uploadImage(file);
+        setAvatarPreview(url);
+      } catch (err) {
+        toast.error("Failed to upload image");
+      }
+    }
+  };
+
   const onSubmit = async (values: FormValues) => {
     try {
       const payload = {
@@ -278,47 +284,26 @@ export default function AddEmployee() {
         bloodGroup: values.bloodGroup || undefined,
         panNumber: values.panNumber || undefined,
         nationalIdNumber: values.nationalIdNumber || undefined,
+        pfNumber: values.uanNumber || undefined,
+        esiNumber: values.esiNumber || undefined,
+        bankName: values.bankName || undefined,
+        accountNumber: values.accountNumber || undefined,
+        ifscCode: values.ifscCode || undefined,
+        accountHolder: values.accountHolder || undefined,
+        profilePhotoUrl: avatarPreview || undefined,
+        roleId: values.roleId || undefined,
+        password: values.password || undefined,
       };
 
       if (isEdit) {
         await updateMut.mutateAsync(payload);
-        if (values.roleId && tiedUser && values.roleId !== userRole) {
-          try {
-            await assignRole.mutateAsync({
-              userId: tiedUser.id,
-              roleIds: [values.roleId],
-            });
-          } catch (err) {
-            toast.warning("Employee updated, but failed to update user role.");
-          }
-        }
         toast.success("Employee updated successfully");
       } else {
-        const created = await createMut.mutateAsync(payload);
-        const newEmp: any = (created as any)?.data || created;
+        await createMut.mutateAsync(payload);
         if (values.email) {
-          const selectedRole = rolesList.find((r) => r.id === values.roleId);
-          const empRole =
-            selectedRole ||
-            rolesList.find(
-              (r) =>
-                r.slug === "EMPLOYEE" || r.name?.toLowerCase() === "employee",
-            );
-          const password = values.password?.trim() || "PayMatrix@123";
-          try {
-            await createUser.mutateAsync({
-              email: values.email,
-              password,
-              employeeId: newEmp?.id,
-              roleIds: empRole ? [empRole.id] : [],
-            });
-            toast.success(
-              `Employee created! Login: ${values.email} · Password: ${password}`,
-            );
-          } catch {
-            toast.success("Employee record created.");
-            toast.warning(`Could not create user login for ${values.email}.`);
-          }
+          toast.success(
+            `Employee created! Login: ${values.email} · Password: ${values.password?.trim() || "PayMatrix@123"}`,
+          );
         } else {
           toast.success("Employee created successfully.");
         }
@@ -348,7 +333,7 @@ export default function AddEmployee() {
           </button>
           <div>
             <h1 className="text-lg font-semibold text-slate-800 dark:text-slate-100 leading-none">
-              {isEdit ? "Edit Employee" : "New Employee"}
+              Employee
             </h1>
             <p className="text-xs text-muted-foreground mt-0.5">
               {isEdit
@@ -383,9 +368,12 @@ export default function AddEmployee() {
                     <div className="h-20 w-20 rounded-full border-2 border-dashed border-primary/30 group-hover:border-primary overflow-hidden bg-primary/5 flex items-center justify-center transition-colors">
                       {avatarPreview ? (
                         <img
-                          src={avatarPreview}
+                          src={getFileUrl(avatarPreview)}
                           alt="Preview"
                           className="h-full w-full object-cover"
+                          onError={() => {
+                            setAvatarPreview(null);
+                          }}
                         />
                       ) : (
                         <span className="text-xl font-bold text-primary/60">
@@ -402,10 +390,7 @@ export default function AddEmployee() {
                     type="file"
                     accept="image/*"
                     className="hidden"
-                    onChange={(e) => {
-                      const file = e.target.files?.[0];
-                      if (file) setAvatarPreview(URL.createObjectURL(file));
-                    }}
+                    onChange={handleImageUpload}
                   />
                   <div className="text-center">
                     <p className="text-xs font-medium text-slate-600 dark:text-slate-300">

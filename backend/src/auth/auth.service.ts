@@ -32,7 +32,10 @@ export class AuthService {
   }
 
   async login(email: string, password: string) {
-    const user: any = await this.db.query.users.findFirst({ where: (u: any, { eq }: any) => eq(u.email, email) });
+    const user: any = await this.db.query.users.findFirst({
+      where: (u: any, { eq }: any) => eq(u.email, email),
+      with: { employee: true },
+    });
     if (!user) throw new UnauthorizedException({ code: 'AUTH_INVALID_CREDENTIALS', message: 'Invalid credentials' });
     if (!user.isActive) throw new UnauthorizedException({ code: 'AUTH_ACCOUNT_DISABLED', message: 'Account disabled' });
     const ok = await bcrypt.compare(password, user.passwordHash);
@@ -68,7 +71,14 @@ export class AuthService {
     return {
       accessToken,
       refreshToken,
-      user: { id: user.id, email: user.email, companyId: user.companyId, roles, permissions: perms },
+      user: {
+        id: user.id,
+        email: user.email,
+        companyId: user.companyId,
+        roles,
+        permissions: perms,
+        employee: user.employee,
+      },
     };
   }
 
