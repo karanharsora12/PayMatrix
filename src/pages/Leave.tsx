@@ -754,7 +754,7 @@ export default function Leave() {
 
       {/* Request Leave Modal */}
       <Dialog open={requestModalOpen} onOpenChange={setRequestModalOpen}>
-        <DialogContent onClose={() => setRequestModalOpen(false)}>
+        <DialogContent>
           <DialogHeader>
             <DialogTitle>Leave Request</DialogTitle>
           </DialogHeader>
@@ -870,7 +870,7 @@ export default function Leave() {
 
       {/* Reject Modal */}
       <Dialog open={rejectModalOpen} onOpenChange={setRejectModalOpen}>
-        <DialogContent onClose={() => setRejectModalOpen(false)}>
+        <DialogContent>
           <DialogHeader>
             <DialogTitle>Reject Request</DialogTitle>
           </DialogHeader>
@@ -910,7 +910,7 @@ export default function Leave() {
 
       {/* Create / Edit Leave Type Modal */}
       <Dialog open={typeModalOpen} onOpenChange={setTypeModalOpen}>
-        <DialogContent onClose={() => setTypeModalOpen(false)}>
+        <DialogContent>
           <DialogHeader>
             <DialogTitle>Leave Type</DialogTitle>
           </DialogHeader>

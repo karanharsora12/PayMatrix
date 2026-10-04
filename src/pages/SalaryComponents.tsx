@@ -303,10 +303,7 @@ export default function SalaryComponents() {
 
       {/* Add/Edit Modal */}
       <Dialog open={isModalOpen} onOpenChange={setIsModalOpen}>
-        <DialogContent
-          className="max-w-lg"
-          onClose={() => setIsModalOpen(false)}
-        >
+        <DialogContent className="max-w-lg">
           <DialogHeader>
             <DialogTitle>Salary Component</DialogTitle>
           </DialogHeader>
@@ -517,10 +514,7 @@ export default function SalaryComponents() {
         open={Boolean(deleteTarget)}
         onOpenChange={(open) => !open && setDeleteTarget(null)}
       >
-        <DialogContent
-          className="max-w-md"
-          onClose={() => setDeleteTarget(null)}
-        >
+        <DialogContent className="max-w-md">
           <DialogHeader>
             <DialogTitle>Delete Salary Component</DialogTitle>
           </DialogHeader>

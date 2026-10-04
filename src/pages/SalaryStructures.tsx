@@ -714,10 +714,7 @@ export default function SalaryStructures() {
 
       {/* Add Component Dialog */}
       <Dialog open={isAddComponentOpen} onOpenChange={setIsAddComponentOpen}>
-        <DialogContent
-          className="max-w-md"
-          onClose={() => setIsAddComponentOpen(false)}
-        >
+        <DialogContent className="max-w-md">
           <DialogHeader>
             <DialogTitle>Component</DialogTitle>
           </DialogHeader>
@@ -765,10 +762,7 @@ export default function SalaryStructures() {
 
       {/* Create Structure Dialog */}
       <Dialog open={isCreateOpen} onOpenChange={setIsCreateOpen}>
-        <DialogContent
-          className="max-w-md"
-          onClose={() => setIsCreateOpen(false)}
-        >
+        <DialogContent className="max-w-md">
           <DialogHeader>
             <DialogTitle>Salary Structure</DialogTitle>
           </DialogHeader>

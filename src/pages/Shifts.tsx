@@ -449,7 +449,7 @@ export default function Shifts() {
 
       {/* Create / Edit Shift Modal */}
       <Dialog open={createOpen} onOpenChange={setCreateOpen}>
-        <DialogContent onClose={() => setCreateOpen(false)}>
+        <DialogContent>
           <DialogHeader>
             <DialogTitle>Shift</DialogTitle>
           </DialogHeader>
@@ -614,7 +614,7 @@ export default function Shifts() {
 
       {/* Assign Shift Modal */}
       <Dialog open={assignOpen} onOpenChange={setAssignOpen}>
-        <DialogContent onClose={() => setAssignOpen(false)}>
+        <DialogContent>
           <DialogHeader>
             <DialogTitle>Assign Shift</DialogTitle>
           </DialogHeader>
