@@ -43,7 +43,14 @@ export class AuthService {
 
     const { roles, perms } = await this.loadPermissions(user.id);
 
-    const payload = { sub: user.id, companyId: user.companyId, email: user.email, roles, permissions: perms };
+    const payload = {
+      sub: user.id,
+      companyId: user.companyId,
+      email: user.email,
+      roles,
+      permissions: perms,
+      employeeId: user.employeeId,
+    };
     const accessToken = await this.jwt.signAsync(payload as any, {
       secret: this.config.get<string>('JWT_SECRET') ?? 'dev-secret',
       expiresIn: (this.config.get<string>('JWT_EXPIRES_IN') ?? '15m') as any
@@ -78,6 +85,7 @@ export class AuthService {
         roles,
         permissions: perms,
         employee: user.employee,
+        employeeId: user.employeeId,
       },
     };
   }
@@ -91,7 +99,14 @@ export class AuthService {
       const user: any = await this.db.query.users.findFirst({ where: (u: any, { eq }: any) => eq(u.id, payload.sub) });
       if (!user || !user.isActive) throw new UnauthorizedException('User not found or disabled');
       const { roles, perms } = await this.loadPermissions(user.id);
-      const newPayload = { sub: user.id, companyId: user.companyId, email: user.email, roles, permissions: perms };
+      const newPayload = {
+        sub: user.id,
+        companyId: user.companyId,
+        email: user.email,
+        roles,
+        permissions: perms,
+        employeeId: user.employeeId,
+      };
       const accessToken = await this.jwt.signAsync(newPayload);
       return { accessToken };
     } catch (e: any) {
@@ -107,7 +122,15 @@ export class AuthService {
     });
     if (!user) throw new UnauthorizedException('User not found');
     const { roles, perms } = await this.loadPermissions(userId);
-    return { id: user.id, email: user.email, companyId: user.companyId, employee: user.employee, roles, permissions: perms };
+    return {
+      id: user.id,
+      email: user.email,
+      companyId: user.companyId,
+      employee: user.employee,
+      employeeId: user.employeeId,
+      roles,
+      permissions: perms,
+    };
   }
 
   async changePassword(userId: string, oldPassword: string, newPassword: string) {

@@ -93,6 +93,7 @@ const nav = [
     group: "Administration",
     items: [
       { label: "Roles & Permissions", icon: ShieldCheck, path: "/roles", perm: "roles.view" },
+      { label: "User Parameters", icon: SlidersHorizontal, path: "/user-parameters", perm: "roles.view" },
       { label: "Settings", icon: Settings, path: "/settings", perm: "settings.view" },
     ],
   },

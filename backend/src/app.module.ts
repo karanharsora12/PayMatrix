@@ -30,6 +30,7 @@ import { DocumentMasterModule } from './document-master/document-master.module';
 import { NotificationsModule } from './notifications/notifications.module';
 import { HealthModule } from './health/health.module';
 import { UploadsModule } from './uploads/uploads.module';
+import { ParametersModule } from './parameters/parameters.module';
 import { JwtAuthGuard } from './common/guards/jwt-auth.guard';
 import { RolesGuard } from './common/guards/roles.guard';
 
@@ -65,6 +66,7 @@ import { RolesGuard } from './common/guards/roles.guard';
     NotificationsModule,
     HealthModule,
     UploadsModule,
+    ParametersModule,
   ],
   providers: [
     Reflector,

@@ -54,6 +54,7 @@ export * from "./statutory";
 export * from "./permissions";
 export * from "./roles";
 export * from "./users";
+export * from "./user-parameters";
 
 // Cross-cutting
 export * from "./audit-logs";

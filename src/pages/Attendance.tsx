@@ -48,6 +48,10 @@ import {
 } from '@/hooks/useAttendance';
 import { useEmployees } from '@/hooks/useEmployees';
 import type { AttendanceRecord } from '@/api/attendance';
+import { useAuth } from '@/context/AuthContext';
+import { useSelector } from 'react-redux';
+import type { RootState } from '@/store';
+import { ShieldAlert, User } from 'lucide-react';
 
 export default function Attendance() {
   const today = new Date().toISOString().substring(0, 10);
@@ -60,11 +64,20 @@ export default function Attendance() {
   const [filterStatus, setFilterStatus] = useState('');
   const [calendarMonth, setCalendarMonth] = useState(currentMonthStr);
 
+  const { user } = useAuth();
+  const canManageAttendance = useSelector(
+    (state: RootState) => state.userParameters.CanManageAttendance,
+  );
+  const currentEmployeeId = user?.employeeId || user?.employee?.id || '';
+  const effectiveFilterEmployeeId = canManageAttendance
+    ? filterEmployeeId
+    : currentEmployeeId;
+
   // Queries
   const { data: attendanceData, isLoading: tableLoading, refetch } = useAttendance({
     fromDate: fromDate || undefined,
     toDate: toDate || undefined,
-    employeeId: filterEmployeeId || undefined,
+    employeeId: effectiveFilterEmployeeId || undefined,
     status: filterStatus || undefined,
     pageSize: 50,
   });
@@ -78,22 +91,38 @@ export default function Attendance() {
 
   const { data: calendarRecords } = useAttendanceCalendar({
     month: calendarMonth,
-    employeeId: filterEmployeeId || undefined,
+    employeeId: effectiveFilterEmployeeId || undefined,
   });
 
   const { data: punchLogs } = useAttendanceLogs({
     fromDate: fromDate || undefined,
     toDate: toDate || undefined,
-    employeeId: filterEmployeeId || undefined,
+    employeeId: effectiveFilterEmployeeId || undefined,
   });
 
   const { data: employeesData } = useEmployees({ pageSize: 100 });
   const employees = employeesData?.data ?? [];
 
-  const employeeOptions = useMemo(() => employees.map((e: any) => ({
-    value: e.id,
-    label: `${e.firstName} ${e.lastName} (${e.employeeCode})`
-  })), [employees]);
+  const employeeOptions = useMemo(() => {
+    if (!canManageAttendance && currentEmployeeId) {
+      const selfEmp =
+        employees.find((e: any) => e.id === currentEmployeeId) ||
+        user?.employee;
+      const firstName = selfEmp?.firstName || user?.name?.split(' ')[0] || 'User';
+      const lastName = selfEmp?.lastName || '';
+      const code = (selfEmp as any)?.employeeCode ? ` (${(selfEmp as any).employeeCode})` : '';
+      return [
+        {
+          value: currentEmployeeId,
+          label: `${firstName} ${lastName}${code}`.trim(),
+        },
+      ];
+    }
+    return employees.map((e: any) => ({
+      value: e.id,
+      label: `${e.firstName} ${e.lastName} (${e.employeeCode})`,
+    }));
+  }, [employees, canManageAttendance, currentEmployeeId, user]);
 
   const statusOptions = useMemo(() => [
     { value: "PRESENT", label: "PRESENT" },
@@ -155,7 +184,9 @@ export default function Attendance() {
   const handleOpenManualCreate = () => {
     setEditingRecord(null);
     setManualForm({
-      employeeId: employees[0]?.id ?? '',
+      employeeId: canManageAttendance
+        ? employees[0]?.id ?? ''
+        : currentEmployeeId,
       attendanceDate: today,
       checkInTime: '09:30',
       checkOutTime: '18:30',
@@ -184,7 +215,11 @@ export default function Attendance() {
 
   const handleSaveManual = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!manualForm.employeeId || !manualForm.attendanceDate) {
+    const targetEmpId = canManageAttendance
+      ? manualForm.employeeId
+      : currentEmployeeId;
+
+    if (!targetEmpId || !manualForm.attendanceDate) {
       toast.error('Employee and Date are required');
       return;
     }
@@ -211,7 +246,7 @@ export default function Attendance() {
         toast.success('Attendance updated');
       } else {
         await createMutation.mutateAsync({
-          employeeId: manualForm.employeeId,
+          employeeId: targetEmpId,
           attendanceDate: manualForm.attendanceDate,
           checkIn: checkInIso,
           checkOut: checkOutIso,
@@ -229,14 +264,18 @@ export default function Attendance() {
 
   const handleSavePunch = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!punchForm.employeeId) {
+    const targetEmpId = canManageAttendance
+      ? punchForm.employeeId
+      : currentEmployeeId;
+
+    if (!targetEmpId) {
       toast.error('Select employee');
       return;
     }
 
     try {
       await punchMutation.mutateAsync({
-        employeeId: punchForm.employeeId,
+        employeeId: targetEmpId,
         punchTime: new Date(punchForm.punchTime).toISOString(),
         punchType: punchForm.punchType,
         source: 'WEB',
@@ -373,8 +412,10 @@ export default function Attendance() {
               size="sm"
               onClick={() => {
                 setPunchForm({
-                  employeeId: employees[0]?.id || "",
-                  punchType: "IN",
+                  employeeId: canManageAttendance
+                    ? employees[0]?.id || ''
+                    : currentEmployeeId,
+                  punchType: 'IN',
                   punchTime: new Date().toISOString().substring(0, 16),
                 });
                 setPunchOpen(true);
@@ -463,17 +504,36 @@ export default function Attendance() {
             {/* Server-side Filter Bar */}
             <div className="p-3 flex flex-wrap items-center gap-3 rounded-lg border border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-900/50">
               <div className="flex-1 min-w-[200px]">
-                <Select value={filterEmployeeId || "ALL"} onValueChange={(val) => setFilterEmployeeId(val === "ALL" ? "" : val)}>
-                  <SelectTrigger>
-                    <SelectValue placeholder="All Employees" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="ALL">All Employees</SelectItem>
-                    {employeeOptions.map(opt => (
-                      <SelectItem key={opt.value} value={opt.value}>{opt.label}</SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+                {canManageAttendance ? (
+                  <Select
+                    value={filterEmployeeId || 'ALL'}
+                    onValueChange={(val) =>
+                      setFilterEmployeeId(val === 'ALL' ? '' : val)
+                    }
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder="All Employees" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="ALL">All Employees</SelectItem>
+                      {employeeOptions.map((opt) => (
+                        <SelectItem key={opt.value} value={opt.value}>
+                          {opt.label}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                ) : (
+                  <div className="flex items-center gap-2 h-9 px-3 rounded-md border bg-muted/60 text-xs font-medium text-foreground">
+                    <User className="h-3.5 w-3.5 text-primary shrink-0" />
+                    <span className="truncate">
+                      {employeeOptions[0]?.label || 'Self Attendance'}
+                    </span>
+                    <Badge variant="outline" className="text-[10px] ml-auto shrink-0">
+                      Self Only
+                    </Badge>
+                  </div>
+                )}
               </div>
               <div className="flex items-center gap-2">
                 <span className="text-xs text-muted-foreground font-medium">From:</span>
@@ -617,18 +677,36 @@ export default function Attendance() {
           </DialogHeader>
           <form onSubmit={handleSaveManual} className="space-y-4">
             <div>
-              <label className="text-xs font-medium text-muted-foreground">Employee</label>
+              <div className="flex items-center justify-between mb-1">
+                <label className="text-xs font-medium text-muted-foreground">
+                  Employee
+                </label>
+                {!canManageAttendance && (
+                  <span className="text-[10px] text-muted-foreground">
+                    (Restricted to your account)
+                  </span>
+                )}
+              </div>
               <Select
-                value={manualForm.employeeId}
-                onValueChange={(val) => setManualForm({ ...manualForm, employeeId: val })}
-                disabled={!!editingRecord}
+                value={
+                  canManageAttendance
+                    ? manualForm.employeeId
+                    : currentEmployeeId
+                }
+                onValueChange={(val) =>
+                  canManageAttendance &&
+                  setManualForm({ ...manualForm, employeeId: val })
+                }
+                disabled={!canManageAttendance || !!editingRecord}
               >
-                <SelectTrigger>
+                <SelectTrigger className={!canManageAttendance ? 'bg-muted/60 cursor-not-allowed' : ''}>
                   <SelectValue placeholder="Select employee" />
                 </SelectTrigger>
                 <SelectContent>
-                  {employeeOptions.map(opt => (
-                    <SelectItem key={opt.value} value={opt.value}>{opt.label}</SelectItem>
+                  {employeeOptions.map((opt) => (
+                    <SelectItem key={opt.value} value={opt.value}>
+                      {opt.label}
+                    </SelectItem>
                   ))}
                 </SelectContent>
               </Select>
@@ -721,17 +799,36 @@ export default function Attendance() {
           </DialogHeader>
           <form onSubmit={handleSavePunch} className="space-y-4">
             <div>
-              <label className="text-xs font-medium text-muted-foreground">Employee</label>
+              <div className="flex items-center justify-between mb-1">
+                <label className="text-xs font-medium text-muted-foreground">
+                  Employee
+                </label>
+                {!canManageAttendance && (
+                  <span className="text-[10px] text-muted-foreground">
+                    (Restricted to your account)
+                  </span>
+                )}
+              </div>
               <Select
-                value={punchForm.employeeId}
-                onValueChange={(val) => setPunchForm({ ...punchForm, employeeId: val })}
+                value={
+                  canManageAttendance
+                    ? punchForm.employeeId
+                    : currentEmployeeId
+                }
+                onValueChange={(val) =>
+                  canManageAttendance &&
+                  setPunchForm({ ...punchForm, employeeId: val })
+                }
+                disabled={!canManageAttendance}
               >
-                <SelectTrigger>
+                <SelectTrigger className={!canManageAttendance ? 'bg-muted/60 cursor-not-allowed' : ''}>
                   <SelectValue placeholder="Select employee" />
                 </SelectTrigger>
                 <SelectContent>
-                  {employeeOptions.map(opt => (
-                    <SelectItem key={opt.value} value={opt.value}>{opt.label}</SelectItem>
+                  {employeeOptions.map((opt) => (
+                    <SelectItem key={opt.value} value={opt.value}>
+                      {opt.label}
+                    </SelectItem>
                   ))}
                 </SelectContent>
               </Select>

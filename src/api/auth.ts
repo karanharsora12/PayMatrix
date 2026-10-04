@@ -7,12 +7,14 @@ export type AuthUser = {
   name?: string;
   profilePhotoUrl?: string | null;
   companyId: string | null;
+  employeeId?: string | null;
   roles: string[];
   permissions: string[];
   employee?: {
     id: string;
     firstName: string;
     lastName: string;
+    employeeCode?: string;
     profilePhotoUrl?: string | null;
   } | null;
 };

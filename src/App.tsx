@@ -30,6 +30,7 @@ import Bonuses from "@/pages/Bonuses";
 import Compliance from "@/pages/Compliance";
 import Reports from "@/pages/Reports";
 import UsersRoles from "@/pages/UsersRoles";
+import UserParameters from "@/pages/UserParameters";
 import Settings from "@/pages/Settings";
 import Placeholder from "@/pages/Placeholder";
 import Login from "@/pages/Login";
@@ -159,6 +160,7 @@ export default function App() {
             <Route path="/reports" element={<Reports />} />
             <Route path="/users" element={<UsersRoles />} />
             <Route path="/roles" element={<UsersRoles />} />
+            <Route path="/user-parameters" element={<UserParameters />} />
             <Route
               path="/audit-logs"
               element={<Placeholder title="Audit Logs" />}
