@@ -34,6 +34,18 @@ export interface HolidayItem {
   name?: string;
 }
 
+export interface ShiftAssignmentItem {
+  effectiveFrom: string;
+  effectiveTo?: string | null;
+  shift: {
+    code: string;
+    name: string;
+    workingHours?: string | number | null;
+    isNightShift?: boolean;
+    isActive?: boolean;
+  };
+}
+
 export interface DailyReconciliationItem {
   date: string; // YYYY-MM-DD
   dayOfWeek: string;
@@ -78,6 +90,7 @@ export class PaidDaysCalculationService {
     attendanceList: AttendanceRecordItem[],
     leaveList: LeaveRequestItem[],
     holidayList: HolidayItem[],
+    shiftList: ShiftAssignmentItem[],
     policy: PayrollProrationPolicy = 'CALENDAR_DAYS',
   ): PaidDaysResult {
     const { year, month } = period;
@@ -106,6 +119,19 @@ export class PaidDaysCalculationService {
     // Set of holiday date strings (YYYY-MM-DD)
     const holidayDates = new Set(holidayList.map((h) => this.formatDate(h.holidayDate)));
 
+    // Map applicable shift per date
+    const shiftMap = new Map<string, ShiftAssignmentItem>();
+    
+    for (let day = 1; day <= totalCalendarDays; day++) {
+      const dateStr = this.toDateStr(year, month, day);
+      const applicableShift = shiftList.find((s) => {
+        const fromStr = this.formatDate(s.effectiveFrom);
+        const toStr = s.effectiveTo ? this.formatDate(s.effectiveTo) : null;
+        return fromStr <= dateStr && (!toStr || toStr >= dateStr);
+      });
+      if (applicableShift) shiftMap.set(dateStr, applicableShift);
+    }
+
     // Count standard working days and eligible working days
     let totalCompanyWorkingDays = 0;
     let eligibleWorkingDays = 0;
@@ -114,8 +140,16 @@ export class PaidDaysCalculationService {
     for (let day = 1; day <= totalCalendarDays; day++) {
       const d = new Date(year, month - 1, day);
       const dateStr = this.toDateStr(year, month, day);
-      const isWeekend = d.getDay() === 0 || d.getDay() === 6; // Sun = 0, Sat = 6
       const isHoliday = holidayDates.has(dateStr);
+      
+      const shiftForDay = shiftMap.get(dateStr);
+      let isWeekend = d.getDay() === 0 || d.getDay() === 6; // Default fallback to Sat/Sun
+      if (shiftForDay && shiftForDay.shift && shiftForDay.shift.isActive !== undefined) {
+         // Some companies use shift configuration to define week off. 
+         // If a specific shift pattern defines working days, we can adapt here. 
+         // For now, if there is an explicit shift, we consider it a working day unless it's explicitly inactive.
+         if (shiftForDay.shift.isActive === false) isWeekend = true;
+      }
 
       if (!isWeekend && !isHoliday) {
         totalCompanyWorkingDays++;
@@ -200,7 +234,11 @@ export class PaidDaysCalculationService {
         const d = new Date(year, month - 1, day);
         const dateStr = this.toDateStr(year, month, day);
         if (dateStr >= effectiveStartStr && dateStr <= effectiveEndStr) {
-          const isWeekend = d.getDay() === 0 || d.getDay() === 6;
+          let isWeekend = d.getDay() === 0 || d.getDay() === 6;
+          const shiftForDay = shiftMap.get(dateStr);
+          if (shiftForDay && shiftForDay.shift && shiftForDay.shift.isActive === false) {
+             isWeekend = true;
+          }
           const isHoliday = holidayDates.has(dateStr);
 
           // If not logged as present/absent/leave in attendance logs
@@ -284,7 +322,13 @@ export class PaidDaysCalculationService {
       const d = new Date(year, month - 1, day);
       const dateStr = this.toDateStr(year, month, day);
       const dayOfWeek = dayNames[d.getDay()];
-      const isWeekend = d.getDay() === 0 || d.getDay() === 6;
+      
+      let isWeekend = d.getDay() === 0 || d.getDay() === 6;
+      const shiftForDay = shiftMap.get(dateStr);
+      if (shiftForDay && shiftForDay.shift && shiftForDay.shift.isActive === false) {
+         isWeekend = true;
+      }
+      
       const isHoliday = holidayDates.has(dateStr);
       const holidayName = isHoliday ? holidayMap.get(dateStr) || 'Public Holiday' : null;
 

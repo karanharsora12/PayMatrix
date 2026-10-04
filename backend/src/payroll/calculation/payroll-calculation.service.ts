@@ -18,12 +18,14 @@ import {
   PayrollCalculationException,
   PayrollRunCalculationResult,
 } from './payroll-calculation.types';
+import { ShiftsService } from '../../shifts/shifts.service';
 
 @Injectable()
 export class PayrollCalculationService {
   constructor(
     @Inject(DRIZZLE) private db: any,
     private paidDaysService: PaidDaysCalculationService,
+    private shiftsService: ShiftsService,
   ) {}
 
   /**
@@ -269,6 +271,21 @@ export class PayrollCalculationService {
         ),
       });
 
+      // 6.5 Batch load employee shifts
+      const shiftAssignmentsRes = await this.shiftsService.batchGetEmployeeShiftsForPeriod(
+        companyId,
+        empIds,
+        periodStart,
+        periodEnd,
+      );
+      const shiftsByEmp = new Map<string, any[]>();
+      if (shiftAssignmentsRes.success && shiftAssignmentsRes.data) {
+        for (const sa of shiftAssignmentsRes.data) {
+          if (!shiftsByEmp.has(sa.employeeId)) shiftsByEmp.set(sa.employeeId, []);
+          shiftsByEmp.get(sa.employeeId)!.push(sa);
+        }
+      }
+
       // 7. Load existing adjustments for this run
       const existingAdjustments: any[] = await this.db.select({
         adj: schema.payrollAdjustments,
@@ -337,6 +354,8 @@ export class PayrollCalculationService {
         // Attendance & Paid Days calculation
         const empAtt = attendanceByEmp.get(emp.id) || [];
         const empLeaves = leavesByEmp.get(emp.id) || [];
+        const empShifts = shiftsByEmp.get(emp.id) || [];
+
         const paidDaysRes = this.paidDaysService.calculatePaidDays(
           {
             id: emp.id,
@@ -353,6 +372,7 @@ export class PayrollCalculationService {
           empAtt,
           empLeaves,
           holidays,
+          empShifts,
           policy,
         );
 
@@ -847,6 +867,14 @@ export class PayrollCalculationService {
       name: h.name,
     }));
 
+    const shiftAssignmentsRes = await this.shiftsService.batchGetEmployeeShiftsForPeriod(
+      companyId,
+      [employeeId],
+      periodStart,
+      periodEnd,
+    );
+    const shiftAssignments = shiftAssignmentsRes.success ? shiftAssignmentsRes.data : [];
+
     const paidDaysRes = this.paidDaysService.calculatePaidDays(
       {
         id: emp.id,
@@ -863,6 +891,7 @@ export class PayrollCalculationService {
       attendanceRecords,
       leaveItems,
       holidayItems,
+      shiftAssignments,
       policy,
     );
 

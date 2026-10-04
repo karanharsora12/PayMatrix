@@ -3,9 +3,10 @@ import { AttendanceController } from './attendance.controller';
 import { AttendanceService } from './attendance.service';
 import { AttendanceCalculationService } from './attendance-calculation.service';
 import { ParametersModule } from '../parameters/parameters.module';
+import { ShiftsModule } from '../shifts/shifts.module';
 
 @Module({
-  imports: [ParametersModule],
+  imports: [ParametersModule, ShiftsModule],
   controllers: [AttendanceController],
   providers: [AttendanceService, AttendanceCalculationService],
   exports: [AttendanceService, AttendanceCalculationService],

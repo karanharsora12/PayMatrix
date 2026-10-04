@@ -3,5 +3,6 @@ export type { DataGridProps } from "./DataGrid";
 export { GridDeleteCell } from "./GridDeleteCell";
 export type { GridDeleteCellParams } from "./GridDeleteCell";
 export * from "./GridDateFloatingFilter";
+export * from "./DatePicker";
 export { AlertProvider, useAlert } from "./AlertProvider";
 export type { AlertOptions, AlertVariant } from "./AlertProvider";

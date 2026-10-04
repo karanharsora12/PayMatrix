@@ -344,22 +344,43 @@ export class ShiftsService {
       });
     }
 
-    const assignments = await this.db.query.employeeShiftAssignments.findMany({
-      where: (a: any, { eq, and, lte }: any) =>
-        and(eq(a.employeeId, employeeId), lte(a.effectiveFrom, dateStr)),
+    const assignment = await this.db.query.employeeShiftAssignments.findFirst({
+      where: (a: any, { eq, and, lte, or, gte, isNull }: any) =>
+        and(
+          eq(a.employeeId, employeeId),
+          lte(a.effectiveFrom, dateStr),
+          or(
+            isNull(a.effectiveTo),
+            gte(a.effectiveTo, dateStr)
+          )
+        ),
       with: { shift: true },
       orderBy: (a: any, { desc }: any) => desc(a.effectiveFrom),
     });
 
-    const current = assignments.find((a: any) => {
-      if (!a.effectiveTo) return true;
-      return a.effectiveTo >= dateStr;
-    });
-
     return {
       success: true,
-      data: current ?? null,
-      message: current ? 'Current shift retrieved' : 'No active shift assignment for date',
+      data: assignment ?? null,
+      message: assignment ? 'Current shift retrieved' : 'No active shift assignment for date',
     };
+  }
+
+  async batchGetEmployeeShiftsForPeriod(companyId: string, employeeIds: string[], periodStart: string, periodEnd: string) {
+    if (employeeIds.length === 0) return { success: true, data: [] };
+
+    const assignments = await this.db.query.employeeShiftAssignments.findMany({
+      where: (a: any, { inArray, and, lte, or, gte, isNull }: any) =>
+        and(
+          inArray(a.employeeId, employeeIds),
+          lte(a.effectiveFrom, periodEnd),
+          or(
+            isNull(a.effectiveTo),
+            gte(a.effectiveTo, periodStart)
+          )
+        ),
+      with: { shift: true },
+      orderBy: (a: any, { desc }: any) => desc(a.effectiveFrom),
+    });
+    return { success: true, data: assignments };
   }
 }

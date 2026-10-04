@@ -1,5 +1,5 @@
 import type { Shift } from "@/api/shifts";
-import { GridDateFloatingFilter, GridDeleteCell } from "@/components/common";
+import { DatePicker, GridDateFloatingFilter, GridDeleteCell } from "@/components/common";
 import { DataGrid } from "@/components/common/DataGrid";
 import { ListingCard } from "@/components/common/ListingCard";
 import { ListingHeader } from "@/components/common/ListingHeader";
@@ -413,18 +413,26 @@ export default function Shifts() {
                     Employee Shift History Lookup
                   </h3>
                 </div>
-                <div className="w-64">
-                  <NativeSelect
-                    placeholder="Select employee to view history"
-                    value={historyEmpId ?? ""}
-                    onChange={(val) => setHistoryEmpId(val || null)}
-                  >
-                    {employees.map((e) => (
-                      <option key={e.id} value={e.id}>
-                        {e.firstName} {e.lastName} ({e.employeeCode})
-                      </option>
-                    ))}
-                  </NativeSelect>
+                <div className="flex items-center gap-1">
+                  <div className="w-64">
+                    <NativeSelect
+                      placeholder="Select employee to view history"
+                      value={historyEmpId ?? ""}
+                      onChange={(val) => setHistoryEmpId(val || null)}
+                    >
+                      {employees.map((e) => (
+                        <option key={e.id} value={e.id}>
+                          {e.firstName} {e.lastName} ({e.employeeCode})
+                        </option>
+                      ))}
+                    </NativeSelect>
+                  </div>
+
+                  <div className="ml-4">
+                    <Button size="sm" onClick={() => handleOpenAssign()}>
+                      Assign Shift
+                    </Button>
+                  </div>
                 </div>
               </div>
               <div className="p-0">
@@ -662,37 +670,36 @@ export default function Shifts() {
 
             <div className="grid grid-cols-2 gap-3">
               <div>
-                <label className="text-xs font-medium text-muted-foreground">
-                  Effective From
+                <label className="text-xs font-medium text-muted-foreground block mb-1">
+                  Effective From <span className="text-destructive">*</span>
                 </label>
-                <Input
-                  type="date"
+                <DatePicker
                   value={assignForm.effectiveFrom}
-                  onChange={(e) =>
+                  onChange={(_, dateStr) =>
                     setAssignForm({
                       ...assignForm,
-                      effectiveFrom: e.target.value,
+                      effectiveFrom: dateStr,
                     })
                   }
-                  required
+                  placeholder="Select effective from"
                 />
               </div>
               <div>
-                <label className="text-xs font-medium text-muted-foreground">
+                <label className="text-xs font-medium text-muted-foreground block mb-1">
                   Effective To{" "}
                   <span className="text-muted-foreground font-normal">
                     (Optional)
                   </span>
                 </label>
-                <Input
-                  type="date"
+                <DatePicker
                   value={assignForm.effectiveTo}
-                  onChange={(e) =>
+                  onChange={(_, dateStr) =>
                     setAssignForm({
                       ...assignForm,
-                      effectiveTo: e.target.value,
+                      effectiveTo: dateStr,
                     })
                   }
+                  placeholder="Select effective to"
                 />
               </div>
             </div>

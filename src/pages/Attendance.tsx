@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { DataGrid } from "@/components/common/DataGrid";
+import { DatePicker } from "@/components/common";
 import type { ColDef } from "ag-grid-community";
 import { useMemo } from "react";
 import { Badge } from "@/components/ui/badge";
@@ -388,6 +389,18 @@ export default function Attendance() {
         cellClass: "font-mono text-sm",
       },
       {
+        field: "shiftName",
+        headerName: "Assigned Shift",
+        width: 140,
+        valueGetter: (p) => p.data.shiftName || "Not Assigned",
+        cellRenderer: (p: any) => (
+          <div className="flex items-center gap-1.5 h-full">
+            <Clock className="h-3.5 w-3.5 text-muted-foreground" />
+            <span className="text-sm font-medium">{p.value}</span>
+          </div>
+        ),
+      },
+      {
         field: "checkIn",
         headerName: "Check In",
         width: 100,
@@ -647,20 +660,20 @@ export default function Attendance() {
                 <span className="text-xs text-muted-foreground font-medium">
                   From:
                 </span>
-                <Input
-                  type="date"
+                <DatePicker
                   className="w-36 h-9 text-xs"
                   value={fromDate}
-                  onChange={(e) => setFromDate(e.target.value)}
+                  onChange={(_, str) => setFromDate(str)}
+                  placeholder="From date"
                 />
                 <span className="text-xs text-muted-foreground font-medium">
                   To:
                 </span>
-                <Input
-                  type="date"
+                <DatePicker
                   className="w-36 h-9 text-xs"
                   value={toDate}
-                  onChange={(e) => setToDate(e.target.value)}
+                  onChange={(_, str) => setToDate(str)}
+                  placeholder="To date"
                 />
               </div>
               <div className="w-36">
@@ -859,20 +872,19 @@ export default function Attendance() {
             </div>
 
             <div>
-              <label className="text-xs font-medium text-muted-foreground">
+              <label className="text-xs font-medium text-muted-foreground block mb-1">
                 Attendance Date
               </label>
-              <Input
-                type="date"
+              <DatePicker
                 value={manualForm.attendanceDate}
-                onChange={(e) =>
+                onChange={(_, str) =>
                   setManualForm({
                     ...manualForm,
-                    attendanceDate: e.target.value,
+                    attendanceDate: str,
                   })
                 }
                 disabled={!!editingRecord}
-                required
+                placeholder="Select date"
               />
             </div>
 

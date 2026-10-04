@@ -17,12 +17,14 @@ import {
   UpdateAttendanceDto,
 } from './dto/attendance.dto';
 import { AttendanceCalculationService } from './attendance-calculation.service';
+import { ShiftsService } from '../shifts/shifts.service';
 
 @Injectable()
 export class AttendanceService {
   constructor(
     @Inject(DRIZZLE) private db: any,
     private readonly calc: AttendanceCalculationService,
+    private readonly shiftsService: ShiftsService,
   ) {}
 
   async list(companyId: string, filter: AttendanceFilterDto) {
@@ -87,7 +89,25 @@ export class AttendanceService {
       orderBy: (a: any, { desc }: any) => desc(a.attendanceDate),
     });
 
-    return paginated(rows, total, filter, 'Attendance fetched successfully');
+    const enrichedRows = await Promise.all(
+      rows.map(async (r: any) => {
+        try {
+          const shiftRes = await this.shiftsService.getCurrentShift(
+            companyId,
+            r.employeeId,
+            r.attendanceDate,
+          );
+          return {
+            ...r,
+            shiftName: shiftRes.data?.shift?.name || 'Not Assigned',
+          };
+        } catch {
+          return { ...r, shiftName: 'Not Assigned' };
+        }
+      }),
+    );
+
+    return paginated(enrichedRows, total, filter, 'Attendance fetched successfully');
   }
 
   async get(companyId: string, id: string) {
@@ -141,18 +161,20 @@ export class AttendanceService {
       });
     }
 
-    // 3. Resolve assigned shift on date
-    const assignment = await this.db.query.employeeShiftAssignments.findFirst({
-      where: (a: any, { eq, and, lte }: any) =>
-        and(
-          eq(a.employeeId, dto.employeeId),
-          lte(a.effectiveFrom, dto.attendanceDate as any),
-        ),
-      with: { shift: true },
-      orderBy: (a: any, { desc }: any) => desc(a.effectiveFrom),
-    });
+    // 3. Resolve assigned shift on date using robust central service
+    const shiftResult = await this.shiftsService.getCurrentShift(
+      companyId,
+      dto.employeeId,
+      dto.attendanceDate,
+    );
 
-    const shift = assignment?.shift ?? null;
+    const shift = shiftResult.data?.shift ?? null;
+    if (!shift) {
+      throw new BadRequestException({
+        code: 'SHIFT_NOT_ASSIGNED',
+        message: `No shift is assigned to this employee for ${dto.attendanceDate}. Cannot mark attendance.`,
+      });
+    }
 
     // 4. Check approved leave on date
     const approvedLeave = await this.db.query.leaveRequests.findFirst({

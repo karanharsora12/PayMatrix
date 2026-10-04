@@ -468,7 +468,7 @@ export default function Employees() {
                 : "All Designations"
             }
             className="w-[180px] h-8 text-xs bg-white"
-            disabled={dept && dept !== "ALL" && designationOptions.length === 0}
+            disabled={Boolean(dept && dept !== "ALL" && designationOptions.length === 0)}
           >
             <option value="ALL">All Designations</option>
             {designationOptions.map((d) => (
