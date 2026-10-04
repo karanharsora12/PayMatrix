@@ -1,4 +1,4 @@
-import { useState, useMemo } from "react";
+import { useState, useMemo, useRef } from "react";
 import { useParams, useNavigate, useSearchParams } from "react-router-dom";
 import {
   Card,
@@ -54,6 +54,8 @@ import { payslipsApi } from "@/api/payslips";
 import { useEmployees } from "@/hooks/useEmployees";
 import { toast } from "sonner";
 import { ListingCard } from "@/components/common/ListingCard";
+import { ListingHeader } from "@/components/common/ListingHeader";
+import { gridExportExcel, gridExportPdf, gridPrint } from "@/lib/gridExport";
 import { ActionMenu } from "@/components/common/ActionMenu";
 
 // Helper to convert number to words for financial slip
@@ -177,10 +179,15 @@ export default function Payslip() {
   if (yearFilter !== "ALL") queryParams.year = parseInt(yearFilter, 10);
   if (monthFilter !== "ALL") queryParams.month = parseInt(monthFilter, 10);
 
-  const { data: listData, isLoading: isListLoading } = usePayslips(queryParams);
+  const {
+    data: listData,
+    isLoading: isListLoading,
+    refetch,
+  } = usePayslips(queryParams);
   const { data: detailData, isLoading: isDetailLoading } = usePayslip(
     selectedPayslipId || "",
   );
+  const gridRef = useRef<any>(null);
   const { data: employeesData } = useEmployees({ pageSize: 200, page: 1 });
 
   const calculatePreviewMutation = useCalculatePayslipPreview();
@@ -691,102 +698,77 @@ export default function Payslip() {
 
   return (
     <ListingCard>
-      {/* Top Banner */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-        <div>
-          <h1 className="text-2xl font-bold tracking-tight text-foreground flex items-center gap-2">
-            <FileSpreadsheet className="h-6 w-6 text-primary" />
-            Payslip & Payroll
-          </h1>
-        </div>
-        <Button
-          onClick={() => {
-            setIsGenerateModalOpen(true);
-            setPreviewData(null);
-          }}
-          className="gap-2 shadow-sm"
+      <ListingHeader
+        title="Payslips"
+        searchValue={searchTerm}
+        onSearchChange={setSearchTerm}
+        onAddNew={() => {
+          setIsGenerateModalOpen(true);
+          setPreviewData(null);
+        }}
+        addButtonText="Generate Payslip"
+        onRefresh={refetch}
+        onExportExcel={() =>
+          gridRef.current?.api &&
+          gridExportExcel(gridRef.current.api, "payslips.csv")
+        }
+        onExportPdf={() =>
+          gridRef.current?.api && gridExportPdf(gridRef.current.api, "Payslips")
+        }
+        onPrint={() =>
+          gridRef.current?.api && gridPrint(gridRef.current.api, "Payslips")
+        }
+      />
+
+      <div className="flex flex-wrap items-center gap-2 mb-3">
+        <NativeSelect
+          value={yearFilter}
+          onChange={(val) => setYearFilter(val)}
+          className="w-32 h-8 text-xs bg-white dark:bg-slate-900"
         >
-          <PlusCircle className="h-4 w-4" />
-          Generate Payslip
-        </Button>
+          <option value="ALL">All Years</option>
+          <option value="2027">2027</option>
+          <option value="2026">2026</option>
+          <option value="2025">2025</option>
+          <option value="2024">2024</option>
+        </NativeSelect>
+
+        <NativeSelect
+          value={monthFilter}
+          onChange={(val) => setMonthFilter(val)}
+          className="w-36 h-8 text-xs bg-white dark:bg-slate-900"
+        >
+          <option value="ALL">All Months</option>
+          {MONTH_NAMES.map((m, idx) => (
+            <option key={idx + 1} value={String(idx + 1)}>
+              {m}
+            </option>
+          ))}
+        </NativeSelect>
+
+        {(yearFilter !== "ALL" || monthFilter !== "ALL" || searchTerm) && (
+          <Button
+            variant="ghost"
+            size="sm"
+            className="h-8 text-xs text-muted-foreground hover:text-foreground"
+            onClick={() => {
+              setSearchTerm("");
+              setYearFilter("ALL");
+              setMonthFilter("ALL");
+            }}
+          >
+            Reset Filters
+          </Button>
+        )}
       </div>
 
-      {/* Filter and Search Bar */}
-      <Card>
-        <CardContent className="p-4">
-          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-3">
-            <div className="relative">
-              <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
-              <Input
-                placeholder="Search payslip #, employee, dept..."
-                className="pl-8 text-xs h-9"
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-              />
-            </div>
-
-            <NativeSelect
-              value={yearFilter}
-              onChange={(val) => setYearFilter(val)}
-              className="text-xs h-9"
-            >
-              <option value="ALL">All Years</option>
-              <option value="2027">2027</option>
-              <option value="2026">2026</option>
-              <option value="2025">2025</option>
-              <option value="2024">2024</option>
-            </NativeSelect>
-
-            <NativeSelect
-              value={monthFilter}
-              onChange={(val) => setMonthFilter(val)}
-              className="text-xs h-9"
-            >
-              <option value="ALL">All Months</option>
-              {MONTH_NAMES.map((m, idx) => (
-                <option key={idx + 1} value={String(idx + 1)}>
-                  {m}
-                </option>
-              ))}
-            </NativeSelect>
-
-            <Button
-              variant="outline"
-              size="sm"
-              className="h-9 text-xs"
-              onClick={() => {
-                setSearchTerm("");
-                setYearFilter("ALL");
-                setMonthFilter("ALL");
-              }}
-            >
-              Reset Filters
-            </Button>
-          </div>
-        </CardContent>
-      </Card>
-
-      {/* Payslips AG Grid */}
-      <Card>
-        <CardHeader className="p-4 pb-2">
-          <div className="flex items-center justify-between">
-            <div>
-              <CardTitle className="text-base font-semibold">
-                Generated Payslips Directory
-              </CardTitle>
-              <CardDescription className="text-xs">
-                Showing {filteredList.length} finalized employee payslip
-                snapshots
-              </CardDescription>
-            </div>
-          </div>
-        </CardHeader>
-        <CardContent className="p-4 pt-2">
-          <div className="h-[520px] w-full">
-            <DataGrid rowData={filteredList} columnDefs={payslipColDefs} />
-          </div>
-        </CardContent>
-      </Card>
+      <div className="h-[600px] w-full">
+        <DataGrid
+          ref={gridRef}
+          rowData={filteredList}
+          columnDefs={payslipColDefs}
+        />
+      </div>
 
       {/* ================= INTERACTIVE GENERATE / PREVIEW MODAL ================= */}
       <Dialog open={isGenerateModalOpen} onOpenChange={setIsGenerateModalOpen}>
