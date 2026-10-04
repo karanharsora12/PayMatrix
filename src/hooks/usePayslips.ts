@@ -1,5 +1,6 @@
-import { useQuery } from '@tanstack/react-query';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { payslipsApi } from '@/api/payslips';
+import { toast } from 'sonner';
 
 export const payslipKeys = {
   all: ['payslips'] as const,
@@ -30,3 +31,50 @@ export function useEmployeePayslips(employeeId: string) {
     enabled: !!employeeId,
   });
 }
+
+export function useCalculatePayslipPreview() {
+  return useMutation({
+    mutationFn: (data: { employeeId: string; year: number; month: number; policy?: string }) =>
+      payslipsApi.calculatePreview(data),
+    onError: (err: any) => {
+      const msg = err.response?.data?.message || err.message || 'Failed to calculate payslip preview';
+      toast.error('Calculation Exception', { description: msg });
+    },
+  });
+}
+
+export function useGenerateSinglePayslip() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (data: { employeeId: string; year: number; month: number; policy?: string }) =>
+      payslipsApi.generateSingle(data),
+    onSuccess: (data: any) => {
+      queryClient.invalidateQueries({ queryKey: payslipKeys.all });
+      toast.success('Payslip Finalized', {
+        description: `Payslip ${data?.payslipNumber || ''} created and locked successfully.`,
+      });
+    },
+    onError: (err: any) => {
+      const msg = err.response?.data?.message || err.message || 'Failed to finalize payslip';
+      toast.error('Generation Failed', { description: msg });
+    },
+  });
+}
+
+export function useRetryPayslipEmail() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (id: string) => payslipsApi.retryEmail(id),
+    onSuccess: (res: any) => {
+      queryClient.invalidateQueries({ queryKey: payslipKeys.all });
+      toast.success('Email Dispatch', {
+        description: res?.message || 'Payslip email queued/sent successfully.',
+      });
+    },
+    onError: (err: any) => {
+      const msg = err.response?.data?.message || err.message || 'Failed to send email';
+      toast.error('Email Transmission Failed', { description: msg });
+    },
+  });
+}
+

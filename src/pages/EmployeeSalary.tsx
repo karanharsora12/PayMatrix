@@ -156,9 +156,9 @@ export default function EmployeeSalary() {
         width: 200,
         cellClass: "text-xs text-muted-foreground",
         valueGetter: (p) =>
-          p.value === "PERCENTAGE"
+          p.data?.calculationType === "PERCENTAGE"
             ? `${p.data.percentage}% of ${p.data.percentageOf || "BASIC"}`
-            : p.value,
+            : p.data?.calculationType,
       },
       {
         field: "amount",

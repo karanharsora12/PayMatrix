@@ -36,6 +36,7 @@ import {
   useSendTestEmail,
 } from "@/hooks/useEmailTemplates";
 import type { EmailTemplate, EmailLog } from "@/api/emailTemplates";
+import { ActionMenu } from "@/components/common/ActionMenu";
 import { useEditor, EditorContent } from "@tiptap/react";
 import StarterKit from "@tiptap/starter-kit";
 import {
@@ -353,6 +354,7 @@ export default function EmailTemplates() {
         templateType: tpl.templateType,
         description: tpl.description || "",
         subject: tpl.subject,
+        bodyHtml: tpl.bodyHtml || "",
         status: tpl.status,
         isDefault: tpl.isDefault,
         changeSummary: "",
@@ -392,7 +394,6 @@ export default function EmailTemplates() {
         valueGetter: (p: any) =>
           p.node?.rowIndex != null ? p.node.rowIndex + 1 : "",
         width: 65,
-        pinned: "left",
         suppressMenu: true,
       },
       {
@@ -451,87 +452,59 @@ export default function EmailTemplates() {
       },
       {
         headerName: "Actions",
-        width: 220,
-        pinned: "right",
+        width: 80,
+        sortable: false,
+        filter: false,
+        cellClass: "flex items-center justify-center",
         cellRenderer: (p: any) => {
           const tpl: EmailTemplate = p.data;
           return (
-            <div className="flex items-center gap-1 py-1">
-              <Button
-                variant="ghost"
-                size="icon"
-                className="h-7 w-7 text-slate-600 hover:text-primary hover:bg-slate-100"
-                title="Edit Template"
-                onClick={() => handleOpenEdit(tpl)}
-              >
-                <Pencil className="h-3.5 w-3.5" />
-              </Button>
-              <Button
-                variant="ghost"
-                size="icon"
-                className="h-7 w-7 text-emerald-600 hover:text-emerald-700 hover:bg-emerald-50"
-                title="Send Test Email"
-                onClick={() => handleTriggerTestEmail(tpl)}
-              >
-                <Send className="h-3.5 w-3.5" />
-              </Button>
-              <Button
-                variant="ghost"
-                size="icon"
-                className="h-7 w-7 text-indigo-600 hover:text-indigo-700 hover:bg-indigo-50"
-                title="Duplicate Template"
-                onClick={() => handleOpenDuplicate(tpl)}
-              >
-                <Copy className="h-3.5 w-3.5" />
-              </Button>
-              <Button
-                variant="ghost"
-                size="icon"
-                className={`h-7 w-7 ${
-                  tpl.isDefault
-                    ? "text-amber-500 fill-amber-400"
-                    : "text-slate-400 hover:text-amber-500 hover:bg-amber-50"
-                }`}
-                title={
-                  tpl.isDefault
-                    ? "Currently Default"
-                    : "Set as Default for Type"
-                }
-                onClick={() => setDefaultMutation.mutate(tpl.id)}
-              >
-                <Star className="h-3.5 w-3.5" />
-              </Button>
-              <Button
-                variant="ghost"
-                size="icon"
-                className={`h-7 w-7 ${
-                  tpl.status === "ACTIVE"
-                    ? "text-slate-500 hover:text-amber-600"
-                    : "text-emerald-600 hover:text-emerald-700"
-                }`}
-                title={tpl.status === "ACTIVE" ? "Deactivate" : "Activate"}
-                onClick={() => toggleStatusMutation.mutate(tpl.id)}
-              >
-                <Power className="h-3.5 w-3.5" />
-              </Button>
-              <Button
-                variant="ghost"
-                size="icon"
-                className="h-7 w-7 text-rose-500 hover:text-rose-600 hover:bg-rose-50"
-                title="Delete Template"
-                onClick={() => {
-                  if (
-                    confirm(
-                      `Are you sure you want to delete template "${tpl.templateName}"?`,
-                    )
-                  ) {
-                    deleteMutation.mutate(tpl.id);
-                  }
-                }}
-              >
-                <Trash2 className="h-3.5 w-3.5" />
-              </Button>
-            </div>
+            <ActionMenu
+              orientation="horizontal"
+              items={[
+                {
+                  label: "Edit Template",
+                  icon: <Pencil className="h-3.5 w-3.5" />,
+                  onClick: () => handleOpenEdit(tpl),
+                },
+                {
+                  label: "Send Test Email",
+                  icon: <Send className="h-3.5 w-3.5" />,
+                  onClick: () => handleTriggerTestEmail(tpl),
+                },
+                {
+                  label: "Duplicate",
+                  icon: <Copy className="h-3.5 w-3.5" />,
+                  onClick: () => handleOpenDuplicate(tpl),
+                },
+                {
+                  label: tpl.isDefault ? "Default Template" : "Set as Default",
+                  icon: <Star className="h-3.5 w-3.5" />,
+                  onClick: () => setDefaultMutation.mutate(tpl.id),
+                  disabled: tpl.isDefault,
+                },
+                {
+                  label: tpl.status === "ACTIVE" ? "Deactivate" : "Activate",
+                  icon: <Power className="h-3.5 w-3.5" />,
+                  onClick: () => toggleStatusMutation.mutate(tpl.id),
+                },
+                {
+                  label: "Delete",
+                  icon: <Trash2 className="h-3.5 w-3.5" />,
+                  destructive: true,
+                  separator: true,
+                  onClick: () => {
+                    if (
+                      confirm(
+                        `Are you sure you want to delete template "${tpl.templateName}"?`,
+                      )
+                    ) {
+                      deleteMutation.mutate(tpl.id);
+                    }
+                  },
+                },
+              ]}
+            />
           );
         },
       },
@@ -547,7 +520,6 @@ export default function EmailTemplates() {
         valueGetter: (p: any) =>
           p.node?.rowIndex != null ? p.node.rowIndex + 1 : "",
         width: 65,
-        pinned: "left",
       },
       {
         headerName: "Status",
@@ -742,20 +714,6 @@ export default function EmailTemplates() {
       ) : (
         /* Logs Tab */
         <div className="space-y-3">
-          <div className="flex items-center justify-between px-1 text-xs text-muted-foreground">
-            <span>
-              Audit trail of all email transmissions, test dispatches, and error
-              statuses.
-            </span>
-            <Button
-              variant="outline"
-              size="sm"
-              className="h-7 text-xs"
-              onClick={() => refetchLogs()}
-            >
-              Refresh Logs
-            </Button>
-          </div>
           <div className="h-[520px] w-full border rounded-sm overflow-hidden bg-white">
             <DataGrid
               ref={logsGridRef}
@@ -1311,7 +1269,6 @@ export default function EmailTemplates() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
-
 
       {/* ────────────────────────────────────────────────────────────────────────── */}
       {/* TEST EMAIL DISPATCH MODAL                                                  */}

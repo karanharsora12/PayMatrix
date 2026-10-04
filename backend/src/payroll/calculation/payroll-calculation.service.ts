@@ -695,4 +695,375 @@ export class PayrollCalculationService {
       });
     }
   }
+
+  /**
+   * Pure single-employee calculation engine used for:
+   * 1. Live payslip preview before finalization
+   * 2. Direct on-demand single payslip generation
+   */
+  async calculateSingleEmployeePayroll(
+    companyId: string,
+    employeeId: string,
+    periodYear: number,
+    periodMonth: number,
+    options?: { policy?: PayrollProrationPolicy },
+  ) {
+    const policy = options?.policy || 'CALENDAR_DAYS';
+    const totalCalendarDays = new Date(periodYear, periodMonth, 0).getDate();
+    const periodStart = `${periodYear}-${String(periodMonth).padStart(2, '0')}-01`;
+    const periodEnd = `${periodYear}-${String(periodMonth).padStart(2, '0')}-${String(totalCalendarDays).padStart(2, '0')}`;
+
+    // 1. Fetch employee details
+    const emp: any = await this.db.query.employees.findFirst({
+      where: and(
+        eq(schema.employees.id, employeeId),
+        eq(schema.employees.companyId, companyId),
+      ),
+      with: {
+        company: true,
+        department: true,
+        designation: true,
+      },
+    });
+
+    if (!emp) {
+      throw new NotFoundException({
+        code: 'EMPLOYEE_NOT_FOUND',
+        message: 'Employee not found in the current company.',
+      });
+    }
+
+    // Eligibility check against joining and last working date
+    if (emp.joiningDate && emp.joiningDate > periodEnd) {
+      throw new BadRequestException({
+        code: 'EMPLOYEE_NOT_YET_JOINED',
+        message: `Employee ${emp.firstName || ''} joined on ${emp.joiningDate}, which is after the payroll period (${periodStart} to ${periodEnd}).`,
+      });
+    }
+
+    if (emp.lastWorkingDate && emp.lastWorkingDate < periodStart) {
+      throw new BadRequestException({
+        code: 'EMPLOYEE_ALREADY_EXITED',
+        message: `Employee ${emp.firstName || ''} exited on ${emp.lastWorkingDate}, which is before the payroll period (${periodStart} to ${periodEnd}).`,
+      });
+    }
+
+    // Bank & statutory lookup
+    let primaryBank: any = null;
+    let statutory: any = null;
+    try {
+      primaryBank = await this.db.query.employeeBankAccounts.findFirst({
+        where: eq(schema.employeeBankAccounts.employeeId, employeeId),
+      });
+      statutory = await this.db.query.employeeStatutoryDetails.findFirst({
+        where: eq(schema.employeeStatutoryDetails.employeeId, employeeId),
+      });
+    } catch {
+      // Ignore if not found
+    }
+
+    // 2. Fetch Effective Salary Structure
+    const salAssignment: any = await this.db.query.employeeSalaryStructures.findFirst({
+      where: and(
+        eq(schema.employeeSalaryStructures.employeeId, employeeId),
+        sql`${schema.employeeSalaryStructures.effectiveFrom} <= ${periodEnd}`,
+        or(
+          isNull(schema.employeeSalaryStructures.effectiveTo),
+          sql`${schema.employeeSalaryStructures.effectiveTo} >= ${periodStart}`,
+        ),
+      ),
+      orderBy: (s: any, { desc }: any) => [desc(s.effectiveFrom)],
+      with: {
+        salaryStructure: {
+          with: {
+            components: {
+              with: {
+                salaryComponent: true,
+              },
+            },
+          },
+        },
+        components: true,
+      },
+    });
+
+    if (!salAssignment || !salAssignment.salaryStructure) {
+      throw new BadRequestException({
+        code: 'NO_SALARY_STRUCTURE',
+        message: `No active salary structure found for Employee ${emp.employeeCode || emp.firstName} for ${periodYear}-${String(periodMonth).padStart(2, '0')}.`,
+      });
+    }
+
+    const structure = salAssignment.salaryStructure;
+    const structComponents: any[] = structure.components || [];
+    if (structComponents.length === 0) {
+      throw new BadRequestException({
+        code: 'INVALID_SALARY_STRUCTURE',
+        message: `Salary structure "${structure.name}" has no components configured.`,
+      });
+    }
+
+    // 3. Fetch Attendance for the employee
+    const attendanceRecords: any[] = await this.db.query.attendance.findMany({
+      where: and(
+        eq(schema.attendance.employeeId, employeeId),
+        sql`${schema.attendance.attendanceDate} >= ${periodStart}`,
+        sql`${schema.attendance.attendanceDate} <= ${periodEnd}`,
+      ),
+    });
+
+    // 4. Fetch Approved Leaves for the employee
+    const approvedLeaves: any[] = await this.db.query.leaveRequests.findMany({
+      where: and(
+        eq(schema.leaveRequests.employeeId, employeeId),
+        eq(schema.leaveRequests.status, 'APPROVED'),
+        sql`${schema.leaveRequests.fromDate} <= ${periodEnd}`,
+        sql`${schema.leaveRequests.toDate} >= ${periodStart}`,
+      ),
+      with: {
+        leaveType: true,
+      },
+    });
+
+    // 5. Fetch Company Holidays for the month
+    const holidays: any[] = await this.db.query.holidays.findMany({
+      where: and(
+        eq(schema.holidays.companyId, companyId),
+        sql`${schema.holidays.holidayDate} >= ${periodStart}`,
+        sql`${schema.holidays.holidayDate} <= ${periodEnd}`,
+      ),
+    });
+
+    // 6. Calculate Paid Days and Daily Timeline
+    const leaveItems = approvedLeaves.map((l) => ({
+      fromDate: l.fromDate,
+      toDate: l.toDate,
+      totalDays: l.totalDays,
+      isPaid: l.leaveType ? l.leaveType.isPaid : true,
+    }));
+
+    const holidayItems = holidays.map((h) => ({
+      holidayDate: h.holidayDate,
+      name: h.name,
+    }));
+
+    const paidDaysRes = this.paidDaysService.calculatePaidDays(
+      {
+        id: emp.id,
+        employeeCode: emp.employeeCode,
+        joiningDate: emp.joiningDate,
+        lastWorkingDate: emp.lastWorkingDate,
+      },
+      {
+        year: periodYear,
+        month: periodMonth,
+        periodStart,
+        periodEnd,
+      },
+      attendanceRecords,
+      leaveItems,
+      holidayItems,
+      policy,
+    );
+
+    // 7. Component definitions and formula evaluation
+    const overrideMap = new Map<string, any>();
+    for (const ov of salAssignment.components || []) {
+      overrideMap.set(ov.salaryComponentId, ov);
+    }
+
+    const componentDefs: Array<{
+      componentId: string;
+      code: string;
+      name: string;
+      componentType: 'EARNING' | 'DEDUCTION' | 'EMPLOYER_CONTRIBUTION' | 'REIMBURSEMENT';
+      calculationType: 'FIXED' | 'PERCENTAGE' | 'FORMULA';
+      amount?: number;
+      percentage?: number;
+      percentageOf?: string;
+      formula?: string;
+      minimumAmount?: number;
+      maximumAmount?: number;
+      isTaxable: boolean;
+      isProratable: boolean;
+      displayOrder: number;
+    }> = [];
+
+    for (const sc of structComponents) {
+      const master = sc.salaryComponent;
+      if (!master) continue;
+
+      const ov = overrideMap.get(master.id);
+      const calcType = ov?.calculationType || sc.calculationType || master.calculationType;
+      const amt = ov?.amount != null ? Number(ov.amount) : (sc.amount != null ? Number(sc.amount) : Number(master.defaultAmount ?? 0));
+      const pct = ov?.percentage != null ? Number(ov.percentage) : (sc.percentage != null ? Number(sc.percentage) : Number(master.defaultPercentage ?? 0));
+      const formula = ov?.formula || sc.formula || master.formula;
+      const percentageOf = sc.percentageOf || master.calculationBasis;
+
+      componentDefs.push({
+        componentId: master.id,
+        code: master.code.toUpperCase(),
+        name: master.name,
+        componentType: master.componentType,
+        calculationType: calcType,
+        amount: amt,
+        percentage: pct,
+        percentageOf: percentageOf ? percentageOf.toUpperCase() : undefined,
+        formula,
+        minimumAmount: sc.minimumAmount ? Number(sc.minimumAmount) : undefined,
+        maximumAmount: sc.maximumAmount ? Number(sc.maximumAmount) : undefined,
+        isTaxable: master.isTaxable ?? true,
+        isProratable: master.isProratable ?? true,
+        displayOrder: sc.displayOrder ?? master.displayOrder ?? 0,
+      });
+    }
+
+    // Topological order
+    const ordered = SafeFormulaEvaluator.getEvaluationOrder(
+      componentDefs.map((c) => ({
+        ...c,
+        percentageOf: c.percentageOf?.toUpperCase(),
+      })),
+    );
+
+    const evalContext: Record<string, number> = {};
+    const calculatedComps: CalculatedComponentSnapshot[] = [];
+
+    let grossEarnings = 0;
+    let totalDeductions = 0;
+    let employerContributions = 0;
+
+    for (const comp of ordered) {
+      let baseAmount = 0;
+      if (comp.calculationType === 'FIXED') {
+        baseAmount = Number(comp.amount ?? 0);
+      } else if (comp.calculationType === 'PERCENTAGE') {
+        const baseKey = (comp.percentageOf || 'BASIC').toUpperCase();
+        const baseVal = evalContext[baseKey] ?? 0;
+        baseAmount = (baseVal * Number(comp.percentage ?? 0)) / 100;
+      } else if (comp.calculationType === 'FORMULA') {
+        try {
+          baseAmount = SafeFormulaEvaluator.evaluate(comp.formula || '0', evalContext);
+        } catch {
+          baseAmount = 0;
+        }
+      }
+
+      // Min/Max capping
+      if (comp.minimumAmount != null) baseAmount = Math.max(comp.minimumAmount, baseAmount);
+      if (comp.maximumAmount != null) baseAmount = Math.min(comp.maximumAmount, baseAmount);
+
+      // Attendance Proration
+      let finalAmount = baseAmount;
+      if (comp.isProratable && paidDaysRes.payableFactor < 1.0) {
+        finalAmount = baseAmount * paidDaysRes.payableFactor;
+      }
+
+      finalAmount = Math.round(finalAmount * 100) / 100;
+      evalContext[comp.code] = finalAmount;
+
+      calculatedComps.push({
+        salaryComponentId: comp.componentId,
+        componentCode: comp.code,
+        componentName: comp.name,
+        componentType: comp.componentType,
+        calculationType: comp.calculationType,
+        calculationBasis: comp.percentageOf || null,
+        rate: comp.percentage != null ? comp.percentage : null,
+        amount: finalAmount,
+        isTaxable: comp.isTaxable,
+        isProratable: comp.isProratable,
+      });
+
+      if (comp.componentType === 'EARNING') {
+        grossEarnings += finalAmount;
+      } else if (comp.componentType === 'DEDUCTION') {
+        totalDeductions += finalAmount;
+      } else if (comp.componentType === 'EMPLOYER_CONTRIBUTION') {
+        employerContributions += finalAmount;
+      }
+    }
+
+    grossEarnings = Math.round(grossEarnings * 100) / 100;
+    totalDeductions = Math.round(totalDeductions * 100) / 100;
+    employerContributions = Math.round(employerContributions * 100) / 100;
+    const netSalary = Math.max(0, Math.round((grossEarnings - totalDeductions) * 100) / 100);
+    const totalCtc = Math.round((grossEarnings + employerContributions) * 100) / 100;
+
+    const earnings = calculatedComps.filter((c) => c.componentType === 'EARNING');
+    const deductions = calculatedComps.filter((c) => c.componentType === 'DEDUCTION');
+    const employer = calculatedComps.filter((c) => c.componentType === 'EMPLOYER_CONTRIBUTION');
+
+    const monthNames = [
+      'January', 'February', 'March', 'April', 'May', 'June',
+      'July', 'August', 'September', 'October', 'November', 'December'
+    ];
+    const monthName = `${monthNames[periodMonth - 1]} ${periodYear}`;
+
+    return {
+      period: {
+        year: periodYear,
+        month: periodMonth,
+        monthName,
+        periodStart,
+        periodEnd,
+        totalCalendarDays,
+      },
+      employee: {
+        id: emp.id,
+        code: emp.employeeCode || emp.id.slice(0, 8),
+        name: `${emp.firstName || ''} ${emp.lastName || ''}`.trim() || 'Staff',
+        email: emp.email || emp.personalEmail || null,
+        department: emp.department?.name || 'General',
+        designation: emp.designation?.title || 'Staff',
+        joiningDate: emp.joiningDate,
+        lastWorkingDate: emp.lastWorkingDate,
+        bankAccount: primaryBank
+          ? {
+              bankName: primaryBank.bankName,
+              accountNumber: primaryBank.accountNumber,
+              ifscCode: primaryBank.ifscCode,
+            }
+          : null,
+        statutory: statutory
+          ? {
+              panNumber: statutory.panNumber,
+              uanNumber: statutory.uanNumber,
+              pfNumber: statutory.pfNumber,
+              esiNumber: statutory.esiNumber,
+            }
+          : null,
+      },
+      salaryStructure: {
+        id: structure.id,
+        name: structure.name,
+      },
+      attendance: {
+        calendarDays: paidDaysRes.calendarDays,
+        workingDays: paidDaysRes.workingDays,
+        presentDays: paidDaysRes.presentDays,
+        absentDays: paidDaysRes.absentDays,
+        paidLeaveDays: paidDaysRes.paidLeaveDays,
+        unpaidLeaveDays: paidDaysRes.unpaidLeaveDays,
+        holidayDays: paidDaysRes.holidayDays,
+        weekOffDays: paidDaysRes.weekOffDays,
+        paidDays: paidDaysRes.paidDays,
+        payableFactor: paidDaysRes.payableFactor,
+        overtimeMinutes: paidDaysRes.overtimeMinutes,
+        dailyTimeline: paidDaysRes.dailyTimeline || [],
+      },
+      components: calculatedComps,
+      earnings,
+      deductions,
+      employerContributions: employer,
+      totals: {
+        grossSalary: grossEarnings,
+        totalDeductions,
+        netSalary,
+        employerContributions,
+        totalCtc,
+      },
+    };
+  }
 }
+

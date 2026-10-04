@@ -173,7 +173,7 @@ export const DataGrid = React.forwardRef<AgGridReact, DataGridProps>(
           const sort = params.sortModel[0];
 
           try {
-            const response = await apiClient.post(apiName, {
+            const response = await apiClient.post(apiName!, {
               ...apiInput,
               page: Math.floor(params.startRow / requestedPageSize) + 1,
               limit: requestedPageSize,

@@ -495,7 +495,7 @@ export default function Leave() {
         headerName: "Carry Forward",
         width: 150,
         valueGetter: (p) =>
-          p.value ? `Yes (max ${p.data.maxCarryForwardDays ?? "∞"})` : "No",
+          p.data?.carryForwardAllowed ? `Yes (max ${p.data.maxCarryForwardDays ?? "∞"})` : "No",
       },
       {
         field: "maxConsecutiveDays",

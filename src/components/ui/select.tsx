@@ -170,11 +170,12 @@ export function NativeSelect({ value, onChange, children, className, placeholder
 
   React.Children.forEach(children, child => {
     if (React.isValidElement(child) && child.type === 'option') {
-      const val = child.props.value;
+      const childProps = child.props as any;
+      const val = childProps.value;
       if (val !== undefined && val !== "") {
-        options.push({ value: String(val), label: child.props.children });
+        options.push({ value: String(val), label: childProps.children });
       } else if (!foundPlaceholder && val === "") {
-        foundPlaceholder = child.props.children as string;
+        foundPlaceholder = childProps.children as string;
       }
     }
   });

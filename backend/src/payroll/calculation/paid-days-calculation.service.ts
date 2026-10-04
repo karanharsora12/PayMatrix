@@ -34,6 +34,20 @@ export interface HolidayItem {
   name?: string;
 }
 
+export interface DailyReconciliationItem {
+  date: string; // YYYY-MM-DD
+  dayOfWeek: string;
+  attendanceStatus?: string | null;
+  leaveStatus?: string | null;
+  isHoliday: boolean;
+  holidayName?: string | null;
+  isWeekend: boolean;
+  finalStatus: string;
+  isPayable: boolean;
+  payableFraction: number;
+  reason: string;
+}
+
 export interface PaidDaysResult {
   calendarDays: number;
   eligibleCalendarDays: number;
@@ -50,6 +64,7 @@ export interface PaidDaysResult {
   paidDays: number;
   payableFactor: number;
   overtimeMinutes: number;
+  dailyTimeline?: DailyReconciliationItem[];
 }
 
 @Injectable()
@@ -241,6 +256,176 @@ export class PaidDaysCalculationService {
       payableFactor = totalCalendarDays > 0 ? Math.max(0, (totalCalendarDays - totalUnpaidDays) / totalCalendarDays) : 1.0;
     }
 
+    // 7. Build daily timeline reconciliation
+    const dayNames = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
+    const holidayMap = new Map<string, string>();
+    for (const h of holidayList) {
+      holidayMap.set(this.formatDate(h.holidayDate), h.name || 'Company Holiday');
+    }
+
+    // Map leaves by date range
+    const leaveDateMap = new Map<string, { isPaid: boolean }>();
+    for (const req of leaveList) {
+      const fromStr = this.formatDate(req.fromDate);
+      const toStr = this.formatDate(req.toDate);
+      const isPaid = req.isPaid ?? true;
+
+      for (let day = 1; day <= totalCalendarDays; day++) {
+        const dateStr = this.toDateStr(year, month, day);
+        if (dateStr >= fromStr && dateStr <= toStr) {
+          leaveDateMap.set(dateStr, { isPaid });
+        }
+      }
+    }
+
+    const dailyTimeline: DailyReconciliationItem[] = [];
+
+    for (let day = 1; day <= totalCalendarDays; day++) {
+      const d = new Date(year, month - 1, day);
+      const dateStr = this.toDateStr(year, month, day);
+      const dayOfWeek = dayNames[d.getDay()];
+      const isWeekend = d.getDay() === 0 || d.getDay() === 6;
+      const isHoliday = holidayDates.has(dateStr);
+      const holidayName = isHoliday ? holidayMap.get(dateStr) || 'Public Holiday' : null;
+
+      if (dateStr < effectiveStartStr) {
+        dailyTimeline.push({
+          date: dateStr,
+          dayOfWeek,
+          attendanceStatus: null,
+          leaveStatus: null,
+          isHoliday,
+          holidayName,
+          isWeekend,
+          finalStatus: 'BEFORE_JOINING',
+          isPayable: false,
+          payableFraction: 0,
+          reason: 'Joined later in period',
+        });
+        continue;
+      }
+
+      if (dateStr > effectiveEndStr) {
+        dailyTimeline.push({
+          date: dateStr,
+          dayOfWeek,
+          attendanceStatus: null,
+          leaveStatus: null,
+          isHoliday,
+          holidayName,
+          isWeekend,
+          finalStatus: 'AFTER_EXIT',
+          isPayable: false,
+          payableFraction: 0,
+          reason: 'Relieved / exited earlier',
+        });
+        continue;
+      }
+
+      const attRecord = attendanceDateMap.get(dateStr);
+      const leaveRecord = leaveDateMap.get(dateStr);
+
+      let finalStatus = 'PRESENT';
+      let isPayable = true;
+      let payableFraction = 1.0;
+      let reason = 'Present';
+
+      if (leaveRecord) {
+        if (leaveRecord.isPaid) {
+          finalStatus = 'PAID_LEAVE';
+          isPayable = true;
+          payableFraction = 1.0;
+          reason = 'Approved Paid Leave';
+        } else {
+          finalStatus = 'UNPAID_LEAVE';
+          isPayable = false;
+          payableFraction = 0;
+          reason = 'Approved Unpaid Leave (LOP)';
+        }
+      } else if (attRecord) {
+        switch (attRecord.status) {
+          case 'PRESENT':
+            finalStatus = 'PRESENT';
+            isPayable = true;
+            payableFraction = 1.0;
+            reason = 'Attendance Marked Present';
+            break;
+          case 'LATE':
+            finalStatus = 'LATE';
+            isPayable = true;
+            payableFraction = 1.0;
+            reason = 'Late Arrival (Payable)';
+            break;
+          case 'HALF_DAY':
+            finalStatus = 'HALF_DAY';
+            isPayable = true;
+            payableFraction = 0.5;
+            reason = 'Half Day (0.5 Payable)';
+            break;
+          case 'ABSENT':
+            finalStatus = 'ABSENT';
+            isPayable = false;
+            payableFraction = 0;
+            reason = 'Attendance Marked Absent';
+            break;
+          case 'HOLIDAY':
+            finalStatus = 'HOLIDAY';
+            isPayable = true;
+            payableFraction = 1.0;
+            reason = holidayName || 'Holiday';
+            break;
+          case 'WEEK_OFF':
+            finalStatus = 'WEEK_OFF';
+            isPayable = true;
+            payableFraction = 1.0;
+            reason = 'Weekly Off';
+            break;
+          default:
+            finalStatus = attRecord.status;
+            isPayable = true;
+            payableFraction = 1.0;
+            reason = attRecord.status;
+            break;
+        }
+      } else if (isHoliday) {
+        finalStatus = 'HOLIDAY';
+        isPayable = true;
+        payableFraction = 1.0;
+        reason = holidayName || 'Public Holiday';
+      } else if (isWeekend) {
+        finalStatus = 'WEEK_OFF';
+        isPayable = true;
+        payableFraction = 1.0;
+        reason = 'Weekend Off';
+      } else {
+        if (attendanceList.length > 0) {
+          finalStatus = 'ABSENT';
+          isPayable = false;
+          payableFraction = 0;
+          reason = 'No attendance recorded';
+        } else {
+          finalStatus = 'PRESENT';
+          isPayable = true;
+          payableFraction = 1.0;
+          reason = 'Standard Working Day';
+        }
+      }
+
+      dailyTimeline.push({
+        date: dateStr,
+        dayOfWeek,
+        attendanceStatus: attRecord?.status || null,
+        leaveStatus: leaveRecord ? (leaveRecord.isPaid ? 'PAID_LEAVE' : 'UNPAID_LEAVE') : null,
+        isHoliday,
+        holidayName,
+        isWeekend,
+        finalStatus,
+        isPayable,
+        payableFraction,
+        reason,
+      });
+    }
+
     payableFactor = Math.min(1.0, Math.max(0.0, Math.round(payableFactor * 10000) / 10000));
 
     return {
@@ -259,6 +444,7 @@ export class PaidDaysCalculationService {
       paidDays,
       payableFactor,
       overtimeMinutes,
+      dailyTimeline,
     };
   }
 

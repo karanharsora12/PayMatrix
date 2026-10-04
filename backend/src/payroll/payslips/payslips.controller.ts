@@ -6,6 +6,7 @@ import {
   ParseUUIDPipe,
   Post,
   Query,
+  Res,
 } from '@nestjs/common';
 import { ApiBearerAuth, ApiOperation, ApiTags } from '@nestjs/swagger';
 import { CurrentUser } from '../../common/decorators/current-user.decorator';
@@ -57,6 +58,58 @@ export class PayslipsController {
     };
   }
 
+  @Get('payslips/:id/download-pdf')
+  @RequirePermission('payslip.view')
+  @ApiOperation({ summary: 'Download binary payslip PDF document' })
+  async downloadPdf(
+    @CurrentUser() user: any,
+    @Param('id', ParseUUIDPipe) id: string,
+    @Res() res: any,
+  ) {
+    const { buffer, filename } = await this.payslipsService.getPayslipPdfBuffer(user.companyId, id);
+    res.set({
+      'Content-Type': 'application/pdf',
+      'Content-Disposition': `attachment; filename="${filename}"`,
+      'Content-Length': buffer.length,
+    });
+    res.end(buffer);
+  }
+
+  @Post('payslips/calculate-preview')
+  @RequirePermission('payroll.run')
+  @ApiOperation({ summary: 'Calculate live preview of single employee payslip before finalization' })
+  async calculatePreview(
+    @CurrentUser() user: any,
+    @Body() body: { employeeId: string; year: number; month: number; policy?: string },
+  ) {
+    return this.payslipsService.calculatePreview(
+      user.companyId,
+      body.employeeId,
+      Number(body.year),
+      Number(body.month),
+      body.policy,
+    );
+  }
+
+  @Post('payslips/generate-single')
+  @RequirePermission('payroll.run')
+  @ApiOperation({ summary: 'Generate and lock individual employee payslip snapshot' })
+  async generateSingle(
+    @CurrentUser() user: any,
+    @Body() body: { employeeId: string; year: number; month: number; policy?: string },
+  ) {
+    return this.payslipsService.generateSingle(
+      user.companyId,
+      {
+        employeeId: body.employeeId,
+        year: Number(body.year),
+        month: Number(body.month),
+        policy: body.policy,
+      },
+      user.id,
+    );
+  }
+
   @Post('payslips/:id/send-email')
   @RequirePermission('payroll.run')
   @ApiOperation({ summary: 'Send payslip email to employee using Email Template Master' })
@@ -65,6 +118,16 @@ export class PayslipsController {
     @Param('id', ParseUUIDPipe) id: string,
   ) {
     return this.payslipsService.sendPayslipEmail(user.companyId, id, user.id);
+  }
+
+  @Post('payslips/:id/retry-email')
+  @RequirePermission('payroll.run')
+  @ApiOperation({ summary: 'Retry sending payslip email using immutable snapshot' })
+  async retryEmail(
+    @CurrentUser() user: any,
+    @Param('id', ParseUUIDPipe) id: string,
+  ) {
+    return this.payslipsService.retryPayslipEmail(user.companyId, id, user.id);
   }
 
   @Post('payslips/send-batch-emails')

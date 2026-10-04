@@ -10,6 +10,8 @@ import * as schema from '../../db/schema';
 import { paginated } from '../../common/dto/pagination.dto';
 import { EmailTemplatesService } from '../../email-templates/email-templates.service';
 import { EmailSenderService } from '../../email-templates/email-sender.service';
+import { PayrollCalculationService } from '../calculation/payroll-calculation.service';
+import { PayslipPdfService } from './payslip-pdf.service';
 
 @Injectable()
 export class PayslipsService {
@@ -17,6 +19,8 @@ export class PayslipsService {
     @Inject(DRIZZLE) private db: any,
     private readonly emailTemplatesService: EmailTemplatesService,
     private readonly emailSender: EmailSenderService,
+    private readonly payrollCalculationService: PayrollCalculationService,
+    private readonly payslipPdfService: PayslipPdfService,
   ) {}
 
   async generateForRun(companyId: string, runId: string) {
@@ -347,7 +351,10 @@ export class PayslipsService {
       variables,
     );
 
-    // Dispatch email with HTML payslip voucher attachment
+    // Generate immutable binary PDF document attachment
+    const pdfBuffer = await this.payslipPdfService.generatePdf(payslip);
+
+    // Dispatch email with binary PDF payslip attachment
     const sendResult = await this.emailSender.sendEmail({
       companyId,
       templateId: template?.id || null,
@@ -359,12 +366,19 @@ export class PayslipsService {
       userId,
       attachments: [
         {
-          filename: `Payslip_${payslip.employee?.code || 'EMP'}_${payslip.periodMonth}_${payslip.periodYear}.html`,
-          content: `<!DOCTYPE html><html><head><meta charset="UTF-8"><title>Payslip - ${payslip.payslipNumber}</title><style>body{font-family:sans-serif;margin:40px;line-height:1.5;color:#1e293b;}</style></head><body>${bodyHtml}</body></html>`,
-          contentType: 'text/html',
+          filename: `Payslip_${payslip.employee?.code || 'EMP'}_${String(payslip.periodMonth).padStart(2, '0')}_${payslip.periodYear}.pdf`,
+          content: pdfBuffer,
+          contentType: 'application/pdf',
         },
       ],
     });
+
+    if (sendResult.status === 'SENT') {
+      await this.db
+        .update(schema.payslips)
+        .set({ status: 'PUBLISHED', updatedAt: new Date() })
+        .where(eq(schema.payslips.id, payslipId));
+    }
 
     return {
       success: true,
@@ -376,6 +390,225 @@ export class PayslipsService {
         message: sendResult.message,
       },
       message: sendResult.status === 'SENT' ? 'Payslip email sent successfully' : 'Email logged (Simulated / Pending SMTP)',
+    };
+  }
+
+  /**
+   * Retry sending email for a finalized payslip without recalculating payroll.
+   */
+  async retryPayslipEmail(companyId: string, payslipId: string, userId?: string) {
+    return this.sendPayslipEmail(companyId, payslipId, userId);
+  }
+
+  /**
+   * Generates and returns binary PDF Buffer for download.
+   */
+  async getPayslipPdfBuffer(companyId: string, payslipId: string): Promise<{ buffer: Buffer; filename: string }> {
+    const payslipRes = await this.get(companyId, payslipId);
+    const payslip = payslipRes.data;
+    const buffer = await this.payslipPdfService.generatePdf(payslip);
+    const filename = `Payslip_${payslip.employee?.code || 'EMP'}_${String(payslip.periodMonth).padStart(2, '0')}_${payslip.periodYear}.pdf`;
+    return { buffer, filename };
+  }
+
+  /**
+   * Preview calculation for a single employee before saving.
+   * Completely read-only, does NOT modify database.
+   */
+  async calculatePreview(
+    companyId: string,
+    employeeId: string,
+    year: number,
+    month: number,
+    policy?: any,
+  ) {
+    const calcResult = await this.payrollCalculationService.calculateSingleEmployeePayroll(
+      companyId,
+      employeeId,
+      year,
+      month,
+      { policy },
+    );
+
+    // Check if an active payslip already exists for this period
+    const existing = await this.db.query.payslips.findFirst({
+      where: and(
+        eq(schema.payslips.employeeId, employeeId),
+        eq(schema.payslips.periodYear, year),
+        eq(schema.payslips.periodMonth, month),
+        sql`${schema.payslips.status} != 'WITHDRAWN'`,
+      ),
+    });
+
+    return {
+      success: true,
+      data: {
+        ...calcResult,
+        alreadyFinalized: !!existing,
+        existingPayslipId: existing?.id || null,
+        existingPayslipNumber: existing?.payslipNumber || null,
+      },
+      message: existing
+        ? 'A finalized payslip already exists for this period. Showing live calculation comparison.'
+        : 'Calculation preview ready for finalization.',
+    };
+  }
+
+  /**
+   * Generates and locks an individual employee payslip snapshot transactionally.
+   */
+  async generateSingle(
+    companyId: string,
+    dto: { employeeId: string; year: number; month: number; policy?: any },
+    userId: string,
+  ) {
+    const { employeeId, year, month, policy } = dto;
+
+    // Duplicate check
+    const existing = await this.db.query.payslips.findFirst({
+      where: and(
+        eq(schema.payslips.employeeId, employeeId),
+        eq(schema.payslips.periodYear, year),
+        eq(schema.payslips.periodMonth, month),
+        sql`${schema.payslips.status} != 'WITHDRAWN'`,
+      ),
+    });
+
+    if (existing) {
+      throw new BadRequestException({
+        code: 'PAYSLIP_ALREADY_EXISTS',
+        message: `A payslip (${existing.payslipNumber}) has already been finalized for this employee for ${year}-${String(month).padStart(2, '0')}.`,
+      });
+    }
+
+    // Run backend calculation engine (source of truth)
+    const calc = await this.payrollCalculationService.calculateSingleEmployeePayroll(
+      companyId,
+      employeeId,
+      year,
+      month,
+      { policy },
+    );
+
+    // Ensure a payroll run exists for this period or create one
+    let run: any = await this.db.query.payrollRuns.findFirst({
+      where: and(
+        eq(schema.payrollRuns.companyId, companyId),
+        eq(schema.payrollRuns.periodYear, year),
+        eq(schema.payrollRuns.periodMonth, month),
+        sql`${schema.payrollRuns.status} != 'CANCELLED'`,
+      ),
+    });
+
+    if (!run) {
+      const code = `RUN-${year}-${String(month).padStart(2, '0')}`;
+      const [newRun] = await this.db
+        .insert(schema.payrollRuns)
+        .values({
+          companyId,
+          payrollCode: code,
+          runNumber: code,
+          periodYear: year,
+          periodMonth: month,
+          periodStart: calc.period.periodStart,
+          periodEnd: calc.period.periodEnd,
+          status: 'APPROVED',
+          preparedBy: userId,
+          createdBy: userId,
+        })
+        .returning();
+      run = newRun;
+    }
+
+    const monthStr = String(month).padStart(2, '0');
+    let savedPayslip: any = null;
+
+    await this.db.transaction(async (tx: any) => {
+      // 1. Insert PayrollEmployee snapshot
+      const [pe] = await tx
+        .insert(schema.payrollEmployees)
+        .values({
+          payrollRunId: run.id,
+          employeeId: calc.employee.id,
+          employeeCode: calc.employee.code,
+          employeeName: calc.employee.name,
+          departmentName: calc.employee.department,
+          designationName: calc.employee.designation,
+          calendarDays: calc.attendance.calendarDays.toString(),
+          workingDays: calc.attendance.workingDays.toString(),
+          presentDays: calc.attendance.presentDays.toString(),
+          absentDays: calc.attendance.absentDays.toString(),
+          paidLeaveDays: calc.attendance.paidLeaveDays.toString(),
+          unpaidLeaveDays: calc.attendance.unpaidLeaveDays.toString(),
+          holidayDays: calc.attendance.holidayDays.toString(),
+          weekOffDays: calc.attendance.weekOffDays.toString(),
+          paidDays: calc.attendance.paidDays.toString(),
+          overtimeMinutes: calc.attendance.overtimeMinutes,
+          grossEarnings: calc.totals.grossSalary.toString(),
+          grossSalary: calc.totals.grossSalary.toString(),
+          totalDeductions: calc.totals.totalDeductions.toString(),
+          employerContributions: calc.totals.employerContributions.toString(),
+          netSalary: calc.totals.netSalary.toString(),
+          totalCtc: calc.totals.totalCtc.toString(),
+          status: 'CALCULATED',
+        })
+        .returning();
+
+      // 2. Insert PayrollComponents snapshots
+      for (const comp of calc.components) {
+        await tx.insert(schema.payrollComponents).values({
+          payrollEmployeeId: pe.id,
+          salaryComponentId: comp.salaryComponentId,
+          componentCode: comp.componentCode,
+          componentName: comp.componentName,
+          componentType: comp.componentType,
+          calculationType: comp.calculationType,
+          calculationBasis: comp.calculationBasis,
+          rate: comp.rate != null ? comp.rate.toString() : null,
+          amount: comp.amount.toString(),
+          isTaxable: comp.isTaxable,
+        });
+      }
+
+      // 3. Generate unique Payslip Number & insert Payslip
+      const [countRow] = await tx
+        .select({ count: sql`count(*)` })
+        .from(schema.payslips)
+        .where(
+          and(
+            eq(schema.payslips.periodYear, year),
+            eq(schema.payslips.periodMonth, month),
+          ),
+        );
+      const nextSeq = Number(countRow?.count || 0) + 1;
+      const payslipNumber = `PAY-${year}-${monthStr}-${String(nextSeq).padStart(5, '0')}`;
+
+      const [ps] = await tx
+        .insert(schema.payslips)
+        .values({
+          payrollEmployeeId: pe.id,
+          payrollRunId: run.id,
+          employeeId: calc.employee.id,
+          payslipNumber,
+          periodYear: year,
+          periodMonth: month,
+          grossSalary: calc.totals.grossSalary.toString(),
+          totalDeductions: calc.totals.totalDeductions.toString(),
+          netSalary: calc.totals.netSalary.toString(),
+          employerContributions: calc.totals.employerContributions.toString(),
+          totalCtc: calc.totals.totalCtc.toString(),
+          status: 'GENERATED',
+          generatedAt: new Date(),
+        })
+        .returning();
+
+      savedPayslip = ps;
+    });
+
+    return {
+      success: true,
+      data: savedPayslip,
+      message: `Payslip ${savedPayslip.payslipNumber} generated and locked successfully`,
     };
   }
 

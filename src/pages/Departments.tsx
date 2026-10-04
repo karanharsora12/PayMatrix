@@ -251,7 +251,7 @@ export default function Departments() {
               <Button
                 type="button"
                 variant="outline"
-                onClick={() => setModalOpen(false)}
+                onClick={() => setOpen(false)}
               >
                 Close
               </Button>

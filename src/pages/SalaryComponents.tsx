@@ -1,43 +1,31 @@
-import { useState } from "react";
-import {
-  useSalaryComponents,
-  useCreateSalaryComponent,
-  useUpdateSalaryComponent,
-  useDeleteSalaryComponent,
-} from "@/hooks/useSalary";
 import type { SalaryComponentItem } from "@/api/salaryComponents";
-import { Card, CardContent } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
 import { DataGrid } from "@/components/common/DataGrid";
-import type { ColDef } from "ag-grid-community";
-import { useMemo } from "react";
-import {
-  Plus,
-  Search,
-  Edit2,
-  Trash2,
-  ShieldCheck,
-  RefreshCw,
-  Calculator,
-} from "lucide-react";
+import { ListingCard } from "@/components/common/ListingCard";
+import { ListingHeader } from "@/components/common/ListingHeader";
+import { Button } from "@/components/ui/button";
 import {
   Dialog,
   DialogContent,
+  DialogFooter,
   DialogHeader,
   DialogTitle,
-  DialogFooter,
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { NativeSelect } from "@/components/ui/select";
-import { formatCurrency } from "@/lib/utils";
-import { toast } from "sonner";
-import { ListingCard } from "@/components/common/ListingCard";
-import { ListingHeader } from "@/components/common/ListingHeader";
+import {
+  useCreateSalaryComponent,
+  useDeleteSalaryComponent,
+  useSalaryComponents,
+  useUpdateSalaryComponent,
+} from "@/hooks/useSalary";
 import { gridExportExcel, gridExportPdf, gridPrint } from "@/lib/gridExport";
+import { formatCurrency } from "@/lib/utils";
+import type { ColDef } from "ag-grid-community";
 import type { AgGridReact } from "ag-grid-react";
-import { useRef } from "react";
+import { Calculator, Edit2, Plus, RefreshCw, Trash2 } from "lucide-react";
+import { useMemo, useRef, useState } from "react";
+import { toast } from "sonner";
 
 export default function SalaryComponents() {
   const [activeTab, setActiveTab] = useState("ALL");
@@ -192,106 +180,40 @@ export default function SalaryComponents() {
       {
         field: "name",
         headerName: "Component Name",
-        flex: 1,
-        cellRenderer: (p: any) => (
-          <div className="flex flex-col justify-center h-full">
-            <div className="font-medium text-sm leading-tight">{p.value}</div>
-            {p.data.description && (
-              <div className="text-xs text-muted-foreground line-clamp-1 leading-tight">
-                {p.data.description}
-              </div>
-            )}
-          </div>
-        ),
+        width: 150,
       },
       {
         field: "componentType",
         headerName: "Type",
         width: 150,
-        cellRenderer: (p: any) => (
-          <div className="flex items-center h-full">
-            <div
-              className={`h-2.5 w-2.5 rounded-full ${p.value ? "bg-emerald-500" : "bg-red-500"}`}
-              title={p.value ? "Active" : "Inactive"}
-            />
-          </div>
-        ),
       },
       {
         field: "calculationType",
         headerName: "Calculation",
         width: 150,
-        cellRenderer: (p: any) => (
-          <div className="flex items-center h-full">
-            <span className="font-medium">{p.value}</span>
-            {p.value === "PERCENTAGE" && (
-              <span className="text-muted-foreground ml-1">
-                of {p.data.calculationBasis || "BASIC"}
-              </span>
-            )}
-          </div>
-        ),
       },
       {
         field: "defaultRate",
         headerName: "Default Rate / Value",
-        width: 180,
-        cellRenderer: (p: any) => {
-          const c = p.data;
-          if (c.calculationType === "FIXED") {
-            return c.defaultAmount
-              ? formatCurrency(Number(c.defaultAmount))
-              : "—";
-          } else if (c.calculationType === "PERCENTAGE") {
-            return c.defaultPercentage ? `${c.defaultPercentage}%` : "—";
-          } else {
-            return (
-              <span className="font-mono text-xs text-muted-foreground">
-                {c.formula || "Formula"}
-              </span>
-            );
-          }
-        },
+        width: 100,
       },
       {
         field: "flags",
         headerName: "Flags",
-        width: 120,
-        cellRenderer: (p: any) => (
-          <div className="flex items-center gap-1 h-full">
-            {p.data.isTaxable && <span>Tax</span>}
-            {p.data.isStatutory && <span>Stat</span>}
-          </div>
-        ),
+        width: 60,
       },
       {
         field: "isActive",
         headerName: "Status",
         width: 100,
-        cellRenderer: (p: any) => (
-          <div className="flex items-center h-full">
-            <div
-              className={`h-2.5 w-2.5 rounded-full ${p.value ? "bg-emerald-500" : "bg-red-500"}`}
-              title={p.value ? "Active" : "Inactive"}
-            />
-          </div>
-        ),
       },
       {
-        headerName: "Actions",
-        width: 120,
+        headerName: "",
+        width: 60,
         sortable: false,
         filter: false,
         cellRenderer: (p: any) => (
           <div className="flex items-center justify-end gap-1 h-full">
-            <Button
-              variant="ghost"
-              size="icon"
-              className="h-8 w-8 text-muted-foreground hover:text-foreground"
-              onClick={() => handleOpenEdit(p.data)}
-            >
-              <Edit2 className="h-3.5 w-3.5" />
-            </Button>
             <Button
               variant="ghost"
               size="icon"
@@ -371,6 +293,9 @@ export default function SalaryComponents() {
               ref={gridRef}
               rowData={components}
               columnDefs={componentsColDefs}
+              gridOptions={{
+                onRowDoubleClicked: (params) => handleOpenEdit(params.data),
+              }}
             />
           </div>
         )}
