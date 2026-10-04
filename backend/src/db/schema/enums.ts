@@ -3,7 +3,12 @@ import { pgEnum } from "drizzle-orm/pg-core";
 // ---------------------------------------------------------------------------
 // Employment / Employee
 // ---------------------------------------------------------------------------
-export const genderEnum = pgEnum("gender", ["MALE", "FEMALE", "OTHER", "PREFER_NOT_TO_SAY"]);
+export const genderEnum = pgEnum("gender", [
+  "MALE",
+  "FEMALE",
+  "OTHER",
+  "PREFER_NOT_TO_SAY",
+]);
 export const maritalStatusEnum = pgEnum("marital_status", [
   "SINGLE",
   "MARRIED",
@@ -34,8 +39,18 @@ export const employmentStatusEnum = pgEnum("employment_status", [
 // ---------------------------------------------------------------------------
 // Address / Document
 // ---------------------------------------------------------------------------
-export const addressTypeEnum = pgEnum("address_type", ["PERMANENT", "CURRENT", "EMERGENCY"]);
-export const accountTypeEnum = pgEnum("account_type", ["SAVINGS", "CURRENT", "SALARY", "NRO", "NRE"]);
+export const addressTypeEnum = pgEnum("address_type", [
+  "PERMANENT",
+  "CURRENT",
+  "EMERGENCY",
+]);
+export const accountTypeEnum = pgEnum("account_type", [
+  "SAVINGS",
+  "CURRENT",
+  "SALARY",
+  "NRO",
+  "NRE",
+]);
 
 // ---------------------------------------------------------------------------
 // Attendance
@@ -67,12 +82,22 @@ export const attendanceSourceEnum = pgEnum("attendance_source", [
   "API",
 ]);
 
-export const holidayTypeEnum = pgEnum("holiday_type", ["NATIONAL", "FESTIVAL", "WEEKLY_OFF", "RESTRICTED"]);
+export const holidayTypeEnum = pgEnum("holiday_type", [
+  "NATIONAL",
+  "FESTIVAL",
+  "WEEKLY_OFF",
+  "RESTRICTED",
+]);
 
 // ---------------------------------------------------------------------------
 // Leave
 // ---------------------------------------------------------------------------
-export const leaveStatusEnum = pgEnum("leave_status", ["PENDING", "APPROVED", "REJECTED", "CANCELLED"]);
+export const leaveStatusEnum = pgEnum("leave_status", [
+  "PENDING",
+  "APPROVED",
+  "REJECTED",
+  "CANCELLED",
+]);
 
 // ---------------------------------------------------------------------------
 // Salary / Payroll
@@ -84,7 +109,11 @@ export const salaryComponentTypeEnum = pgEnum("salary_component_type", [
   "REIMBURSEMENT",
 ]);
 
-export const calculationTypeEnum = pgEnum("calculation_type", ["FIXED", "PERCENTAGE", "FORMULA"]);
+export const calculationTypeEnum = pgEnum("calculation_type", [
+  "FIXED",
+  "PERCENTAGE",
+  "FORMULA",
+]);
 
 export const salaryStructureStatusEnum = pgEnum("salary_structure_status", [
   "ACTIVE",
@@ -114,7 +143,11 @@ export const payrollEmployeeStatusEnum = pgEnum("payroll_employee_status", [
   "SKIPPED",
 ]);
 
-export const payslipStatusEnum = pgEnum("payslip_status", ["GENERATED", "PUBLISHED", "WITHDRAWN"]);
+export const payslipStatusEnum = pgEnum("payslip_status", [
+  "GENERATED",
+  "PUBLISHED",
+  "WITHDRAWN",
+]);
 
 export const payrollApprovalStatusEnum = pgEnum("payroll_approval_status", [
   "PENDING",
@@ -132,9 +165,19 @@ export const bonusTypeEnum = pgEnum("bonus_type", [
   "OTHER",
 ]);
 
-export const bonusStatusEnum = pgEnum("bonus_status", ["PENDING", "APPROVED", "PAID", "CANCELLED"]);
+export const bonusStatusEnum = pgEnum("bonus_status", [
+  "PENDING",
+  "APPROVED",
+  "PAID",
+  "CANCELLED",
+]);
 
-export const deductionStatusEnum = pgEnum("deduction_status", ["ACTIVE", "PAUSED", "COMPLETED", "CANCELLED"]);
+export const deductionStatusEnum = pgEnum("deduction_status", [
+  "ACTIVE",
+  "PAUSED",
+  "COMPLETED",
+  "CANCELLED",
+]);
 
 export const advanceStatusEnum = pgEnum("advance_status", [
   "PENDING",
@@ -196,7 +239,11 @@ export const statutoryTypeEnum = pgEnum("statutory_type", [
   "OTHER",
 ]);
 
-export const taxRegimeEnum = pgEnum("tax_regime", ["OLD", "NEW", "NOT_APPLICABLE"]);
+export const taxRegimeEnum = pgEnum("tax_regime", [
+  "OLD",
+  "NEW",
+  "NOT_APPLICABLE",
+]);
 
 export const taxDeclarationStatusEnum = pgEnum("tax_declaration_status", [
   "DRAFT",
@@ -251,4 +298,15 @@ export const notificationTypeEnum = pgEnum("notification_type", [
   "SYSTEM",
   "APPROVAL",
   "GENERAL",
+]);
+
+export const emailTemplateStatusEnum = pgEnum("email_template_status", [
+  "ACTIVE",
+  "INACTIVE",
+]);
+
+export const emailLogStatusEnum = pgEnum("email_log_status", [
+  "PENDING",
+  "SENT",
+  "FAILED",
 ]);

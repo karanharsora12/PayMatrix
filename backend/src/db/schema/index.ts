@@ -60,3 +60,4 @@ export * from "./user-parameters";
 export * from "./audit-logs";
 export * from "./notifications";
 export * from "./settings";
+export * from "./email-templates";

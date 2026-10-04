@@ -32,6 +32,7 @@ import {
   UsersRound,
   History,
   SlidersHorizontal,
+  Mail,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useState } from "react";
@@ -94,6 +95,7 @@ const nav = [
     items: [
       { label: "Roles & Permissions", icon: ShieldCheck, path: "/roles", perm: "roles.view" },
       { label: "User Parameters", icon: SlidersHorizontal, path: "/user-parameters", perm: "roles.view" },
+      { label: "Email Templates", icon: Mail, path: "/email-templates", perm: "settings.view" },
       { label: "Settings", icon: Settings, path: "/settings", perm: "settings.view" },
     ],
   },

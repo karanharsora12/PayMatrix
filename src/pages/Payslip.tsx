@@ -22,9 +22,12 @@ import {
   ArrowLeft,
   Building2,
   Lock,
+  Mail,
+  Send,
 } from "lucide-react";
 import { formatCurrency } from "@/lib/utils";
 import { usePayslips, usePayslip } from "@/hooks/usePayslips";
+import { useSendPayslipEmail } from "@/hooks/useEmailTemplates";
 
 // Helper to convert number to words for financial slip
 function numberToWords(num: number): string {
@@ -64,6 +67,7 @@ export default function Payslip() {
 
   const { data: listData, isLoading: isListLoading } = usePayslips(queryParams);
   const { data: detailData, isLoading: isDetailLoading } = usePayslip(selectedPayslipId || "");
+  const sendEmailMutation = useSendPayslipEmail();
 
   const payslipsList: any[] = (listData as any)?.data || listData || [];
   const payslip = (detailData as any)?.data ?? detailData;
@@ -143,19 +147,30 @@ export default function Payslip() {
     },
     { 
       headerName: "Action", 
-      width: 120,
+      width: 170,
       sortable: false,
       filter: false,
       cellRenderer: (p: any) => (
-        <div className="flex justify-end items-center h-full">
-          <Button size="sm" variant="ghost" onClick={() => setSelectedPayslipId(p.data.id)}>
+        <div className="flex justify-end items-center gap-1 h-full">
+          <Button
+            size="sm"
+            variant="ghost"
+            className="h-7 px-2 text-primary hover:text-primary hover:bg-primary/10"
+            title="Dispatch Payslip Email"
+            onClick={() => sendEmailMutation.mutate(p.data.id)}
+            disabled={sendEmailMutation.isPending}
+          >
+            <Mail className="h-3.5 w-3.5 mr-1" />
+            Email
+          </Button>
+          <Button size="sm" variant="ghost" className="h-7 px-2" onClick={() => setSelectedPayslipId(p.data.id)}>
             <Eye className="h-3.5 w-3.5 mr-1" />
             View
           </Button>
         </div>
       )
     }
-  ], []);
+  ], [sendEmailMutation.isPending]);
 
   const handlePrint = () => {
     window.print();
@@ -177,6 +192,16 @@ export default function Payslip() {
             Back to Directory
           </Button>
           <div className="flex items-center gap-2">
+            <Button
+              variant="outline"
+              size="sm"
+              className="text-primary hover:text-primary hover:bg-primary/10"
+              onClick={() => sendEmailMutation.mutate(selectedPayslipId)}
+              disabled={sendEmailMutation.isPending}
+            >
+              <Mail className="h-4 w-4 mr-1.5" />
+              {sendEmailMutation.isPending ? "Sending..." : "Send Email"}
+            </Button>
             <Button variant="outline" size="sm" onClick={handlePrint}>
               <Printer className="h-4 w-4 mr-1.5" />
               Print / Save as PDF

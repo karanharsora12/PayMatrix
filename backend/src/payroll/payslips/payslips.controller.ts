@@ -1,8 +1,10 @@
 import {
+  Body,
   Controller,
   Get,
   Param,
   ParseUUIDPipe,
+  Post,
   Query,
 } from '@nestjs/common';
 import { ApiBearerAuth, ApiOperation, ApiTags } from '@nestjs/swagger';
@@ -53,5 +55,25 @@ export class PayslipsController {
       },
       message: 'Payslip printable snapshot retrieved',
     };
+  }
+
+  @Post('payslips/:id/send-email')
+  @RequirePermission('payroll.run')
+  @ApiOperation({ summary: 'Send payslip email to employee using Email Template Master' })
+  async sendEmail(
+    @CurrentUser() user: any,
+    @Param('id', ParseUUIDPipe) id: string,
+  ) {
+    return this.payslipsService.sendPayslipEmail(user.companyId, id, user.id);
+  }
+
+  @Post('payslips/send-batch-emails')
+  @RequirePermission('payroll.run')
+  @ApiOperation({ summary: 'Batch dispatch payslip emails to employees' })
+  async sendBatchEmails(
+    @CurrentUser() user: any,
+    @Body() body: { payslipIds: string[] },
+  ) {
+    return this.payslipsService.sendBatchPayslipEmails(user.companyId, body.payslipIds || [], user.id);
   }
 }

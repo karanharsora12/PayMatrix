@@ -31,6 +31,7 @@ import Compliance from "@/pages/Compliance";
 import Reports from "@/pages/Reports";
 import UsersRoles from "@/pages/UsersRoles";
 import UserParameters from "@/pages/UserParameters";
+import EmailTemplates from "@/pages/EmailTemplates";
 import Settings from "@/pages/Settings";
 import Placeholder from "@/pages/Placeholder";
 import Login from "@/pages/Login";
@@ -161,6 +162,7 @@ export default function App() {
             <Route path="/users" element={<UsersRoles />} />
             <Route path="/roles" element={<UsersRoles />} />
             <Route path="/user-parameters" element={<UserParameters />} />
+            <Route path="/email-templates" element={<EmailTemplates />} />
             <Route
               path="/audit-logs"
               element={<Placeholder title="Audit Logs" />}

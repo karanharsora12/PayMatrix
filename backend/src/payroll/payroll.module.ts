@@ -8,6 +8,8 @@ import { PayrollRunsController } from './runs/payroll-runs.controller';
 import { PayslipsController } from './payslips/payslips.controller';
 import { PayrollGateway } from './payroll.gateway';
 
+import { EmailTemplatesModule } from '../email-templates/email-templates.module';
+
 // Re-export for compatibility
 export { PayrollRunsService as PayrollService } from './runs/payroll-runs.service';
 export { PayrollCalculationService } from './calculation/payroll-calculation.service';
@@ -15,6 +17,7 @@ export { PaidDaysCalculationService } from './calculation/paid-days-calculation.
 export { PayslipsService } from './payslips/payslips.service';
 
 @Module({
+  imports: [EmailTemplatesModule],
   controllers: [PayrollRunsController, PayslipsController],
   providers: [
     PaidDaysCalculationService,

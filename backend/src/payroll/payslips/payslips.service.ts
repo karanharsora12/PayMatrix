@@ -8,10 +8,16 @@ import { and, desc, eq, sql } from 'drizzle-orm';
 import { DRIZZLE } from '../../database/database.module';
 import * as schema from '../../db/schema';
 import { paginated } from '../../common/dto/pagination.dto';
+import { EmailTemplatesService } from '../../email-templates/email-templates.service';
+import { EmailSenderService } from '../../email-templates/email-sender.service';
 
 @Injectable()
 export class PayslipsService {
-  constructor(@Inject(DRIZZLE) private db: any) {}
+  constructor(
+    @Inject(DRIZZLE) private db: any,
+    private readonly emailTemplatesService: EmailTemplatesService,
+    private readonly emailSender: EmailSenderService,
+  ) {}
 
   async generateForRun(companyId: string, runId: string) {
     const run: any = await this.db.query.payrollRuns.findFirst({
@@ -271,5 +277,140 @@ export class PayslipsService {
 
   async getEmployeePayslips(companyId: string, employeeId: string) {
     return this.list(companyId, { employeeId, limit: 50, page: 1 });
+  }
+
+  /**
+   * Dispatches payslip notification to employee using generic Email Template Engine.
+   */
+  async sendPayslipEmail(companyId: string, payslipId: string, userId?: string) {
+    const payslipRes = await this.get(companyId, payslipId);
+    const payslip = payslipRes.data;
+
+    // Fetch employee full details to get email address
+    const employee = await this.db.query.employees.findFirst({
+      where: eq(schema.employees.id, payslip.employee?.id),
+    });
+
+    const recipientEmail = employee?.email || employee?.personalEmail;
+    if (!recipientEmail) {
+      throw new BadRequestException({
+        code: 'NO_EMPLOYEE_EMAIL',
+        message: `Employee ${payslip.employee?.name || payslip.employee?.code} does not have an email address configured.`,
+      });
+    }
+
+    const monthNames = [
+      'January', 'February', 'March', 'April', 'May', 'June',
+      'July', 'August', 'September', 'October', 'November', 'December'
+    ];
+    const payMonth = `${monthNames[payslip.periodMonth - 1] || payslip.periodMonth} ${payslip.periodYear}`;
+
+    // Look for basic salary component
+    const basicComponent = payslip.earnings?.find(
+      (e: any) =>
+        e.salaryComponent?.code === 'BASIC' ||
+        e.salaryComponent?.name?.toLowerCase().includes('basic') ||
+        e.componentName?.toLowerCase().includes('basic')
+    );
+    const basicSalary = basicComponent ? Number(basicComponent.amount) : Number(payslip.totals.grossSalary) * 0.5;
+
+    // Prepare dictionary matching EMAIL_VARIABLE_DEFINITIONS
+    const variables: Record<string, any> = {
+      CompanyName: payslip.company?.name || 'PayMatrix Technologies',
+      CompanyAddress: payslip.company?.address || '',
+      CompanyEmail: 'payroll@paymatrix.com',
+      CompanyPhone: '+91 (022) 4567-8900',
+      EmployeeName: payslip.employee?.name || 'Employee',
+      EmployeeCode: payslip.employee?.code || '',
+      DepartmentName: payslip.employee?.department || 'N/A',
+      DesignationName: payslip.employee?.designation || 'N/A',
+      BranchName: (payslip.employee as any)?.branch || '',
+      EmployeeEmail: recipientEmail,
+      PayMonth: payMonth,
+      PayslipNumber: payslip.payslipNumber,
+      BasicSalary: '₹' + basicSalary.toLocaleString('en-IN', { minimumFractionDigits: 2 }),
+      GrossSalary: '₹' + Number(payslip.totals?.grossSalary || 0).toLocaleString('en-IN', { minimumFractionDigits: 2 }),
+      TotalDeductions: '₹' + Number(payslip.totals?.totalDeductions || 0).toLocaleString('en-IN', { minimumFractionDigits: 2 }),
+      NetSalary: '₹' + Number(payslip.totals?.netSalary || 0).toLocaleString('en-IN', { minimumFractionDigits: 2 }),
+      NetSalaryInWords: '',
+      PaymentDate: payslip.generatedAt ? new Date(payslip.generatedAt).toLocaleDateString('en-IN') : new Date().toLocaleDateString('en-IN'),
+      BankName: payslip.employee?.bankAccount?.bankName || 'N/A',
+      BankAccountNo: payslip.employee?.bankAccount?.accountNumber ? '•••• ' + payslip.employee.bankAccount.accountNumber.slice(-4) : 'N/A',
+      CurrentDate: new Date().toLocaleDateString('en-IN'),
+      CurrentYear: new Date().getFullYear().toString(),
+    };
+
+    // Render using reusable engine (finds default active Payslip template)
+    const { template, subject, bodyHtml } = await this.emailTemplatesService.renderTemplate(
+      companyId,
+      'Payslip',
+      variables,
+    );
+
+    // Dispatch email with HTML payslip voucher attachment
+    const sendResult = await this.emailSender.sendEmail({
+      companyId,
+      templateId: template?.id || null,
+      referenceType: 'Payslip',
+      referenceId: payslipId,
+      toEmail: recipientEmail,
+      subject,
+      bodyHtml,
+      userId,
+      attachments: [
+        {
+          filename: `Payslip_${payslip.employee?.code || 'EMP'}_${payslip.periodMonth}_${payslip.periodYear}.html`,
+          content: `<!DOCTYPE html><html><head><meta charset="UTF-8"><title>Payslip - ${payslip.payslipNumber}</title><style>body{font-family:sans-serif;margin:40px;line-height:1.5;color:#1e293b;}</style></head><body>${bodyHtml}</body></html>`,
+          contentType: 'text/html',
+        },
+      ],
+    });
+
+    return {
+      success: true,
+      data: {
+        toEmail: recipientEmail,
+        subject,
+        status: sendResult.status,
+        logId: sendResult.logId,
+        message: sendResult.message,
+      },
+      message: sendResult.status === 'SENT' ? 'Payslip email sent successfully' : 'Email logged (Simulated / Pending SMTP)',
+    };
+  }
+
+  /**
+   * Batch sends payslip emails for multiple payslip IDs.
+   */
+  async sendBatchPayslipEmails(companyId: string, payslipIds: string[], userId?: string) {
+    const results: any[] = [];
+    let sentCount = 0;
+    let failCount = 0;
+
+    for (const id of payslipIds) {
+      try {
+        const res = await this.sendPayslipEmail(companyId, id, userId);
+        results.push({ id, success: true, ...res.data });
+        sentCount++;
+      } catch (err: any) {
+        results.push({
+          id,
+          success: false,
+          error: err.message || 'Failed to dispatch email',
+        });
+        failCount++;
+      }
+    }
+
+    return {
+      success: true,
+      data: {
+        total: payslipIds.length,
+        sentCount,
+        failCount,
+        details: results,
+      },
+      message: `Processed ${payslipIds.length} payslips: ${sentCount} queued/sent, ${failCount} failed`,
+    };
   }
 }

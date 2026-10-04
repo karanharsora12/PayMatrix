@@ -31,6 +31,7 @@ import { NotificationsModule } from './notifications/notifications.module';
 import { HealthModule } from './health/health.module';
 import { UploadsModule } from './uploads/uploads.module';
 import { ParametersModule } from './parameters/parameters.module';
+import { EmailTemplatesModule } from './email-templates/email-templates.module';
 import { JwtAuthGuard } from './common/guards/jwt-auth.guard';
 import { RolesGuard } from './common/guards/roles.guard';
 
@@ -67,6 +68,7 @@ import { RolesGuard } from './common/guards/roles.guard';
     HealthModule,
     UploadsModule,
     ParametersModule,
+    EmailTemplatesModule,
   ],
   providers: [
     Reflector,
