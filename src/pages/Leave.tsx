@@ -633,9 +633,7 @@ export default function Leave() {
               { label: "Balances", value: "balances" },
             ],
             value:
-              activeTab === "types" && !canManageLeave
-                ? "requests"
-                : activeTab,
+              activeTab === "types" && !canManageLeave ? "requests" : activeTab,
             onChange: setActiveTab,
           }}
         />
@@ -663,12 +661,6 @@ export default function Leave() {
                     <span className="truncate">
                       {selfEmployeeLabel || "Self Leaves"}
                     </span>
-                    <Badge
-                      variant="outline"
-                      className="text-[10px] ml-auto shrink-0"
-                    >
-                      Self Only
-                    </Badge>
                   </div>
                 )}
               </div>
@@ -745,12 +737,6 @@ export default function Leave() {
                     <span className="truncate">
                       {selfEmployeeLabel || "Self Balance"}
                     </span>
-                    <Badge
-                      variant="outline"
-                      className="text-[10px] ml-auto shrink-0"
-                    >
-                      Self Only
-                    </Badge>
                   </div>
                 )}
               </div>
@@ -778,11 +764,6 @@ export default function Leave() {
                 <label className="text-xs font-medium text-muted-foreground">
                   Employee
                 </label>
-                {!canManageLeave && (
-                  <Badge variant="outline" className="text-[10px]">
-                    Self Only
-                  </Badge>
-                )}
               </div>
               {canManageLeave ? (
                 <NativeSelect

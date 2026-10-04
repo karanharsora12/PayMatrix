@@ -640,12 +640,6 @@ export default function Attendance() {
                     <span className="truncate">
                       {employeeOptions[0]?.label || "Self Attendance"}
                     </span>
-                    <Badge
-                      variant="outline"
-                      className="text-[10px] ml-auto shrink-0"
-                    >
-                      Self Only
-                    </Badge>
                   </div>
                 )}
               </div>
