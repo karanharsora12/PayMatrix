@@ -49,7 +49,7 @@
     "zod": "^3.23.8"
   },
   "devDependencies": {
-    "@rolldown/binding-win32-x64-msvc": "^1.2.9",
+
     "@types/node": "^24.13.3",
     "@types/pg": "^8.11.0",
     "@types/react": "^19.2.18",
