@@ -14,6 +14,8 @@ import {
 import { Input } from "@/components/ui/input";
 import { NativeSelect } from "@/components/ui/select";
 import { useEmployees } from "@/hooks/useEmployees";
+import { useAuth } from "@/context/AuthContext";
+import { useCanManageLeave } from "@/hooks/useUserParameters";
 import {
   useApproveLeave,
   useCancelLeave,
@@ -30,12 +32,16 @@ import {
 import { gridExportExcel, gridExportPdf, gridPrint } from "@/lib/gridExport";
 import type { ColDef } from "ag-grid-community";
 import type { AgGridReact } from "ag-grid-react";
-import { CheckCircle2, RotateCcw, Trash2, XCircle } from "lucide-react";
+import { CheckCircle2, RotateCcw, Trash2, XCircle, User } from "lucide-react";
 import { useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
 
 export default function Leave() {
   const { confirm } = useAlert();
+  const { user } = useAuth();
+  const canManageLeave = useCanManageLeave();
+  const currentEmployeeId = user?.employeeId || user?.employee?.id || "";
+
   const currentYear = new Date().getFullYear();
   const todayStr = new Date().toISOString().substring(0, 10);
   const currentMonthStr = todayStr.substring(0, 7);
@@ -50,13 +56,17 @@ export default function Leave() {
   const [balanceEmpId, setBalanceEmpId] = useState("");
   const [calendarMonth, setCalendarMonth] = useState(currentMonthStr);
 
+  const effectiveFilterEmployeeId = canManageLeave
+    ? filterEmployeeId
+    : currentEmployeeId;
+
   // Queries
   const { data: typesData, isLoading: typesLoading } = useLeaveTypes();
   const leaveTypes = typesData?.data ?? [];
 
   const { data: requestsData, isLoading: requestsLoading } = useLeaveRequests({
     status: filterStatus || undefined,
-    employeeId: filterEmployeeId || undefined,
+    employeeId: effectiveFilterEmployeeId || undefined,
     pageSize: 50,
   });
   const requests = requestsData?.data ?? [];
@@ -64,8 +74,12 @@ export default function Leave() {
   const { data: employeesData } = useEmployees({ pageSize: 100 });
   const employees = employeesData?.data ?? [];
 
+  const effectiveBalanceEmpId = canManageLeave
+    ? balanceEmpId || employees[0]?.id || currentEmployeeId
+    : currentEmployeeId;
+
   const { data: balancesData, isLoading: balancesLoading } = useLeaveBalances(
-    balanceEmpId || (employees[0]?.id ?? undefined),
+    effectiveBalanceEmpId || undefined,
     currentYear,
   );
   const balances = balancesData ?? [];
@@ -75,6 +89,7 @@ export default function Leave() {
   const { data: calendarEvents } = useLeaveCalendar({
     fromDate: fromMonthDate,
     toDate: toMonthDate,
+    employeeId: canManageLeave ? undefined : currentEmployeeId,
   });
 
   // Mutations
@@ -118,10 +133,24 @@ export default function Leave() {
     isActive: true,
   });
 
+  // Self employee label helper
+  const selfEmployeeLabel = useMemo(() => {
+    const selfEmp =
+      employees.find((e: any) => e.id === currentEmployeeId) || user?.employee;
+    const firstName = selfEmp?.firstName || user?.name?.split(" ")[0] || "User";
+    const lastName = selfEmp?.lastName || "";
+    const code = (selfEmp as any)?.employeeCode
+      ? ` (${(selfEmp as any).employeeCode})`
+      : "";
+    return `${firstName} ${lastName}${code}`.trim();
+  }, [employees, currentEmployeeId, user]);
+
   // Action Handlers
   const handleOpenRequest = () => {
     setRequestForm({
-      employeeId: employees[0]?.id || "",
+      employeeId: canManageLeave
+        ? employees[0]?.id || currentEmployeeId || ""
+        : currentEmployeeId,
       leaveTypeId: leaveTypes[0]?.id || "",
       fromDate: todayStr,
       toDate: todayStr,
@@ -132,8 +161,12 @@ export default function Leave() {
 
   const handleSaveRequest = async (e: React.FormEvent) => {
     e.preventDefault();
+    const targetEmpId = canManageLeave
+      ? requestForm.employeeId
+      : currentEmployeeId;
+
     if (
-      !requestForm.employeeId ||
+      !targetEmpId ||
       !requestForm.leaveTypeId ||
       !requestForm.fromDate ||
       !requestForm.toDate
@@ -143,7 +176,10 @@ export default function Leave() {
     }
 
     try {
-      await createRequestMutation.mutateAsync(requestForm);
+      await createRequestMutation.mutateAsync({
+        ...requestForm,
+        employeeId: targetEmpId,
+      });
       toast.success("Leave request submitted successfully");
       setRequestModalOpen(false);
     } catch (err: any) {
@@ -384,7 +420,7 @@ export default function Leave() {
         filter: false,
         cellRenderer: (p: any) => (
           <div className="flex items-center justify-end gap-1.5 h-full">
-            {p.data.status === "PENDING" && (
+            {p.data.status === "PENDING" && canManageLeave && (
               <>
                 <Button
                   size="sm"
@@ -406,17 +442,18 @@ export default function Leave() {
                 </Button>
               </>
             )}
-            {(p.data.status === "PENDING" || p.data.status === "APPROVED") && (
-              <Button
-                size="sm"
-                variant="ghost"
-                className="h-8 text-xs text-muted-foreground hover:text-foreground"
-                onClick={() => handleCancel(p.data.id)}
-                disabled={cancelMutation.isPending}
-              >
-                <RotateCcw className="h-3 w-3 mr-1" /> Cancel
-              </Button>
-            )}
+            {(p.data.status === "PENDING" || p.data.status === "APPROVED") &&
+              (canManageLeave || p.data.employeeId === currentEmployeeId) && (
+                <Button
+                  size="sm"
+                  variant="ghost"
+                  className="h-8 text-xs text-muted-foreground hover:text-foreground"
+                  onClick={() => handleCancel(p.data.id)}
+                  disabled={cancelMutation.isPending}
+                >
+                  <RotateCcw className="h-3 w-3 mr-1" /> Cancel
+                </Button>
+              )}
           </div>
         ),
       },
@@ -425,6 +462,8 @@ export default function Leave() {
       approveMutation.isPending,
       rejectMutation.isPending,
       cancelMutation.isPending,
+      canManageLeave,
+      currentEmployeeId,
     ],
   );
 
@@ -483,29 +522,33 @@ export default function Leave() {
           </div>
         ),
       },
-      {
-        headerName: "",
-        width: 80,
-        sortable: false,
-        filter: false,
-        cellRenderer: (p: any) => (
-          <div className="flex items-center justify-end gap-1 h-full">
-            <Button
-              size="sm"
-              variant="ghost"
-              className="h-8 w-8"
-              onClick={(e) => {
-                e.stopPropagation();
-                handleDeleteType(p.data.id, p.data.name);
-              }}
-            >
-              <Trash2 className="h-3.5 w-3.5 text-red-500" />
-            </Button>
-          </div>
-        ),
-      },
+      ...(canManageLeave
+        ? [
+            {
+              headerName: "",
+              width: 80,
+              sortable: false,
+              filter: false,
+              cellRenderer: (p: any) => (
+                <div className="flex items-center justify-end gap-1 h-full">
+                  <Button
+                    size="sm"
+                    variant="ghost"
+                    className="h-8 w-8"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      handleDeleteType(p.data.id, p.data.name);
+                    }}
+                  >
+                    <Trash2 className="h-3.5 w-3.5 text-red-500" />
+                  </Button>
+                </div>
+              ),
+            },
+          ]
+        : []),
     ],
-    [],
+    [canManageLeave],
   );
 
   const balancesColDefs = useMemo<ColDef[]>(
@@ -561,7 +604,7 @@ export default function Leave() {
           searchValue={searchQuery}
           onSearchChange={setSearchQuery}
           onAddNew={
-            activeTab === "types"
+            activeTab === "types" && canManageLeave
               ? () => handleOpenTypeModal()
               : activeTab === "requests"
                 ? handleOpenRequest
@@ -584,10 +627,15 @@ export default function Leave() {
           tabs={{
             options: [
               { label: "Leave Requests", value: "requests" },
-              { label: "Leave Types", value: "types" },
+              ...(canManageLeave
+                ? [{ label: "Leave Types", value: "types" }]
+                : []),
               { label: "Balances", value: "balances" },
             ],
-            value: activeTab,
+            value:
+              activeTab === "types" && !canManageLeave
+                ? "requests"
+                : activeTab,
             onChange: setActiveTab,
           }}
         />
@@ -597,17 +645,32 @@ export default function Leave() {
           <div className="space-y-3">
             <div className="flex flex-wrap items-center gap-3">
               <div className="flex-1 min-w-[200px]">
-                <NativeSelect
-                  placeholder="All Employees"
-                  value={filterEmployeeId}
-                  onChange={(val) => setFilterEmployeeId(val || "")}
-                >
-                  {employees.map((e) => (
-                    <option key={e.id} value={e.id}>
-                      {e.firstName} {e.lastName} ({e.employeeCode})
-                    </option>
-                  ))}
-                </NativeSelect>
+                {canManageLeave ? (
+                  <NativeSelect
+                    placeholder="All Employees"
+                    value={filterEmployeeId}
+                    onChange={(val) => setFilterEmployeeId(val || "")}
+                  >
+                    {employees.map((e) => (
+                      <option key={e.id} value={e.id}>
+                        {e.firstName} {e.lastName} ({e.employeeCode})
+                      </option>
+                    ))}
+                  </NativeSelect>
+                ) : (
+                  <div className="flex items-center gap-2 h-9 px-3 rounded-md border bg-muted/60 text-xs font-medium text-foreground">
+                    <User className="h-3.5 w-3.5 text-primary shrink-0" />
+                    <span className="truncate">
+                      {selfEmployeeLabel || "Self Leaves"}
+                    </span>
+                    <Badge
+                      variant="outline"
+                      className="text-[10px] ml-auto shrink-0"
+                    >
+                      Self Only
+                    </Badge>
+                  </div>
+                )}
               </div>
               <div className="w-40">
                 <NativeSelect
@@ -643,14 +706,15 @@ export default function Leave() {
         )}
 
         {/* Types Tab */}
-        {activeTab === "types" && (
+        {activeTab === "types" && canManageLeave && (
           <div className="h-[500px]">
             <DataGrid
               ref={gridRef}
               rowData={leaveTypes}
               columnDefs={typesColDefs}
               gridOptions={{
-                onRowDoubleClicked: (e) => handleOpenTypeModal(e.data),
+                onRowDoubleClicked: (e) =>
+                  canManageLeave && handleOpenTypeModal(e.data),
               }}
             />
           </div>
@@ -664,16 +728,31 @@ export default function Leave() {
                 Employee Leave Balances ({currentYear})
               </p>
               <div className="w-64">
-                <NativeSelect
-                  value={balanceEmpId || (employees[0]?.id ?? "")}
-                  onChange={(val) => setBalanceEmpId(val || "")}
-                >
-                  {employees.map((e) => (
-                    <option key={e.id} value={e.id}>
-                      {e.firstName} {e.lastName} ({e.employeeCode})
-                    </option>
-                  ))}
-                </NativeSelect>
+                {canManageLeave ? (
+                  <NativeSelect
+                    value={balanceEmpId || (employees[0]?.id ?? "")}
+                    onChange={(val) => setBalanceEmpId(val || "")}
+                  >
+                    {employees.map((e) => (
+                      <option key={e.id} value={e.id}>
+                        {e.firstName} {e.lastName} ({e.employeeCode})
+                      </option>
+                    ))}
+                  </NativeSelect>
+                ) : (
+                  <div className="flex items-center gap-2 h-9 px-3 rounded-md border bg-muted/60 text-xs font-medium text-foreground">
+                    <User className="h-3.5 w-3.5 text-primary shrink-0" />
+                    <span className="truncate">
+                      {selfEmployeeLabel || "Self Balance"}
+                    </span>
+                    <Badge
+                      variant="outline"
+                      className="text-[10px] ml-auto shrink-0"
+                    >
+                      Self Only
+                    </Badge>
+                  </div>
+                )}
               </div>
             </div>
             <div className="h-[400px]">
@@ -695,22 +774,38 @@ export default function Leave() {
           </DialogHeader>
           <form onSubmit={handleSaveRequest} className="space-y-4">
             <div>
-              <label className="text-xs font-medium text-muted-foreground">
-                Employee
-              </label>
-              <NativeSelect
-                value={requestForm.employeeId}
-                onChange={(val) =>
-                  setRequestForm({ ...requestForm, employeeId: val || "" })
-                }
-                required
-              >
-                {employees.map((e) => (
-                  <option key={e.id} value={e.id}>
-                    {e.firstName} {e.lastName} ({e.employeeCode})
-                  </option>
-                ))}
-              </NativeSelect>
+              <div className="flex items-center justify-between mb-1">
+                <label className="text-xs font-medium text-muted-foreground">
+                  Employee
+                </label>
+                {!canManageLeave && (
+                  <Badge variant="outline" className="text-[10px]">
+                    Self Only
+                  </Badge>
+                )}
+              </div>
+              {canManageLeave ? (
+                <NativeSelect
+                  value={requestForm.employeeId}
+                  onChange={(val) =>
+                    setRequestForm({ ...requestForm, employeeId: val || "" })
+                  }
+                  required
+                >
+                  {employees.map((e) => (
+                    <option key={e.id} value={e.id}>
+                      {e.firstName} {e.lastName} ({e.employeeCode})
+                    </option>
+                  ))}
+                </NativeSelect>
+              ) : (
+                <div className="flex items-center gap-2 h-9 px-3 rounded-md border bg-muted/60 text-xs font-medium text-foreground cursor-not-allowed">
+                  <User className="h-3.5 w-3.5 text-primary shrink-0" />
+                  <span className="truncate">
+                    {selfEmployeeLabel || "Current Employee"}
+                  </span>
+                </div>
+              )}
             </div>
 
             <div>

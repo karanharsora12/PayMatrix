@@ -51,7 +51,6 @@ export default function UserParameters() {
     new Set(),
   );
 
-  // Load parameter definitions from backend — only show CanManageAttendance
   const loadDefinitions = async () => {
     setDefinitionsLoading(true);
     try {

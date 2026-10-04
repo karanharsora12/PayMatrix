@@ -17,6 +17,15 @@ export const PARAMETER_DEFINITIONS: ParameterDefinition[] = [
     defaultValueLabel: 'No',
     type: 'boolean',
   },
+  {
+    srNo: 2,
+    name: 'CanManageLeave',
+    description:
+      'Controls whether the user can manage leave requests, approvals, and balances for all employees or only their own leaves.',
+    defaultValue: false,
+    defaultValueLabel: 'No',
+    type: 'boolean',
+  },
 ];
 
 export const DEFAULT_PARAMETERS: Record<string, boolean | string> =

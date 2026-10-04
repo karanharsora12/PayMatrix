@@ -3,6 +3,7 @@ import { useAppDispatch, useAppSelector } from '@/store';
 import {
   fetchUserParameters,
   selectCanManageAttendance,
+  selectCanManageLeave,
   selectUserParameter,
   selectUserParameters,
 } from '@/store/slices/userParametersSlice';
@@ -11,6 +12,7 @@ export function useUserParameters() {
   const dispatch = useAppDispatch();
   const parameters = useAppSelector(selectUserParameters);
   const canManageAttendance = useAppSelector(selectCanManageAttendance);
+  const canManageLeave = useAppSelector(selectCanManageLeave);
   const loading = useAppSelector((state) => state.userParameters.loading);
   const error = useAppSelector((state) => state.userParameters.error);
   const isInitialized = useAppSelector((state) => state.userParameters.isInitialized);
@@ -36,6 +38,7 @@ export function useUserParameters() {
   return {
     parameters,
     canManageAttendance,
+    canManageLeave,
     loading,
     error,
     isInitialized,
@@ -47,4 +50,8 @@ export function useUserParameters() {
 
 export function useCanManageAttendance(): boolean {
   return useAppSelector(selectCanManageAttendance);
+}
+
+export function useCanManageLeave(): boolean {
+  return useAppSelector(selectCanManageLeave);
 }

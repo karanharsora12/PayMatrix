@@ -5,6 +5,7 @@ import { parametersApi } from '@/api/parameters';
 export interface UserParametersState {
   parameters: Record<string, boolean | string>;
   CanManageAttendance: boolean;
+  CanManageLeave: boolean;
   loading: boolean;
   error: string | null;
   isInitialized: boolean;
@@ -13,8 +14,10 @@ export interface UserParametersState {
 const initialState: UserParametersState = {
   parameters: {
     CanManageAttendance: false,
+    CanManageLeave: false,
   },
   CanManageAttendance: false,
+  CanManageLeave: false,
   loading: false,
   error: null,
   isInitialized: false,
@@ -52,6 +55,9 @@ export const userParametersSlice = createSlice({
       if (name === 'CanManageAttendance') {
         state.CanManageAttendance = Boolean(value);
       }
+      if (name === 'CanManageLeave') {
+        state.CanManageLeave = Boolean(value);
+      }
     },
     setUserParameters: (
       state,
@@ -60,6 +66,9 @@ export const userParametersSlice = createSlice({
       state.parameters = { ...state.parameters, ...action.payload };
       if ('CanManageAttendance' in action.payload) {
         state.CanManageAttendance = Boolean(action.payload['CanManageAttendance']);
+      }
+      if ('CanManageLeave' in action.payload) {
+        state.CanManageLeave = Boolean(action.payload['CanManageLeave']);
       }
       state.isInitialized = true;
     },
@@ -80,12 +89,16 @@ export const userParametersSlice = createSlice({
         state.CanManageAttendance = Boolean(
           action.payload?.['CanManageAttendance'] ?? false,
         );
+        state.CanManageLeave = Boolean(
+          action.payload?.['CanManageLeave'] ?? false,
+        );
       })
       .addCase(fetchUserParameters.rejected, (state, action) => {
         state.loading = false;
         state.error = (action.payload as string) || 'Failed to load user parameters';
         // Safe default on failure
         state.CanManageAttendance = false;
+        state.CanManageLeave = false;
       });
   },
 });
@@ -100,6 +113,10 @@ export const selectUserParameters = (state: { userParameters: UserParametersStat
 export const selectCanManageAttendance = (state: {
   userParameters: UserParametersState;
 }) => state.userParameters.CanManageAttendance;
+
+export const selectCanManageLeave = (state: {
+  userParameters: UserParametersState;
+}) => state.userParameters.CanManageLeave;
 
 export const selectUserParameter = (
   state: { userParameters: UserParametersState },
