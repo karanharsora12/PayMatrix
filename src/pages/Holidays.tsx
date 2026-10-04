@@ -6,6 +6,7 @@ import { DataGrid } from "@/components/common/DataGrid";
 import { ListingHeader } from "@/components/common/ListingHeader";
 import { ListingCard } from "@/components/common/ListingCard";
 import { GridDateFloatingFilter } from "@/components/common/GridDateFloatingFilter";
+import { DatePicker } from "@/components/common";
 import { gridExportExcel, gridExportPdf, gridPrint } from "@/lib/gridExport";
 import type { ColDef } from "ag-grid-community";
 import type { AgGridReact } from "ag-grid-react";
@@ -352,16 +353,15 @@ export default function Holidays() {
 
             <div className="grid grid-cols-2 gap-3">
               <div>
-                <label className="text-xs font-medium text-muted-foreground">
-                  Holiday Date
+                <label className="text-xs font-medium text-muted-foreground block mb-1">
+                  Holiday Date <span className="text-destructive">*</span>
                 </label>
-                <Input
-                  type="date"
+                <DatePicker
                   value={form.holidayDate}
-                  onChange={(e) =>
-                    setForm({ ...form, holidayDate: e.target.value })
+                  onChange={(_, str) =>
+                    setForm({ ...form, holidayDate: str })
                   }
-                  required
+                  placeholder="Select holiday date"
                 />
               </div>
               <div>

@@ -4,6 +4,7 @@ import { departmentApi } from "@/api/departments";
 import { designationApi } from "@/api/designations";
 import { employeeGroupApi } from "@/api/employeeGroups";
 import { FormFooter } from "@/components/common/FormFooter";
+import { DatePicker } from "@/components/common";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import {
@@ -497,11 +498,22 @@ export default function AddEmployee() {
                     required
                     error={errors.joiningDate}
                   >
-                    <Input
-                      type="date"
-                      name="joiningDate"
+                    <DatePicker
                       value={formData.joiningDate || ""}
-                      onChange={handleInputChange}
+                      onChange={(_, str) => {
+                        setFormData((prev: any) => ({
+                          ...prev,
+                          joiningDate: str,
+                        }));
+                        if (errors.joiningDate) {
+                          setErrors((prev: any) => {
+                            const next = { ...prev };
+                            delete next.joiningDate;
+                            return next;
+                          });
+                        }
+                      }}
+                      placeholder="Select joining date"
                     />
                   </Field>
                 </div>

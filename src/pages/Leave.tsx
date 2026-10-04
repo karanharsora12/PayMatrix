@@ -1,5 +1,5 @@
 import type { LeaveType } from "@/api/leave";
-import { useAlert } from "@/components/common";
+import { DatePicker, useAlert } from "@/components/common";
 import { DataGrid } from "@/components/common/DataGrid";
 import { ListingCard } from "@/components/common/ListingCard";
 import { ListingHeader } from "@/components/common/ListingHeader";
@@ -810,29 +810,27 @@ export default function Leave() {
 
             <div className="grid grid-cols-2 gap-3">
               <div>
-                <label className="text-xs font-medium text-muted-foreground">
-                  From Date
+                <label className="text-xs font-medium text-muted-foreground block mb-1">
+                  From Date <span className="text-destructive">*</span>
                 </label>
-                <Input
-                  type="date"
+                <DatePicker
                   value={requestForm.fromDate}
-                  onChange={(e) =>
-                    setRequestForm({ ...requestForm, fromDate: e.target.value })
+                  onChange={(_, str) =>
+                    setRequestForm({ ...requestForm, fromDate: str })
                   }
-                  required
+                  placeholder="Select from date"
                 />
               </div>
               <div>
-                <label className="text-xs font-medium text-muted-foreground">
-                  To Date
+                <label className="text-xs font-medium text-muted-foreground block mb-1">
+                  To Date <span className="text-destructive">*</span>
                 </label>
-                <Input
-                  type="date"
+                <DatePicker
                   value={requestForm.toDate}
-                  onChange={(e) =>
-                    setRequestForm({ ...requestForm, toDate: e.target.value })
+                  onChange={(_, str) =>
+                    setRequestForm({ ...requestForm, toDate: str })
                   }
-                  required
+                  placeholder="Select to date"
                 />
               </div>
             </div>

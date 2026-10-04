@@ -1,6 +1,7 @@
 import { DataGrid } from "@/components/common/DataGrid";
 import { ListingCard } from "@/components/common/ListingCard";
 import { ListingHeader } from "@/components/common/ListingHeader";
+import { DatePicker } from "@/components/common";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -780,12 +781,11 @@ export default function EmployeeSalary() {
 
               <div className="space-y-1.5">
                 <Label htmlFor="effDate">Effective From *</Label>
-                <Input
+                <DatePicker
                   id="effDate"
-                  type="date"
                   value={revisionEffectiveFrom}
-                  onChange={(e) => setRevisionEffectiveFrom(e.target.value)}
-                  required
+                  onChange={(_, str) => setRevisionEffectiveFrom(str)}
+                  placeholder="Select effective date"
                 />
               </div>
             </div>

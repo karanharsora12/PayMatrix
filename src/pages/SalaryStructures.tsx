@@ -40,6 +40,7 @@ import { NativeSelect } from "@/components/ui/select";
 import { toast } from "sonner";
 import { ListingCard } from "@/components/common/ListingCard";
 import { ListingHeader } from "@/components/common/ListingHeader";
+import { DatePicker } from "@/components/common";
 
 export default function SalaryStructures() {
   const {
@@ -802,12 +803,11 @@ export default function SalaryStructures() {
 
             <div className="space-y-1.5">
               <Label htmlFor="sDate">Effective From *</Label>
-              <Input
+              <DatePicker
                 id="sDate"
-                type="date"
                 value={newEffectiveFrom}
-                onChange={(e) => setNewEffectiveFrom(e.target.value)}
-                required
+                onChange={(_, str) => setNewEffectiveFrom(str)}
+                placeholder="Select effective date"
               />
             </div>
 
