@@ -1,5 +1,6 @@
 import { useState, useMemo, useEffect } from "react";
 import { Button } from "@/components/ui/button";
+import { Checkbox } from "@/components/ui/checkbox";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { ListingCard } from "@/components/common/ListingCard";
@@ -242,12 +243,10 @@ export default function UserParameters() {
           const isChecked = Boolean(p.value);
 
           return (
-            <div className="flex items-center justify-center">
-              <input
-                type="checkbox"
+            <div className="flex items-center justify-center h-full">
+              <Checkbox
                 checked={isChecked}
-                onChange={() => handleToggleValue(p.data?.employeeId)}
-                className="h-4 w-4 rounded border-gray-300 text-primary focus:ring-primary cursor-pointer"
+                onCheckedChange={() => handleToggleValue(p.data?.employeeId)}
               />
             </div>
           );

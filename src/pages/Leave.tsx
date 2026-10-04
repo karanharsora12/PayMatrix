@@ -1,52 +1,38 @@
-import { useState, useRef } from 'react';
-import { Card, CardContent } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
-import { DataGrid } from '@/components/common/DataGrid';
-import { ListingCard } from '@/components/common/ListingCard';
-import { ListingHeader } from '@/components/common/ListingHeader';
-import { useAlert } from '@/components/common';
-import { gridExportExcel, gridExportPdf, gridPrint } from '@/lib/gridExport';
-import type { AgGridReact } from 'ag-grid-react';
-import type { ColDef } from 'ag-grid-community';
-import { useMemo } from 'react';
-import { Input } from '@/components/ui/input';
-import { NativeSelect } from '@/components/ui/select';
+import type { LeaveType } from "@/api/leave";
+import { useAlert } from "@/components/common";
+import { DataGrid } from "@/components/common/DataGrid";
+import { ListingCard } from "@/components/common/ListingCard";
+import { ListingHeader } from "@/components/common/ListingHeader";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 import {
   Dialog,
   DialogContent,
   DialogHeader,
   DialogTitle,
-  DialogDescription,
-} from '@/components/ui/dialog';
+} from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
+import { NativeSelect } from "@/components/ui/select";
+import { useEmployees } from "@/hooks/useEmployees";
 import {
-  Calendar as CalendarIcon,
-  Plus,
-  CheckCircle2,
-  XCircle,
-  Clock,
-  RotateCcw,
-  Pencil,
-  Trash2,
-  AlertCircle,
-  FileText,
-} from 'lucide-react';
-import { toast } from 'sonner';
-import {
-  useLeaveTypes,
-  useCreateLeaveType,
-  useUpdateLeaveType,
-  useDeleteLeaveType,
-  useLeaveRequests,
-  useCreateLeaveRequest,
   useApproveLeave,
-  useRejectLeave,
   useCancelLeave,
+  useCreateLeaveRequest,
+  useCreateLeaveType,
+  useDeleteLeaveType,
   useLeaveBalances,
   useLeaveCalendar,
-} from '@/hooks/useLeave';
-import { useEmployees } from '@/hooks/useEmployees';
-import type { LeaveType, LeaveRequest } from '@/api/leave';
+  useLeaveRequests,
+  useLeaveTypes,
+  useRejectLeave,
+  useUpdateLeaveType,
+} from "@/hooks/useLeave";
+import { gridExportExcel, gridExportPdf, gridPrint } from "@/lib/gridExport";
+import type { ColDef } from "ag-grid-community";
+import type { AgGridReact } from "ag-grid-react";
+import { CheckCircle2, RotateCcw, Trash2, XCircle } from "lucide-react";
+import { useMemo, useRef, useState } from "react";
+import { toast } from "sonner";
 
 export default function Leave() {
   const { confirm } = useAlert();
@@ -54,14 +40,14 @@ export default function Leave() {
   const todayStr = new Date().toISOString().substring(0, 10);
   const currentMonthStr = todayStr.substring(0, 7);
 
-  const [activeTab, setActiveTab] = useState('requests');
-  const [searchQuery, setSearchQuery] = useState('');
+  const [activeTab, setActiveTab] = useState("requests");
+  const [searchQuery, setSearchQuery] = useState("");
   const gridRef = useRef<AgGridReact>(null);
 
   // Filter States
-  const [filterStatus, setFilterStatus] = useState('');
-  const [filterEmployeeId, setFilterEmployeeId] = useState('');
-  const [balanceEmpId, setBalanceEmpId] = useState('');
+  const [filterStatus, setFilterStatus] = useState("");
+  const [filterEmployeeId, setFilterEmployeeId] = useState("");
+  const [balanceEmpId, setBalanceEmpId] = useState("");
   const [calendarMonth, setCalendarMonth] = useState(currentMonthStr);
 
   // Queries
@@ -105,22 +91,24 @@ export default function Leave() {
   const [typeModalOpen, setTypeModalOpen] = useState(false);
   const [editingType, setEditingType] = useState<LeaveType | null>(null);
   const [rejectModalOpen, setRejectModalOpen] = useState(false);
-  const [rejectingRequestId, setRejectingRequestId] = useState<string | null>(null);
-  const [rejectionReason, setRejectionReason] = useState('');
+  const [rejectingRequestId, setRejectingRequestId] = useState<string | null>(
+    null,
+  );
+  const [rejectionReason, setRejectionReason] = useState("");
 
   // Forms
   const [requestForm, setRequestForm] = useState({
-    employeeId: '',
-    leaveTypeId: '',
+    employeeId: "",
+    leaveTypeId: "",
     fromDate: todayStr,
     toDate: todayStr,
-    reason: '',
+    reason: "",
   });
 
   const [typeForm, setTypeForm] = useState({
-    code: '',
-    name: '',
-    description: '',
+    code: "",
+    name: "",
+    description: "",
     isPaid: true,
     annualAllowance: 12,
     carryForwardAllowed: false,
@@ -133,28 +121,37 @@ export default function Leave() {
   // Action Handlers
   const handleOpenRequest = () => {
     setRequestForm({
-      employeeId: employees[0]?.id || '',
-      leaveTypeId: leaveTypes[0]?.id || '',
+      employeeId: employees[0]?.id || "",
+      leaveTypeId: leaveTypes[0]?.id || "",
       fromDate: todayStr,
       toDate: todayStr,
-      reason: '',
+      reason: "",
     });
     setRequestModalOpen(true);
   };
 
   const handleSaveRequest = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!requestForm.employeeId || !requestForm.leaveTypeId || !requestForm.fromDate || !requestForm.toDate) {
-      toast.error('All fields are required');
+    if (
+      !requestForm.employeeId ||
+      !requestForm.leaveTypeId ||
+      !requestForm.fromDate ||
+      !requestForm.toDate
+    ) {
+      toast.error("All fields are required");
       return;
     }
 
     try {
       await createRequestMutation.mutateAsync(requestForm);
-      toast.success('Leave request submitted successfully');
+      toast.success("Leave request submitted successfully");
       setRequestModalOpen(false);
     } catch (err: any) {
-      toast.error(err.response?.data?.error?.message || err.message || 'Failed to submit leave request');
+      toast.error(
+        err.response?.data?.error?.message ||
+          err.message ||
+          "Failed to submit leave request",
+      );
     }
   };
 
@@ -164,7 +161,7 @@ export default function Leave() {
       setTypeForm({
         code: t.code,
         name: t.name,
-        description: t.description || '',
+        description: t.description || "",
         isPaid: t.isPaid,
         annualAllowance: Number(t.annualAllowance),
         carryForwardAllowed: t.carryForwardAllowed,
@@ -176,9 +173,9 @@ export default function Leave() {
     } else {
       setEditingType(null);
       setTypeForm({
-        code: '',
-        name: '',
-        description: '',
+        code: "",
+        name: "",
+        description: "",
         isPaid: true,
         annualAllowance: 12,
         carryForwardAllowed: false,
@@ -194,45 +191,60 @@ export default function Leave() {
   const handleSaveType = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!typeForm.code.trim() || !typeForm.name.trim()) {
-      toast.error('Code and Name are required');
+      toast.error("Code and Name are required");
       return;
     }
 
     try {
       if (editingType) {
-        await updateTypeMutation.mutateAsync({ id: editingType.id, payload: typeForm });
-        toast.success('Leave type updated');
+        await updateTypeMutation.mutateAsync({
+          id: editingType.id,
+          payload: typeForm,
+        });
+        toast.success("Leave type updated");
       } else {
         await createTypeMutation.mutateAsync(typeForm);
-        toast.success('Leave type created');
+        toast.success("Leave type created");
       }
       setTypeModalOpen(false);
     } catch (err: any) {
-      toast.error(err.response?.data?.error?.message || err.message || 'Failed to save leave type');
+      toast.error(
+        err.response?.data?.error?.message ||
+          err.message ||
+          "Failed to save leave type",
+      );
     }
   };
 
   const handleDeleteType = async (id: string, name: string) => {
     try {
       await deleteTypeMutation.mutateAsync(id);
-      toast.success('Leave type deleted');
+      toast.success("Leave type deleted");
     } catch (err: any) {
-      toast.error(err.response?.data?.error?.message || err.message || 'Cannot delete leave type');
+      toast.error(
+        err.response?.data?.error?.message ||
+          err.message ||
+          "Cannot delete leave type",
+      );
     }
   };
 
   const handleApprove = async (id: string) => {
     try {
       await approveMutation.mutateAsync(id);
-      toast.success('Leave request approved and balance deducted');
+      toast.success("Leave request approved and balance deducted");
     } catch (err: any) {
-      toast.error(err.response?.data?.error?.message || err.message || 'Failed to approve leave');
+      toast.error(
+        err.response?.data?.error?.message ||
+          err.message ||
+          "Failed to approve leave",
+      );
     }
   };
 
   const handleOpenReject = (id: string) => {
     setRejectingRequestId(id);
-    setRejectionReason('');
+    setRejectionReason("");
     setRejectModalOpen(true);
   };
 
@@ -240,7 +252,7 @@ export default function Leave() {
     e.preventDefault();
     if (!rejectingRequestId) return;
     if (!rejectionReason.trim()) {
-      toast.error('Rejection reason is mandatory');
+      toast.error("Rejection reason is mandatory");
       return;
     }
 
@@ -249,342 +261,430 @@ export default function Leave() {
         id: rejectingRequestId,
         rejectionReason: rejectionReason.trim(),
       });
-      toast.success('Leave request rejected');
+      toast.success("Leave request rejected");
       setRejectModalOpen(false);
     } catch (err: any) {
-      toast.error(err.response?.data?.error?.message || err.message || 'Failed to reject leave');
+      toast.error(
+        err.response?.data?.error?.message ||
+          err.message ||
+          "Failed to reject leave",
+      );
     }
   };
 
   const handleCancel = async (id: string) => {
     const ok = await confirm({
-      title: 'Cancel Leave Request?',
-      message: 'If approved, the leave balance will be restored. This cannot be undone.',
-      confirmText: 'Yes, Cancel Request',
-      cancelText: 'Keep it',
+      title: "Cancel Leave Request?",
+      message:
+        "If approved, the leave balance will be restored. This cannot be undone.",
+      confirmText: "Yes, Cancel Request",
+      cancelText: "Keep it",
     });
     if (!ok) return;
     try {
       await cancelMutation.mutateAsync(id);
-      toast.success('Leave request cancelled and balance restored');
+      toast.success("Leave request cancelled and balance restored");
     } catch (err: any) {
-      toast.error(err.response?.data?.error?.message || err.message || 'Failed to cancel leave');
+      toast.error(
+        err.response?.data?.error?.message ||
+          err.message ||
+          "Failed to cancel leave",
+      );
     }
   };
 
   const getStatusBadge = (status: string) => {
     switch (status) {
-      case 'APPROVED':
-        return <Badge className="bg-emerald-100 text-emerald-800 dark:bg-emerald-950 dark:text-emerald-300">Approved</Badge>;
-      case 'PENDING':
-        return <Badge className="bg-amber-100 text-amber-800 dark:bg-amber-950 dark:text-amber-300">Pending</Badge>;
-      case 'CANCELLED':
+      case "APPROVED":
+        return (
+          <Badge className="bg-emerald-100 text-emerald-800 dark:bg-emerald-950 dark:text-emerald-300">
+            Approved
+          </Badge>
+        );
+      case "PENDING":
+        return (
+          <Badge className="bg-amber-100 text-amber-800 dark:bg-amber-950 dark:text-amber-300">
+            Pending
+          </Badge>
+        );
+      case "CANCELLED":
         return <Badge variant="secondary">Cancelled</Badge>;
-      case 'REJECTED':
+      case "REJECTED":
       default:
-        return <Badge className="bg-red-100 text-red-800 dark:bg-red-950 dark:text-red-300">Rejected</Badge>;
+        return (
+          <Badge className="bg-red-100 text-red-800 dark:bg-red-950 dark:text-red-300">
+            Rejected
+          </Badge>
+        );
     }
   };
 
-  const requestsColDefs = useMemo<ColDef[]>(() => [
-    {
-      field: "employee",
-      headerName: "Employee",
-      flex: 1,
-      valueGetter: (p) => p.data?.employee?.firstName ? `${p.data.employee.firstName} ${p.data.employee.lastName}` : '—',
-      cellRenderer: (p: any) => (
-        <div className="flex flex-col justify-center h-full">
-          <div className="font-medium text-sm leading-tight">{p.value}</div>
-          <div className="text-xs text-muted-foreground leading-tight">{p.data?.employee?.employeeCode}</div>
-        </div>
-      )
-    },
-    {
-      field: "leaveType",
-      headerName: "Leave Type",
-      width: 150,
-      cellRenderer: (p: any) => (
-        <div className="flex items-center h-full">
-          <div className={`h-2.5 w-2.5 rounded-full ${p.value ? "bg-emerald-500" : "bg-red-500"}`} title={p.value ? "Active" : "Inactive"} />
-        </div>
-      )
-    },
-    {
-      field: "period",
-      headerName: "Period",
-      width: 220,
-      valueGetter: (p) => `${p.data.fromDate} → ${p.data.toDate}`
-    },
-    {
-      field: "totalDays",
-      headerName: "Days",
-      width: 100,
-      valueFormatter: (p) => `${Number(p.value)} ${Number(p.value) === 1 ? 'day' : 'days'}`
-    },
-    {
-      field: "reason",
-      headerName: "Reason",
-      flex: 1,
-      cellRenderer: (p: any) => (
-        <div className="text-xs text-muted-foreground max-w-[180px] truncate">
-          {p.value || '—'}
-          {p.data.rejectionReason && (
-            <div className="text-red-500 font-medium">Rejection: {p.data.rejectionReason}</div>
-          )}
-        </div>
-      )
-    },
-    {
-      field: "status",
-      headerName: "Status",
-      width: 120,
-      cellRenderer: (p: any) => getStatusBadge(p.value)
-    },
-    {
-      headerName: "Actions",
-      width: 220,
-      sortable: false,
-      filter: false,
-      cellRenderer: (p: any) => (
-        <div className="flex items-center justify-end gap-1.5 h-full">
-          {p.data.status === 'PENDING' && (
-            <>
-              <Button size="sm" variant="outline" className="h-8 text-xs text-emerald-600 border-emerald-300 hover:bg-emerald-50" onClick={() => handleApprove(p.data.id)} disabled={approveMutation.isPending}>
-                <CheckCircle2 className="h-3.5 w-3.5 mr-1" /> Approve
+  const requestsColDefs = useMemo<ColDef[]>(
+    () => [
+      {
+        field: "employee",
+        headerName: "Employee",
+        flex: 1,
+        valueGetter: (p) =>
+          p.data?.employee?.firstName
+            ? `${p.data.employee.firstName} ${p.data.employee.lastName}`
+            : "—",
+      },
+      {
+        field: "leaveType",
+        headerName: "Leave Type",
+        width: 150,
+        cellRenderer: (p: any) => (
+          <div className="flex items-center h-full">
+            <div
+              className={`h-2.5 w-2.5 rounded-full ${p.value ? "bg-emerald-500" : "bg-red-500"}`}
+              title={p.value ? "Active" : "Inactive"}
+            />
+          </div>
+        ),
+      },
+      {
+        field: "period",
+        headerName: "Period",
+        width: 220,
+        valueGetter: (p) => `${p.data.fromDate} → ${p.data.toDate}`,
+      },
+      {
+        field: "totalDays",
+        headerName: "Days",
+        width: 100,
+        valueFormatter: (p) =>
+          `${Number(p.value)} ${Number(p.value) === 1 ? "day" : "days"}`,
+      },
+      {
+        field: "reason",
+        headerName: "Reason",
+        flex: 1,
+        cellRenderer: (p: any) => (
+          <div className="text-xs text-muted-foreground max-w-[180px] truncate">
+            {p.value || "—"}
+            {p.data.rejectionReason && (
+              <div className="text-red-500 font-medium">
+                Rejection: {p.data.rejectionReason}
+              </div>
+            )}
+          </div>
+        ),
+      },
+      {
+        field: "status",
+        headerName: "Status",
+        width: 120,
+        cellRenderer: (p: any) => getStatusBadge(p.value),
+      },
+      {
+        headerName: "Actions",
+        width: 220,
+        sortable: false,
+        filter: false,
+        cellRenderer: (p: any) => (
+          <div className="flex items-center justify-end gap-1.5 h-full">
+            {p.data.status === "PENDING" && (
+              <>
+                <Button
+                  size="sm"
+                  variant="outline"
+                  className="h-8 text-xs text-emerald-600 border-emerald-300 hover:bg-emerald-50"
+                  onClick={() => handleApprove(p.data.id)}
+                  disabled={approveMutation.isPending}
+                >
+                  <CheckCircle2 className="h-3.5 w-3.5 mr-1" /> Approve
+                </Button>
+                <Button
+                  size="sm"
+                  variant="ghost"
+                  className="h-8 text-xs text-red-600 hover:bg-red-50"
+                  onClick={() => handleOpenReject(p.data.id)}
+                  disabled={rejectMutation.isPending}
+                >
+                  <XCircle className="h-3.5 w-3.5 mr-1" /> Reject
+                </Button>
+              </>
+            )}
+            {(p.data.status === "PENDING" || p.data.status === "APPROVED") && (
+              <Button
+                size="sm"
+                variant="ghost"
+                className="h-8 text-xs text-muted-foreground hover:text-foreground"
+                onClick={() => handleCancel(p.data.id)}
+                disabled={cancelMutation.isPending}
+              >
+                <RotateCcw className="h-3 w-3 mr-1" /> Cancel
               </Button>
-              <Button size="sm" variant="ghost" className="h-8 text-xs text-red-600 hover:bg-red-50" onClick={() => handleOpenReject(p.data.id)} disabled={rejectMutation.isPending}>
-                <XCircle className="h-3.5 w-3.5 mr-1" /> Reject
-              </Button>
-            </>
-          )}
-          {(p.data.status === 'PENDING' || p.data.status === 'APPROVED') && (
-            <Button size="sm" variant="ghost" className="h-8 text-xs text-muted-foreground hover:text-foreground" onClick={() => handleCancel(p.data.id)} disabled={cancelMutation.isPending}>
-              <RotateCcw className="h-3 w-3 mr-1" /> Cancel
+            )}
+          </div>
+        ),
+      },
+    ],
+    [
+      approveMutation.isPending,
+      rejectMutation.isPending,
+      cancelMutation.isPending,
+    ],
+  );
+
+  const typesColDefs = useMemo<ColDef[]>(
+    () => [
+      { field: "code", headerName: "Code", width: 100 },
+      { field: "name", headerName: "Name", flex: 1 },
+      {
+        field: "isPaid",
+        headerName: "Type",
+        width: 100,
+        cellRenderer: (p: any) => (
+          <div className="flex items-center h-full">
+            <div
+              className={`h-2.5 w-2.5 rounded-full ${p.value ? "bg-emerald-500" : "bg-red-500"}`}
+              title={p.value ? "Active" : "Inactive"}
+            />
+          </div>
+        ),
+      },
+      {
+        field: "annualAllowance",
+        headerName: "Annual Allowance",
+        width: 150,
+        valueFormatter: (p) => `${Number(p.value)} days`,
+      },
+      {
+        field: "carryForwardAllowed",
+        headerName: "Carry Forward",
+        width: 150,
+        valueGetter: (p) =>
+          p.value ? `Yes (max ${p.data.maxCarryForwardDays ?? "∞"})` : "No",
+      },
+      {
+        field: "maxConsecutiveDays",
+        headerName: "Max Consecutive",
+        width: 150,
+        valueFormatter: (p) => (p.value ? `${p.value} days` : "Unlimited"),
+      },
+      {
+        field: "requiresApproval",
+        headerName: "Approval",
+        width: 120,
+        valueFormatter: (p) => (p.value ? "Required" : "Auto"),
+      },
+      {
+        field: "isActive",
+        headerName: "Status",
+        width: 100,
+        cellRenderer: (p: any) => (
+          <div className="flex items-center h-full">
+            <div
+              className={`h-2.5 w-2.5 rounded-full ${p.value ? "bg-emerald-500" : "bg-red-500"}`}
+              title={p.value ? "Active" : "Inactive"}
+            />
+          </div>
+        ),
+      },
+      {
+        headerName: "",
+        width: 80,
+        sortable: false,
+        filter: false,
+        cellRenderer: (p: any) => (
+          <div className="flex items-center justify-end gap-1 h-full">
+            <Button
+              size="sm"
+              variant="ghost"
+              className="h-8 w-8"
+              onClick={(e) => {
+                e.stopPropagation();
+                handleDeleteType(p.data.id, p.data.name);
+              }}
+            >
+              <Trash2 className="h-3.5 w-3.5 text-red-500" />
             </Button>
-          )}
-        </div>
-      )
-    }
-  ], [approveMutation.isPending, rejectMutation.isPending, cancelMutation.isPending]);
+          </div>
+        ),
+      },
+    ],
+    [],
+  );
 
-  const typesColDefs = useMemo<ColDef[]>(() => [
-    { field: "code", headerName: "Code", width: 100 },
-    { field: "name", headerName: "Name", flex: 1 },
-    {
-      field: "isPaid",
-      headerName: "Type",
-      width: 100,
-      cellRenderer: (p: any) => (
-        <div className="flex items-center h-full">
-          <div className={`h-2.5 w-2.5 rounded-full ${p.value ? "bg-emerald-500" : "bg-red-500"}`} title={p.value ? "Active" : "Inactive"} />
-        </div>
-      )
-    },
-    { field: "annualAllowance", headerName: "Annual Allowance", width: 150, valueFormatter: (p) => `${Number(p.value)} days` },
-    {
-      field: "carryForwardAllowed",
-      headerName: "Carry Forward",
-      width: 150,
-      valueGetter: (p) => p.value ? `Yes (max ${p.data.maxCarryForwardDays ?? '∞'})` : 'No'
-    },
-    {
-      field: "maxConsecutiveDays",
-      headerName: "Max Consecutive",
-      width: 150,
-      valueFormatter: (p) => p.value ? `${p.value} days` : 'Unlimited'
-    },
-    {
-      field: "requiresApproval",
-      headerName: "Approval",
-      width: 120,
-      valueFormatter: (p) => p.value ? 'Required' : 'Auto'
-    },
-    {
-      field: "isActive",
-      headerName: "Status",
-      width: 100,
-      cellRenderer: (p: any) => (
-        <div className="flex items-center h-full">
-          <div className={`h-2.5 w-2.5 rounded-full ${p.value ? "bg-emerald-500" : "bg-red-500"}`} title={p.value ? "Active" : "Inactive"} />
-        </div>
-      )
-    },
-    {
-      headerName: "",
-      width: 80,
-      sortable: false,
-      filter: false,
-      cellRenderer: (p: any) => (
-        <div className="flex items-center justify-end gap-1 h-full">
-          <Button size="sm" variant="ghost" className="h-8 w-8" onClick={(e) => { e.stopPropagation(); handleDeleteType(p.data.id, p.data.name); }}>
-            <Trash2 className="h-3.5 w-3.5 text-red-500" />
-          </Button>
-        </div>
-      )
-    }
-  ], []);
-
-  const balancesColDefs = useMemo<ColDef[]>(() => [
-    {
-      field: "leaveType",
-      headerName: "Leave Type",
-      flex: 1,
-      valueGetter: (p) => p.data.leaveType ? `${p.data.leaveType.name} (${p.data.leaveType.code})` : '—'
-    },
-    { field: "openingBalance", headerName: "Opening Balance", width: 150, valueFormatter: (p) => String(Number(p.value)) },
-    { field: "allocatedDays", headerName: "Allocated", width: 120, valueFormatter: (p) => String(Number(p.value)) },
-    { field: "usedDays", headerName: "Used Days", width: 120, valueFormatter: (p) => String(Number(p.value)) },
-    { field: "pendingDays", headerName: "Pending Approval", width: 150, valueFormatter: (p) => String(Number(p.value)) },
-    { field: "remainingDays", headerName: "Remaining Balance", width: 160, valueFormatter: (p) => String(Number(p.value)) }
-  ], []);
+  const balancesColDefs = useMemo<ColDef[]>(
+    () => [
+      {
+        field: "leaveType",
+        headerName: "Leave Type",
+        flex: 1,
+        valueGetter: (p) =>
+          p.data.leaveType
+            ? `${p.data.leaveType.name} (${p.data.leaveType.code})`
+            : "—",
+      },
+      {
+        field: "openingBalance",
+        headerName: "Opening Balance",
+        width: 150,
+        valueFormatter: (p) => String(Number(p.value)),
+      },
+      {
+        field: "allocatedDays",
+        headerName: "Allocated",
+        width: 120,
+        valueFormatter: (p) => String(Number(p.value)),
+      },
+      {
+        field: "usedDays",
+        headerName: "Used Days",
+        width: 120,
+        valueFormatter: (p) => String(Number(p.value)),
+      },
+      {
+        field: "pendingDays",
+        headerName: "Pending Approval",
+        width: 150,
+        valueFormatter: (p) => String(Number(p.value)),
+      },
+      {
+        field: "remainingDays",
+        headerName: "Remaining Balance",
+        width: 160,
+        valueFormatter: (p) => String(Number(p.value)),
+      },
+    ],
+    [],
+  );
 
   return (
     <div className="space-y-6">
       <ListingCard>
         <ListingHeader
-        title="Leave Management"
-        searchValue={searchQuery}
-        onSearchChange={setSearchQuery}
-        onAddNew={activeTab === 'types' ? () => handleOpenTypeModal() : activeTab === 'requests' ? handleOpenRequest : undefined}
-        addButtonText={activeTab === 'types' ? 'Add Leave Type' : 'Request Leave'}
-        onRefresh={() => { }}
-        onExportExcel={() => gridRef.current?.api && gridExportExcel(gridRef.current.api, 'leave.csv')}
-        onExportPdf={() => gridRef.current?.api && gridExportPdf(gridRef.current.api, 'Leave')}
-        onPrint={() => gridRef.current?.api && gridPrint(gridRef.current.api, 'Leave')}
-        tabs={{
-          options: [
-            { label: 'Leave Requests', value: 'requests' },
-            { label: 'Leave Types', value: 'types' },
-            { label: 'Balances', value: 'balances' },
-            { label: 'Calendar', value: 'calendar' },
-          ],
-          value: activeTab,
-          onChange: setActiveTab,
-        }}
-      />
+          title="Leave Management"
+          searchValue={searchQuery}
+          onSearchChange={setSearchQuery}
+          onAddNew={
+            activeTab === "types"
+              ? () => handleOpenTypeModal()
+              : activeTab === "requests"
+                ? handleOpenRequest
+                : undefined
+          }
+          addButtonText={
+            activeTab === "types" ? "Add Leave Type" : "Request Leave"
+          }
+          onRefresh={() => {}}
+          onExportExcel={() =>
+            gridRef.current?.api &&
+            gridExportExcel(gridRef.current.api, "leave.csv")
+          }
+          onExportPdf={() =>
+            gridRef.current?.api && gridExportPdf(gridRef.current.api, "Leave")
+          }
+          onPrint={() =>
+            gridRef.current?.api && gridPrint(gridRef.current.api, "Leave")
+          }
+          tabs={{
+            options: [
+              { label: "Leave Requests", value: "requests" },
+              { label: "Leave Types", value: "types" },
+              { label: "Balances", value: "balances" },
+            ],
+            value: activeTab,
+            onChange: setActiveTab,
+          }}
+        />
 
-      {/* Requests Tab */}
-      {activeTab === 'requests' && (
-        <div className="space-y-3">
-          <div className="flex flex-wrap items-center gap-3">
-            <div className="flex-1 min-w-[200px]">
-              <NativeSelect
-                placeholder="All Employees"
-                value={filterEmployeeId}
-                onChange={(val) => setFilterEmployeeId(val || '')}
+        {/* Requests Tab */}
+        {activeTab === "requests" && (
+          <div className="space-y-3">
+            <div className="flex flex-wrap items-center gap-3">
+              <div className="flex-1 min-w-[200px]">
+                <NativeSelect
+                  placeholder="All Employees"
+                  value={filterEmployeeId}
+                  onChange={(val) => setFilterEmployeeId(val || "")}
+                >
+                  {employees.map((e) => (
+                    <option key={e.id} value={e.id}>
+                      {e.firstName} {e.lastName} ({e.employeeCode})
+                    </option>
+                  ))}
+                </NativeSelect>
+              </div>
+              <div className="w-40">
+                <NativeSelect
+                  placeholder="All Statuses"
+                  value={filterStatus}
+                  onChange={(val) => setFilterStatus(val || "")}
+                >
+                  <option value="PENDING">Pending</option>
+                  <option value="APPROVED">Approved</option>
+                  <option value="REJECTED">Rejected</option>
+                  <option value="CANCELLED">Cancelled</option>
+                </NativeSelect>
+              </div>
+              <Button
+                size="sm"
+                variant="ghost"
+                onClick={() => {
+                  setFilterEmployeeId("");
+                  setFilterStatus("");
+                }}
               >
-                {employees.map((e) => (
-                  <option key={e.id} value={e.id}>
-                    {e.firstName} {e.lastName} ({e.employeeCode})
-                  </option>
-                ))}
-              </NativeSelect>
+                Reset Filters
+              </Button>
             </div>
-            <div className="w-40">
-              <NativeSelect
-                placeholder="All Statuses"
-                value={filterStatus}
-                onChange={(val) => setFilterStatus(val || '')}
-              >
-                <option value="PENDING">Pending</option>
-                <option value="APPROVED">Approved</option>
-                <option value="REJECTED">Rejected</option>
-                <option value="CANCELLED">Cancelled</option>
-              </NativeSelect>
+            <div className="h-[500px]">
+              <DataGrid
+                ref={gridRef}
+                rowData={requests}
+                columnDefs={requestsColDefs}
+              />
             </div>
-            <Button size="sm" variant="ghost" onClick={() => { setFilterEmployeeId(''); setFilterStatus(''); }}>
-              Reset Filters
-            </Button>
           </div>
+        )}
+
+        {/* Types Tab */}
+        {activeTab === "types" && (
           <div className="h-[500px]">
-            <DataGrid ref={gridRef} rowData={requests} columnDefs={requestsColDefs} />
-          </div>
-        </div>
-      )}
-
-      {/* Types Tab */}
-      {activeTab === 'types' && (
-        <div className="h-[500px]">
-          <DataGrid
-            ref={gridRef}
-            rowData={leaveTypes}
-            columnDefs={typesColDefs}
-            gridOptions={{ onRowDoubleClicked: (e) => handleOpenTypeModal(e.data) }}
-          />
-        </div>
-      )}
-
-      {/* Balances Tab */}
-      {activeTab === 'balances' && (
-        <div className="space-y-3">
-          <div className="flex items-center justify-between">
-            <p className="text-sm font-medium text-slate-600 dark:text-slate-400">Employee Leave Balances ({currentYear})</p>
-            <div className="w-64">
-              <NativeSelect
-                value={balanceEmpId || (employees[0]?.id ?? '')}
-                onChange={(val) => setBalanceEmpId(val || '')}
-              >
-                {employees.map((e) => (
-                  <option key={e.id} value={e.id}>
-                    {e.firstName} {e.lastName} ({e.employeeCode})
-                  </option>
-                ))}
-              </NativeSelect>
-            </div>
-          </div>
-          <div className="h-[400px]">
-            <DataGrid ref={gridRef} rowData={balances} columnDefs={balancesColDefs} />
-          </div>
-        </div>
-      )}
-
-      {/* Calendar Tab */}
-      {activeTab === 'calendar' && (
-        <div className="space-y-3">
-          <div className="flex items-center justify-between">
-            <p className="text-sm font-medium text-slate-600 dark:text-slate-400">Monthly Leave Calendar</p>
-            <Input
-              type="month"
-              className="w-40 h-9 text-xs"
-              value={calendarMonth}
-              onChange={(e) => setCalendarMonth(e.target.value)}
+            <DataGrid
+              ref={gridRef}
+              rowData={leaveTypes}
+              columnDefs={typesColDefs}
+              gridOptions={{
+                onRowDoubleClicked: (e) => handleOpenTypeModal(e.data),
+              }}
             />
           </div>
-          <div className="grid grid-cols-7 gap-2 text-center text-xs font-semibold text-muted-foreground mb-2">
-            <div>Sun</div><div>Mon</div><div>Tue</div><div>Wed</div><div>Thu</div><div>Fri</div><div>Sat</div>
-          </div>
-          <div className="grid grid-cols-7 gap-2">
-            {Array.from({ length: 31 }).map((_, idx) => {
-              const dayNum = idx + 1;
-              const dateStr = `${calendarMonth}-${String(dayNum).padStart(2, '0')}`;
-              const dayLeaves = (calendarEvents ?? []).filter(
-                (e) => e.fromDate <= dateStr && e.toDate >= dateStr,
-              );
-              return (
-                <div
-                  key={idx}
-                  className={`min-h-[85px] border rounded-lg p-1.5 flex flex-col justify-between transition-colors ${
-                    dayLeaves.length > 0 ? 'bg-purple-50/40 border-purple-200 dark:bg-purple-950/20' : 'bg-card'
-                  }`}
+        )}
+
+        {/* Balances Tab */}
+        {activeTab === "balances" && (
+          <div className="space-y-3">
+            <div className="flex items-center justify-between">
+              <p className="text-sm font-medium text-slate-600 dark:text-slate-400">
+                Employee Leave Balances ({currentYear})
+              </p>
+              <div className="w-64">
+                <NativeSelect
+                  value={balanceEmpId || (employees[0]?.id ?? "")}
+                  onChange={(val) => setBalanceEmpId(val || "")}
                 >
-                  <div className="text-xs font-semibold text-muted-foreground">{dayNum}</div>
-                  <div className="space-y-1 overflow-hidden">
-                    {dayLeaves.map((l) => (
-                      <div
-                        key={l.id}
-                        className="text-[10px] bg-purple-200 text-purple-900 dark:bg-purple-900 dark:text-purple-100 rounded px-1 py-0.5 font-medium truncate"
-                        title={`${l.employee?.firstName} ${l.employee?.lastName} - ${l.leaveType?.name}`}
-                      >
-                        {l.employee?.firstName} ({l.leaveType?.code})
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              );
-            })}
+                  {employees.map((e) => (
+                    <option key={e.id} value={e.id}>
+                      {e.firstName} {e.lastName} ({e.employeeCode})
+                    </option>
+                  ))}
+                </NativeSelect>
+              </div>
+            </div>
+            <div className="h-[400px]">
+              <DataGrid
+                ref={gridRef}
+                rowData={balances}
+                columnDefs={balancesColDefs}
+              />
+            </div>
           </div>
-        </div>
-      )}
+        )}
       </ListingCard>
 
       {/* Request Leave Modal */}
@@ -595,10 +695,14 @@ export default function Leave() {
           </DialogHeader>
           <form onSubmit={handleSaveRequest} className="space-y-4">
             <div>
-              <label className="text-xs font-medium text-muted-foreground">Employee</label>
+              <label className="text-xs font-medium text-muted-foreground">
+                Employee
+              </label>
               <NativeSelect
                 value={requestForm.employeeId}
-                onChange={(val) => setRequestForm({ ...requestForm, employeeId: val || '' })}
+                onChange={(val) =>
+                  setRequestForm({ ...requestForm, employeeId: val || "" })
+                }
                 required
               >
                 {employees.map((e) => (
@@ -610,15 +714,19 @@ export default function Leave() {
             </div>
 
             <div>
-              <label className="text-xs font-medium text-muted-foreground">Leave Type</label>
+              <label className="text-xs font-medium text-muted-foreground">
+                Leave Type
+              </label>
               <NativeSelect
                 value={requestForm.leaveTypeId}
-                onChange={(val) => setRequestForm({ ...requestForm, leaveTypeId: val || '' })}
+                onChange={(val) =>
+                  setRequestForm({ ...requestForm, leaveTypeId: val || "" })
+                }
                 required
               >
                 {leaveTypes.map((t) => (
                   <option key={t.id} value={t.id}>
-                    {t.name} ({t.code}) — {t.isPaid ? 'Paid' : 'Unpaid'}
+                    {t.name} ({t.code}) — {t.isPaid ? "Paid" : "Unpaid"}
                   </option>
                 ))}
               </NativeSelect>
@@ -626,40 +734,58 @@ export default function Leave() {
 
             <div className="grid grid-cols-2 gap-3">
               <div>
-                <label className="text-xs font-medium text-muted-foreground">From Date</label>
+                <label className="text-xs font-medium text-muted-foreground">
+                  From Date
+                </label>
                 <Input
                   type="date"
                   value={requestForm.fromDate}
-                  onChange={(e) => setRequestForm({ ...requestForm, fromDate: e.target.value })}
+                  onChange={(e) =>
+                    setRequestForm({ ...requestForm, fromDate: e.target.value })
+                  }
                   required
                 />
               </div>
               <div>
-                <label className="text-xs font-medium text-muted-foreground">To Date</label>
+                <label className="text-xs font-medium text-muted-foreground">
+                  To Date
+                </label>
                 <Input
                   type="date"
                   value={requestForm.toDate}
-                  onChange={(e) => setRequestForm({ ...requestForm, toDate: e.target.value })}
+                  onChange={(e) =>
+                    setRequestForm({ ...requestForm, toDate: e.target.value })
+                  }
                   required
                 />
               </div>
             </div>
 
             <div>
-              <label className="text-xs font-medium text-muted-foreground">Reason</label>
+              <label className="text-xs font-medium text-muted-foreground">
+                Reason
+              </label>
               <Input
                 placeholder="Specify reason for leave..."
                 value={requestForm.reason}
-                onChange={(e) => setRequestForm({ ...requestForm, reason: e.target.value })}
+                onChange={(e) =>
+                  setRequestForm({ ...requestForm, reason: e.target.value })
+                }
               />
             </div>
 
             <div className="flex justify-end gap-2 pt-4">
-              <Button type="button" variant="outline" onClick={() => setRequestModalOpen(false)}>
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => setRequestModalOpen(false)}
+              >
                 Cancel
               </Button>
               <Button type="submit" disabled={createRequestMutation.isPending}>
-                {createRequestMutation.isPending ? 'Submitting...' : 'Submit Request'}
+                {createRequestMutation.isPending
+                  ? "Submitting..."
+                  : "Submit Request"}
               </Button>
             </div>
           </form>
@@ -674,7 +800,9 @@ export default function Leave() {
           </DialogHeader>
           <form onSubmit={handleConfirmReject} className="space-y-4">
             <div>
-              <label className="text-xs font-medium text-muted-foreground">Rejection Reason</label>
+              <label className="text-xs font-medium text-muted-foreground">
+                Rejection Reason
+              </label>
               <Input
                 placeholder="e.g. Critical release scheduled during these dates"
                 value={rejectionReason}
@@ -683,11 +811,21 @@ export default function Leave() {
               />
             </div>
             <div className="flex justify-end gap-2 pt-4">
-              <Button type="button" variant="outline" onClick={() => setRejectModalOpen(false)}>
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => setRejectModalOpen(false)}
+              >
                 Cancel
               </Button>
-              <Button type="submit" variant="destructive" disabled={rejectMutation.isPending}>
-                {rejectMutation.isPending ? 'Rejecting...' : 'Confirm Rejection'}
+              <Button
+                type="submit"
+                variant="destructive"
+                disabled={rejectMutation.isPending}
+              >
+                {rejectMutation.isPending
+                  ? "Rejecting..."
+                  : "Confirm Rejection"}
               </Button>
             </div>
           </form>
@@ -703,61 +841,94 @@ export default function Leave() {
           <form onSubmit={handleSaveType} className="space-y-4">
             <div className="grid grid-cols-2 gap-3">
               <div>
-                <label className="text-xs font-medium text-muted-foreground">Code</label>
+                <label className="text-xs font-medium text-muted-foreground">
+                  Code
+                </label>
                 <Input
                   placeholder="e.g. CL"
                   value={typeForm.code}
-                  onChange={(e) => setTypeForm({ ...typeForm, code: e.target.value })}
+                  onChange={(e) =>
+                    setTypeForm({ ...typeForm, code: e.target.value })
+                  }
                   required
                 />
               </div>
               <div>
-                <label className="text-xs font-medium text-muted-foreground">Name</label>
+                <label className="text-xs font-medium text-muted-foreground">
+                  Name
+                </label>
                 <Input
                   placeholder="e.g. Casual Leave"
                   value={typeForm.name}
-                  onChange={(e) => setTypeForm({ ...typeForm, name: e.target.value })}
+                  onChange={(e) =>
+                    setTypeForm({ ...typeForm, name: e.target.value })
+                  }
                   required
                 />
               </div>
             </div>
 
             <div>
-              <label className="text-xs font-medium text-muted-foreground">Description</label>
+              <label className="text-xs font-medium text-muted-foreground">
+                Description
+              </label>
               <Input
                 placeholder="Short description of this leave type"
                 value={typeForm.description}
-                onChange={(e) => setTypeForm({ ...typeForm, description: e.target.value })}
+                onChange={(e) =>
+                  setTypeForm({ ...typeForm, description: e.target.value })
+                }
               />
             </div>
 
             <div className="grid grid-cols-3 gap-3">
               <div>
-                <label className="text-xs font-medium text-muted-foreground">Annual Days</label>
+                <label className="text-xs font-medium text-muted-foreground">
+                  Annual Days
+                </label>
                 <Input
                   type="number"
                   min="0"
                   value={typeForm.annualAllowance}
-                  onChange={(e) => setTypeForm({ ...typeForm, annualAllowance: Number(e.target.value) })}
+                  onChange={(e) =>
+                    setTypeForm({
+                      ...typeForm,
+                      annualAllowance: Number(e.target.value),
+                    })
+                  }
                   required
                 />
               </div>
               <div>
-                <label className="text-xs font-medium text-muted-foreground">Max Consecutive</label>
+                <label className="text-xs font-medium text-muted-foreground">
+                  Max Consecutive
+                </label>
                 <Input
                   type="number"
                   min="1"
                   value={typeForm.maxConsecutiveDays}
-                  onChange={(e) => setTypeForm({ ...typeForm, maxConsecutiveDays: Number(e.target.value) })}
+                  onChange={(e) =>
+                    setTypeForm({
+                      ...typeForm,
+                      maxConsecutiveDays: Number(e.target.value),
+                    })
+                  }
                 />
               </div>
               <div>
-                <label className="text-xs font-medium text-muted-foreground">Max Carry Forward</label>
+                <label className="text-xs font-medium text-muted-foreground">
+                  Max Carry Forward
+                </label>
                 <Input
                   type="number"
                   min="0"
                   value={typeForm.maxCarryForwardDays}
-                  onChange={(e) => setTypeForm({ ...typeForm, maxCarryForwardDays: Number(e.target.value) })}
+                  onChange={(e) =>
+                    setTypeForm({
+                      ...typeForm,
+                      maxCarryForwardDays: Number(e.target.value),
+                    })
+                  }
                   disabled={!typeForm.carryForwardAllowed}
                 />
               </div>
@@ -768,7 +939,9 @@ export default function Leave() {
                 <input
                   type="checkbox"
                   checked={typeForm.isPaid}
-                  onChange={(e) => setTypeForm({ ...typeForm, isPaid: e.target.checked })}
+                  onChange={(e) =>
+                    setTypeForm({ ...typeForm, isPaid: e.target.checked })
+                  }
                   className="rounded border-gray-300"
                 />
                 <span>Paid Leave</span>
@@ -778,7 +951,12 @@ export default function Leave() {
                 <input
                   type="checkbox"
                   checked={typeForm.carryForwardAllowed}
-                  onChange={(e) => setTypeForm({ ...typeForm, carryForwardAllowed: e.target.checked })}
+                  onChange={(e) =>
+                    setTypeForm({
+                      ...typeForm,
+                      carryForwardAllowed: e.target.checked,
+                    })
+                  }
                   className="rounded border-gray-300"
                 />
                 <span>Allow carry-forward to next calendar year</span>
@@ -788,7 +966,12 @@ export default function Leave() {
                 <input
                   type="checkbox"
                   checked={typeForm.requiresApproval}
-                  onChange={(e) => setTypeForm({ ...typeForm, requiresApproval: e.target.checked })}
+                  onChange={(e) =>
+                    setTypeForm({
+                      ...typeForm,
+                      requiresApproval: e.target.checked,
+                    })
+                  }
                   className="rounded border-gray-300"
                 />
                 <span>Requires Manager / HR approval</span>
@@ -798,7 +981,9 @@ export default function Leave() {
                 <input
                   type="checkbox"
                   checked={typeForm.isActive}
-                  onChange={(e) => setTypeForm({ ...typeForm, isActive: e.target.checked })}
+                  onChange={(e) =>
+                    setTypeForm({ ...typeForm, isActive: e.target.checked })
+                  }
                   className="rounded border-gray-300"
                 />
                 <span>Active</span>
@@ -806,11 +991,20 @@ export default function Leave() {
             </div>
 
             <div className="flex justify-end gap-2 pt-4">
-              <Button type="button" variant="outline" onClick={() => setTypeModalOpen(false)}>
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => setTypeModalOpen(false)}
+              >
                 Cancel
               </Button>
-              <Button type="submit" disabled={createTypeMutation.isPending || updateTypeMutation.isPending}>
-                {editingType ? 'Save Changes' : 'Create Leave Type'}
+              <Button
+                type="submit"
+                disabled={
+                  createTypeMutation.isPending || updateTypeMutation.isPending
+                }
+              >
+                {editingType ? "Save Changes" : "Create Leave Type"}
               </Button>
             </div>
           </form>
