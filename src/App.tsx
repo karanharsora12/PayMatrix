@@ -25,8 +25,6 @@ import SalaryComponents from "@/pages/SalaryComponents";
 import SalaryStructures from "@/pages/SalaryStructures";
 import EmployeeSalary from "@/pages/EmployeeSalary";
 import Payslip from "@/pages/Payslip";
-import Loans from "@/pages/Loans";
-import Bonuses from "@/pages/Bonuses";
 import Compliance from "@/pages/Compliance";
 import Reports from "@/pages/Reports";
 import UsersRoles from "@/pages/UsersRoles";
@@ -45,7 +43,6 @@ import {
 import { Input } from "@/components/ui/input";
 import { Search } from "lucide-react";
 import { useAuth } from "@/context/AuthContext";
-import { employees as mockEmployees } from "@/mock/data";
 
 function Protected() {
   const { user, loading } = useAuth();
@@ -74,15 +71,6 @@ function CommandPalette({
   onOpenChange: (v: boolean) => void;
 }) {
   const [q, setQ] = useState("");
-  const results = q
-    ? mockEmployees
-        .filter((e) =>
-          `${e.firstName} ${e.lastName} ${e.employeeId}`
-            .toLowerCase()
-            .includes(q.toLowerCase()),
-        )
-        .slice(0, 5)
-    : [];
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-xl" onClose={() => onOpenChange(false)}>
@@ -97,29 +85,6 @@ function CommandPalette({
             value={q}
             onChange={(e) => setQ(e.target.value)}
           />
-        </div>
-        <div className="space-y-1 max-h-[300px] overflow-auto">
-          {results.map((r) => (
-            <div
-              key={r.id}
-              className="flex items-center gap-3 p-2 hover:bg-accent rounded-lg cursor-pointer"
-            >
-              <img src={r.avatar} className="h-8 w-8 rounded-full" />
-              <div>
-                <div className="text-sm font-medium">
-                  {r.firstName} {r.lastName}
-                </div>
-                <div className="text-xs text-muted-foreground">
-                  {r.employeeId} • {r.designation}
-                </div>
-              </div>
-            </div>
-          ))}
-          {!q && (
-            <div className="text-sm text-muted-foreground p-2">
-              Try: "John", "EMP-1002", "Payroll", "Salary Register"
-            </div>
-          )}
         </div>
       </DialogContent>
     </Dialog>
@@ -153,10 +118,6 @@ export default function App() {
             <Route path="/employee-salary" element={<EmployeeSalary />} />
             <Route path="/payslips" element={<Payslip />} />
             <Route path="/payslips/:id" element={<Payslip />} />
-            <Route path="/loans" element={<Loans />} />
-            <Route path="/advances" element={<Loans />} />
-            <Route path="/bonuses" element={<Bonuses />} />
-            <Route path="/deductions" element={<Bonuses />} />
             <Route path="/compliance/:type" element={<Compliance />} />
             <Route path="/reports" element={<Reports />} />
             <Route path="/users" element={<UsersRoles />} />

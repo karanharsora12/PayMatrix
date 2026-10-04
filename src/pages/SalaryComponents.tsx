@@ -269,36 +269,16 @@ export default function SalaryComponents() {
           }}
         />
 
-        {isLoading ? (
-          <div className="p-8 text-center text-muted-foreground">
-            <RefreshCw className="h-6 w-6 animate-spin mx-auto mb-2" />
-            Loading salary components...
-          </div>
-        ) : components.length === 0 ? (
-          <div className="p-12 text-center text-muted-foreground">
-            <Calculator className="h-10 w-10 mx-auto mb-3 opacity-40" />
-            <h3 className="font-semibold text-foreground text-base">
-              No components found
-            </h3>
-            <p className="text-sm mt-1">
-              Get started by creating your first salary component.
-            </p>
-            <Button onClick={handleOpenAdd} variant="outline" className="mt-4">
-              <Plus className="h-4 w-4 mr-2" /> Add Component
-            </Button>
-          </div>
-        ) : (
-          <div className="h-[500px]">
-            <DataGrid
-              ref={gridRef}
-              rowData={components}
-              columnDefs={componentsColDefs}
-              gridOptions={{
-                onRowDoubleClicked: (params) => handleOpenEdit(params.data),
-              }}
-            />
-          </div>
-        )}
+        <div className="h-[500px]">
+          <DataGrid
+            ref={gridRef}
+            rowData={components}
+            columnDefs={componentsColDefs}
+            gridOptions={{
+              onRowDoubleClicked: (params) => handleOpenEdit(params.data),
+            }}
+          />
+        </div>
       </ListingCard>
 
       {/* Add/Edit Modal */}

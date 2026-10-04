@@ -24,6 +24,7 @@ export class CreateEmployeeDto {
   @ApiPropertyOptional() @IsOptional() @IsString() profilePhotoUrl?: string;
   @ApiPropertyOptional() @IsOptional() @IsString() roleId?: string;
   @ApiPropertyOptional() @IsOptional() @IsString() password?: string;
+  @ApiPropertyOptional() @IsOptional() @IsUUID() employeeGroupId?: string;
 
   // Address and Bank (mapped in service)
   @ApiPropertyOptional() @IsOptional() @IsString() address?: string;

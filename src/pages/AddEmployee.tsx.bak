@@ -20,6 +20,7 @@ import {
 } from "@/hooks/useEmployees";
 import { useRoles } from "@/hooks/useUsersRoles";
 import { cn } from "@/lib/utils";
+import { zodResolver } from "@hookform/resolvers/zod";
 import { useQuery } from "@tanstack/react-query";
 import {
   ArrowLeft,
@@ -36,6 +37,7 @@ import {
   User,
 } from "lucide-react";
 import { useEffect, useMemo, useRef, useState } from "react";
+import { Controller, useForm } from "react-hook-form";
 import { useNavigate, useParams } from "react-router-dom";
 import { toast } from "sonner";
 import { z } from "zod";
@@ -63,7 +65,6 @@ const schema = z.object({
   accountHolder: z.string().optional(),
   roleId: z.string().optional(),
   password: z.string().optional(),
-  employeeGroupId: z.string().optional(),
 });
 type FormValues = z.infer<typeof schema>;
 
@@ -146,76 +147,51 @@ export default function AddEmployee() {
 
   const [showPassword, setShowPassword] = useState(false);
   const [avatarPreview, setAvatarPreview] = useState<string | null>(null);
+  const [employeeGroupId, setEmployeeGroupId] = useState<string>("");
   const fileRef = useRef<HTMLInputElement>(null);
 
-  const [formData, setFormData] = useState<FormValues>({
-    employeeCode: "EMP-",
-    firstName: "",
-    lastName: "",
-    email: "",
-    phone: "",
-    address: "",
-    joiningDate: new Date().toISOString().slice(0, 10),
-    gender: "",
-    bloodGroup: "",
-    departmentId: "",
-    designationId: "",
-    branchId: "",
-    panNumber: "",
-    nationalIdNumber: "",
-    uanNumber: "",
-    esiNumber: "",
-    bankName: "",
-    accountNumber: "",
-    ifscCode: "",
-    accountHolder: "",
-    roleId: "",
-    password: "PayMatrix@123",
-    employeeGroupId: "",
+  const {
+    register,
+    handleSubmit,
+    reset,
+    control,
+    watch,
+    setValue,
+    formState: { errors },
+  } = useForm<FormValues>({
+    resolver: zodResolver(schema),
+    defaultValues: {
+      employeeCode: "EMP-",
+      firstName: "",
+      lastName: "",
+      email: "",
+      phone: "",
+      address: "",
+      joiningDate: new Date().toISOString().slice(0, 10),
+      gender: "",
+      bloodGroup: "",
+      departmentId: "",
+      designationId: "",
+      branchId: "",
+      panNumber: "",
+      nationalIdNumber: "",
+      uanNumber: "",
+      esiNumber: "",
+      bankName: "",
+      accountNumber: "",
+      ifscCode: "",
+      accountHolder: "",
+      roleId: "",
+      password: "PayMatrix@123",
+    },
   });
-  const [errors, setErrors] = useState<
-    Partial<Record<keyof FormValues, string>>
-  >({});
-
-  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const { name, value } = e.target;
-    setFormData((prev) => ({ ...prev, [name]: value }));
-    if (errors[name as keyof FormValues]) {
-      setErrors((prev) => ({ ...prev, [name]: undefined }));
-    }
-  };
-
-  const handleSelectChange = (name: keyof FormValues, value: string) => {
-    setFormData((prev) => {
-      const newData = { ...prev, [name]: value };
-      if (name === "departmentId") {
-        if (newData.designationId) {
-          const currentDesig = desigList.find(
-            (d: any) => d.id === newData.designationId,
-          );
-          if (
-            currentDesig &&
-            currentDesig.departmentId &&
-            currentDesig.departmentId !== value &&
-            currentDesig.department?.id !== value
-          ) {
-            newData.designationId = "";
-          }
-        }
-      }
-      return newData;
-    });
-    if (errors[name]) {
-      setErrors((prev) => ({ ...prev, [name]: undefined }));
-    }
-  };
 
   const eData: any = (empData as any)?.data || empData;
   const tiedUser = isEdit ? eData?.user : null;
   const userRole = tiedUser?.roles?.[0]?.id || "";
 
-  const watchedFirstName = formData.firstName;
-  const watchedLastName = formData.lastName;
+  const watchedFirstName = watch("firstName");
+  const watchedLastName = watch("lastName");
 
   const initials =
     (
@@ -228,8 +204,10 @@ export default function AddEmployee() {
       if (e.profilePhotoUrl && !avatarPreview) {
         setAvatarPreview(getFileUrl(e.profilePhotoUrl));
       }
-
-      setFormData({
+      if (e.employeeGroupId || e.employeeGroup?.id) {
+        setEmployeeGroupId(e.employeeGroupId || e.employeeGroup?.id || "");
+      }
+      reset({
         employeeCode: e.employeeCode || e.employeeId || "",
         firstName: e.firstName || "",
         lastName: e.lastName || "",
@@ -254,10 +232,9 @@ export default function AddEmployee() {
         accountHolder: e.accountHolder || "",
         roleId: userRole,
         password: "",
-        employeeGroupId: e.employeeGroupId || e.employeeGroup?.id || "",
       });
     }
-  }, [isEdit, empData, userRole]);
+  }, [isEdit, empData, userRole, reset]);
 
   const { data: depts } = useQuery({
     queryKey: ["departments", "list"],
@@ -289,8 +266,8 @@ export default function AddEmployee() {
   const rolesList: any[] = (rolesResp as any)?.data ?? [];
   const employeeGroupList = (employeeGroups as any)?.data ?? [];
 
-  const watchedDepartmentId = formData.departmentId;
-  const watchedDesignationId = formData.designationId;
+  const watchedDepartmentId = watch("departmentId");
+  const watchedDesignationId = watch("designationId");
 
   // Filter designations according to selected department
   const filteredDesigList = useMemo(() => {
@@ -331,19 +308,7 @@ export default function AddEmployee() {
     }
   };
 
-  const onSubmit = async (e?: React.FormEvent) => {
-    if (e) e.preventDefault();
-    const result = schema.safeParse(formData);
-    if (!result.success) {
-      const fieldErrors: any = {};
-      result.error.issues.forEach((i) => {
-        if (i.path[0]) fieldErrors[i.path[0]] = i.message;
-      });
-      setErrors(fieldErrors);
-      toast.error("Please fix the errors in the form");
-      return;
-    }
-    const values = formData;
+  const onSubmit = async (values: FormValues) => {
     try {
       const payload = {
         employeeCode: values.employeeCode,
@@ -369,7 +334,7 @@ export default function AddEmployee() {
         profilePhotoUrl: avatarPreview || undefined,
         roleId: values.roleId || undefined,
         password: values.password || undefined,
-        employeeGroupId: values.employeeGroupId || undefined,
+        employeeGroupId: employeeGroupId || undefined,
       };
 
       if (isEdit) {
@@ -420,7 +385,11 @@ export default function AddEmployee() {
           </div>
         </div>
 
-        <form id="employee-form" onSubmit={onSubmit} className="flex-1 pb-28">
+        <form
+          id="employee-form"
+          onSubmit={handleSubmit(onSubmit)}
+          className="flex-1 pb-28"
+        >
           <div className="grid grid-cols-1 xl:grid-cols-[300px_1fr] gap-5">
             {/* LEFT: Profile + Code + Access */}
             <div className="space-y-5">
@@ -482,27 +451,20 @@ export default function AddEmployee() {
                   <Field
                     label="Employee Code"
                     required
-                    error={errors.employeeCode}
+                    error={errors.employeeCode?.message}
                   >
                     <Input
                       placeholder="EMP-001"
                       className="font-mono"
-                      name="employeeCode"
-                      value={formData.employeeCode || ""}
-                      onChange={handleInputChange}
+                      {...register("employeeCode")}
                     />
                   </Field>
                   <Field
                     label="Joining Date"
                     required
-                    error={errors.joiningDate}
+                    error={errors.joiningDate?.message}
                   >
-                    <Input
-                      type="date"
-                      name="joiningDate"
-                      value={formData.joiningDate || ""}
-                      onChange={handleInputChange}
-                    />
+                    <Input type="date" {...register("joiningDate")} />
                   </Field>
                 </div>
               </div>
@@ -524,24 +486,30 @@ export default function AddEmployee() {
                         : "Defaults to Employee if not selected"
                     }
                   >
-                    <Select
-                      onValueChange={(val) => handleSelectChange("roleId", val)}
-                      value={formData.roleId || ""}
-                    >
-                      <SelectTrigger>
-                        <SelectValue placeholder="Select role..." />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {rolesList.map((r: any) => (
-                          <SelectItem key={r.id} value={r.id}>
-                            <div className="flex items-center gap-2">
-                              <Shield className="h-3.5 w-3.5 text-muted-foreground" />
-                              {r.name}
-                            </div>
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
+                    <Controller
+                      control={control}
+                      name="roleId"
+                      render={({ field }) => (
+                        <Select
+                          onValueChange={field.onChange}
+                          value={field.value || ""}
+                        >
+                          <SelectTrigger>
+                            <SelectValue placeholder="Select role..." />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {rolesList.map((r: any) => (
+                              <SelectItem key={r.id} value={r.id}>
+                                <div className="flex items-center gap-2">
+                                  <Shield className="h-3.5 w-3.5 text-muted-foreground" />
+                                  {r.name}
+                                </div>
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      )}
+                    />
                   </Field>
                   {!isEdit && (
                     <>
@@ -555,9 +523,7 @@ export default function AddEmployee() {
                             type={showPassword ? "text" : "password"}
                             placeholder="PayMatrix@123"
                             className="pl-8 pr-9 font-mono text-sm"
-                            name="password"
-                            value={formData.password || ""}
-                            onChange={handleInputChange}
+                            {...register("password")}
                           />
                           <button
                             type="button"
@@ -598,49 +564,40 @@ export default function AddEmployee() {
                   <Field
                     label="First Name"
                     required
-                    error={errors.firstName}
+                    error={errors.firstName?.message}
                   >
-                    <Input
-                      placeholder="Karan"
-                      name="firstName"
-                      value={formData.firstName || ""}
-                      onChange={handleInputChange}
-                    />
+                    <Input placeholder="Karan" {...register("firstName")} />
                   </Field>
                   <Field
                     label="Last Name"
                     required
-                    error={errors.lastName}
+                    error={errors.lastName?.message}
                   >
-                    <Input
-                      placeholder="Harsora"
-                      name="lastName"
-                      value={formData.lastName || ""}
-                      onChange={handleInputChange}
-                    />
+                    <Input placeholder="Harsora" {...register("lastName")} />
                   </Field>
                   <Field label="Gender">
-                    <Select
-                      onValueChange={(val) => handleSelectChange("gender", val)}
-                      value={formData.gender || ""}
-                    >
-                      <SelectTrigger>
-                        <SelectValue placeholder="Select..." />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="MALE">Male</SelectItem>
-                        <SelectItem value="FEMALE">Female</SelectItem>
-                        <SelectItem value="OTHER">Other</SelectItem>
-                      </SelectContent>
-                    </Select>
+                    <Controller
+                      control={control}
+                      name="gender"
+                      render={({ field }) => (
+                        <Select
+                          onValueChange={field.onChange}
+                          value={field.value || ""}
+                        >
+                          <SelectTrigger>
+                            <SelectValue placeholder="Select..." />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="MALE">Male</SelectItem>
+                            <SelectItem value="FEMALE">Female</SelectItem>
+                            <SelectItem value="OTHER">Other</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      )}
+                    />
                   </Field>
                   <Field label="Blood Group">
-                    <Input
-                      placeholder="B+"
-                      name="bloodGroup"
-                      value={formData.bloodGroup || ""}
-                      onChange={handleInputChange}
-                    />
+                    <Input placeholder="B+" {...register("bloodGroup")} />
                   </Field>
                 </div>
               </div>
@@ -655,10 +612,8 @@ export default function AddEmployee() {
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                   <Field label="Employee Group">
                     <Select
-                      onValueChange={(val) =>
-                        handleSelectChange("employeeGroupId", val)
-                      }
-                      value={formData.employeeGroupId || ""}
+                      onValueChange={setEmployeeGroupId}
+                      value={employeeGroupId}
                     >
                       <SelectTrigger>
                         <SelectValue placeholder="Select Group..." />
@@ -673,23 +628,43 @@ export default function AddEmployee() {
                     </Select>
                   </Field>
                   <Field label="Department">
-                    <Select
-                      onValueChange={(val) =>
-                        handleSelectChange("departmentId", val)
-                      }
-                      value={formData.departmentId || ""}
-                    >
-                      <SelectTrigger>
-                        <SelectValue placeholder="Department..." />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {deptList.map((d: any) => (
-                          <SelectItem key={d.id} value={d.id}>
-                            {d.name}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
+                    <Controller
+                      control={control}
+                      name="departmentId"
+                      render={({ field }) => (
+                        <Select
+                          onValueChange={(val) => {
+                            field.onChange(val);
+                            // If current designation doesn't belong to the newly selected department, reset it
+                            if (watchedDesignationId) {
+                              const currentDesig = desigList.find(
+                                (d: any) => d.id === watchedDesignationId,
+                              );
+                              if (
+                                currentDesig &&
+                                currentDesig.departmentId &&
+                                currentDesig.departmentId !== val &&
+                                currentDesig.department?.id !== val
+                              ) {
+                                setValue("designationId", "");
+                              }
+                            }
+                          }}
+                          value={field.value || ""}
+                        >
+                          <SelectTrigger>
+                            <SelectValue placeholder="Department..." />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {deptList.map((d: any) => (
+                              <SelectItem key={d.id} value={d.id}>
+                                {d.name}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      )}
+                    />
                   </Field>
                   <Field
                     label="Designation"
@@ -699,49 +674,57 @@ export default function AddEmployee() {
                         : undefined
                     }
                   >
-                    <Select
-                      onValueChange={(val) =>
-                        handleSelectChange("designationId", val)
-                      }
-                      value={formData.designationId || ""}
-                      disabled={filteredDesigList.length === 0}
-                    >
-                      <SelectTrigger>
-                        <SelectValue
-                          placeholder={
-                            filteredDesigList.length === 0
-                              ? "No designations available"
-                              : "Designation..."
-                          }
-                        />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {filteredDesigList.map((d: any) => (
-                          <SelectItem key={d.id} value={d.id}>
-                            {d.name}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
+                    <Controller
+                      control={control}
+                      name="designationId"
+                      render={({ field }) => (
+                        <Select
+                          onValueChange={field.onChange}
+                          value={field.value || ""}
+                          disabled={filteredDesigList.length === 0}
+                        >
+                          <SelectTrigger>
+                            <SelectValue
+                              placeholder={
+                                filteredDesigList.length === 0
+                                  ? "No designations available"
+                                  : "Designation..."
+                              }
+                            />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {filteredDesigList.map((d: any) => (
+                              <SelectItem key={d.id} value={d.id}>
+                                {d.name}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      )}
+                    />
                   </Field>
                   <Field label="Branch">
-                    <Select
-                      onValueChange={(val) =>
-                        handleSelectChange("branchId", val)
-                      }
-                      value={formData.branchId || ""}
-                    >
-                      <SelectTrigger>
-                        <SelectValue placeholder="Branch..." />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {branchList.map((b: any) => (
-                          <SelectItem key={b.id} value={b.id}>
-                            {b.name}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
+                    <Controller
+                      control={control}
+                      name="branchId"
+                      render={({ field }) => (
+                        <Select
+                          onValueChange={field.onChange}
+                          value={field.value || ""}
+                        >
+                          <SelectTrigger>
+                            <SelectValue placeholder="Branch..." />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {branchList.map((b: any) => (
+                              <SelectItem key={b.id} value={b.id}>
+                                {b.name}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      )}
+                    />
                   </Field>
                 </div>
               </div>
@@ -756,31 +739,25 @@ export default function AddEmployee() {
                 <div className="grid grid-cols-2 gap-4">
                   <Field
                     label="Email"
-                    error={errors.email}
+                    error={errors.email?.message}
                     hint="Required for system login"
                   >
                     <Input
                       type="email"
                       placeholder="karan@company.com"
-                      name="email"
-                      value={formData.email || ""}
-                      onChange={handleInputChange}
+                      {...register("email")}
                     />
                   </Field>
                   <Field label="Mobile">
                     <Input
                       placeholder="+91 98765 43210"
-                      name="phone"
-                      value={formData.phone || ""}
-                      onChange={handleInputChange}
+                      {...register("phone")}
                     />
                   </Field>
                   <Field label="Address" className="col-span-2">
                     <Input
                       placeholder="Residential address"
-                      name="address"
-                      value={formData.address || ""}
-                      onChange={handleInputChange}
+                      {...register("address")}
                     />
                   </Field>
                 </div>
@@ -797,35 +774,27 @@ export default function AddEmployee() {
                   <Field label="Bank Name" className="md:col-span-2">
                     <Input
                       placeholder="e.g. HDFC Bank"
-                      name="bankName"
-                      value={formData.bankName || ""}
-                      onChange={handleInputChange}
+                      {...register("bankName")}
                     />
                   </Field>
                   <Field label="IFSC Code">
                     <Input
                       placeholder="HDFC0001234"
                       className="font-mono"
-                      name="ifscCode"
-                      value={formData.ifscCode || ""}
-                      onChange={handleInputChange}
+                      {...register("ifscCode")}
                     />
                   </Field>
                   <Field label="Account Number">
                     <Input
                       placeholder="Account number"
                       className="font-mono"
-                      name="accountNumber"
-                      value={formData.accountNumber || ""}
-                      onChange={handleInputChange}
+                      {...register("accountNumber")}
                     />
                   </Field>
                   <Field label="Account Holder" className="md:col-span-2">
                     <Input
                       placeholder="As per bank records"
-                      name="accountHolder"
-                      value={formData.accountHolder || ""}
-                      onChange={handleInputChange}
+                      {...register("accountHolder")}
                     />
                   </Field>
                 </div>
@@ -843,36 +812,28 @@ export default function AddEmployee() {
                     <Input
                       placeholder="ABCDE1234F"
                       className="font-mono uppercase"
-                      name="panNumber"
-                      value={formData.panNumber || ""}
-                      onChange={handleInputChange}
+                      {...register("panNumber")}
                     />
                   </Field>
                   <Field label="Aadhaar / National ID">
                     <Input
                       placeholder="1234 5678 9012"
                       className="font-mono"
-                      name="nationalIdNumber"
-                      value={formData.nationalIdNumber || ""}
-                      onChange={handleInputChange}
+                      {...register("nationalIdNumber")}
                     />
                   </Field>
                   <Field label="UAN Number">
                     <Input
                       placeholder="Universal Account No."
                       className="font-mono"
-                      name="uanNumber"
-                      value={formData.uanNumber || ""}
-                      onChange={handleInputChange}
+                      {...register("uanNumber")}
                     />
                   </Field>
                   <Field label="ESI Number">
                     <Input
                       placeholder="ESI / Insurance No."
                       className="font-mono"
-                      name="esiNumber"
-                      value={formData.esiNumber || ""}
-                      onChange={handleInputChange}
+                      {...register("esiNumber")}
                     />
                   </Field>
                 </div>
@@ -887,32 +848,7 @@ export default function AddEmployee() {
         isSaving={createMut.isPending || updateMut.isPending}
         saveLabel={isEdit ? "Update Employee" : "Save & Create Employee"}
         onClear={() => {
-          setFormData({
-            employeeCode: "EMP-",
-            firstName: "",
-            lastName: "",
-            email: "",
-            phone: "",
-            address: "",
-            joiningDate: new Date().toISOString().slice(0, 10),
-            gender: "",
-            bloodGroup: "",
-            departmentId: "",
-            designationId: "",
-            branchId: "",
-            panNumber: "",
-            nationalIdNumber: "",
-            uanNumber: "",
-            esiNumber: "",
-            bankName: "",
-            accountNumber: "",
-            ifscCode: "",
-            accountHolder: "",
-            roleId: "",
-            password: "PayMatrix@123",
-            employeeGroupId: "",
-          });
-          setErrors({});
+          reset();
           setAvatarPreview(null);
         }}
         onCancel={() => nav("/employees")}

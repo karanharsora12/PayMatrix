@@ -63,6 +63,10 @@ export class EmployeesService {
       where: (b: any, { eq }: any) => eq(b.employeeId, id),
     });
 
+    const groupMember = await this.db.query.employeeGroupMembers.findFirst({
+      where: (m: any, { eq }: any) => eq(m.employeeId, id),
+    });
+
     return {
       success: true,
       data: {
@@ -73,6 +77,7 @@ export class EmployeesService {
         accountNumber: bankAccount?.accountNumber || "",
         ifscCode: bankAccount?.ifscCode || "",
         accountHolder: bankAccount?.accountHolderName || "",
+        employeeGroupId: groupMember?.employeeGroupId || "",
       },
     };
   }
@@ -150,7 +155,7 @@ export class EmployeesService {
     }
     try {
       const {
-        address, bankName, accountNumber, ifscCode, accountHolder, roleId, password,
+        address, bankName, accountNumber, ifscCode, accountHolder, roleId, password, employeeGroupId,
         ...empFields
       } = dto;
 
@@ -195,6 +200,13 @@ export class EmployeesService {
         }).catch(() => {});
       }
 
+      if (employeeGroupId) {
+        await this.db.insert(schema.employeeGroupMembers).values({
+          employeeGroupId,
+          employeeId: row.id,
+        }).catch(() => {});
+      }
+
       await this.db.insert(schema.auditLogs).values({ companyId, userId, module: 'employees', entityType: 'employee', entityId: row.id, action: 'CREATE', newValues: dto as any }).catch(() => {});
       return { success: true, data: row, message: 'Employee created' };
     } catch (e: any) {
@@ -207,7 +219,7 @@ export class EmployeesService {
     const existing = await this.db.query.employees.findFirst({ where: (e: any, { eq, and }: any) => and(eq(e.id, id), eq(e.companyId, companyId)) });
     if (!existing || existing.deletedAt) throw new NotFoundException({ code: 'EMPLOYEE_NOT_FOUND', message: 'Employee not found' });
     
-    const { address, bankName, accountNumber, ifscCode, accountHolder, roleId, password, ...empFields } = dto;
+    const { address, bankName, accountNumber, ifscCode, accountHolder, roleId, password, employeeGroupId, ...empFields } = dto;
     
     const [row] = await this.db.update(schema.employees).set({ ...empFields, updatedAt: new Date() } as any).where(and(eq(schema.employees.id, id), eq(schema.employees.companyId, companyId))).returning();
     
@@ -263,6 +275,18 @@ export class EmployeesService {
       if (u) {
         const hash = await bcrypt.hash(password, 10);
         await this.db.update(schema.users).set({ passwordHash: hash }).where(eq(schema.users.id, u.id));
+      }
+    }
+
+    if (employeeGroupId) {
+      const existingMapping = await this.db.query.employeeGroupMembers.findFirst({ where: (m: any, { eq }: any) => eq(m.employeeId, id) });
+      if (existingMapping) {
+        if (existingMapping.employeeGroupId !== employeeGroupId) {
+          await this.db.delete(schema.employeeGroupMembers).where(eq(schema.employeeGroupMembers.employeeId, id));
+          await this.db.insert(schema.employeeGroupMembers).values({ employeeGroupId, employeeId: id }).catch(() => {});
+        }
+      } else {
+        await this.db.insert(schema.employeeGroupMembers).values({ employeeGroupId, employeeId: id }).catch(() => {});
       }
     }
 

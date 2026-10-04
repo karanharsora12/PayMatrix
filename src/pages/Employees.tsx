@@ -14,8 +14,10 @@ import {
 } from "@/components/ui/dialog";
 import { useAuth } from "@/context/AuthContext";
 import { toast } from "sonner";
+import { useQuery } from "@tanstack/react-query";
+import { departmentApi } from "@/api/departments";
+import { designationApi } from "@/api/designations";
 import { useEmployees } from "@/hooks/useEmployees";
-import { employees as mockEmployees } from "@/mock/data";
 import { DataGrid } from "@/components/common/DataGrid";
 import { GridDeleteCell } from "@/components/common/GridDeleteCell";
 import { ListingHeader } from "@/components/common/ListingHeader";
@@ -31,27 +33,224 @@ export default function Employees() {
   const [searchParams, setSearchParams] = useSearchParams();
   const q = searchParams.get("search") ?? "";
   const dept = searchParams.get("department") ?? "";
+  const desig = searchParams.get("designation") ?? "";
   const status = searchParams.get("status") ?? "";
   const [showImport, setShowImport] = useState(false);
   const [deletedIds, setDeletedIds] = useState<Set<string | number>>(new Set());
 
   const setParam = (key: string, value: string) => {
     const next = new URLSearchParams(searchParams);
-    if (value) next.set(key, value);
+    if (value && value !== "ALL") next.set(key, value);
     else next.delete(key);
     setSearchParams(next);
   };
 
-  const filters = useMemo(
-    () => ({
+  const handleDeptChange = (value: string) => {
+    const next = new URLSearchParams(searchParams);
+    if (value && value !== "ALL") {
+      next.set("department", value);
+    } else {
+      next.delete("department");
+    }
+    // Clear designation filter when department changes
+    next.delete("designation");
+    setSearchParams(next);
+  };
+
+  const handleDesigChange = (value: string) => {
+    setParam("designation", value);
+  };
+
+  const handleStatusChange = (value: string) => {
+    setParam("status", value);
+  };
+
+  const { data: deptsData } = useQuery({
+    queryKey: ["departments", "list"],
+    queryFn: () =>
+      departmentApi
+        .list({ page: 1, pageSize: 100 })
+        .catch(() => ({ data: [] })),
+  });
+
+  const { data: desigsData } = useQuery({
+    queryKey: ["designations", "list"],
+    queryFn: () =>
+      designationApi
+        .list({ page: 1, pageSize: 100 })
+        .catch(() => ({ data: [] })),
+  });
+
+  const isUUID = (val?: string) =>
+    val
+      ? /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(
+          val,
+        )
+      : false;
+
+  const filters = useMemo(() => {
+    let departmentId: string | undefined;
+    if (dept && dept !== "ALL") {
+      if (isUUID(dept)) {
+        departmentId = dept;
+      } else if (Array.isArray(deptsData?.data)) {
+        const match = deptsData.data.find(
+          (d: any) => d.name?.toLowerCase() === dept.toLowerCase(),
+        );
+        if (match && isUUID(match.id)) departmentId = match.id;
+      }
+    }
+
+    let designationId: string | undefined;
+    if (desig && desig !== "ALL") {
+      if (isUUID(desig)) {
+        designationId = desig;
+      } else if (Array.isArray(desigsData?.data)) {
+        const match = desigsData.data.find(
+          (d: any) => d.name?.toLowerCase() === desig.toLowerCase(),
+        );
+        if (match && isUUID(match.id)) designationId = match.id;
+      }
+    }
+
+    return {
       search: q || undefined,
-      departmentId: dept || undefined,
-      status: status || undefined,
-    }),
-    [q, dept, status],
-  );
+      departmentId,
+      designationId,
+      status: status && status !== "ALL" ? status : undefined,
+    };
+  }, [q, dept, desig, status, deptsData, desigsData]);
 
   const { data, refetch } = useEmployees(filters);
+
+  // Available departments list (from API and fallback from employee data)
+  const departmentOptions = useMemo(() => {
+    const list: { id: string; name: string }[] = [];
+    const seen = new Set<string>();
+
+    if (Array.isArray(deptsData?.data)) {
+      deptsData.data.forEach((d: any) => {
+        if (d?.name && !seen.has(d.name.toLowerCase())) {
+          seen.add(d.name.toLowerCase());
+          list.push({ id: d.id || d.name, name: d.name });
+        }
+      });
+    }
+
+    if (Array.isArray(data?.data)) {
+      data.data.forEach((e: any) => {
+        const name =
+          e.department?.name ??
+          (typeof e.department === "string" ? e.department : null);
+        const id = e.department?.id ?? e.departmentId ?? name;
+        if (name && !seen.has(name.toLowerCase())) {
+          seen.add(name.toLowerCase());
+          list.push({ id: id || name, name });
+        }
+      });
+    }
+
+    if (list.length === 0) {
+      ["Engineering", "Finance", "Marketing", "Sales", "Human Resources"].forEach(
+        (name) => {
+          list.push({ id: name, name });
+        },
+      );
+    }
+
+    return list;
+  }, [deptsData, data]);
+
+  const selectedDeptObj = useMemo(() => {
+    if (!dept || dept === "ALL") return null;
+    return (
+      departmentOptions.find(
+        (d) =>
+          d.id === dept ||
+          d.name.toLowerCase() === dept.toLowerCase(),
+      ) || null
+    );
+  }, [dept, departmentOptions]);
+
+  // Designations filtered according to selected department
+  const designationOptions = useMemo(() => {
+    const allDesigs: {
+      id: string;
+      name: string;
+      departmentId?: string;
+      departmentName?: string;
+    }[] = [];
+    const seen = new Set<string>();
+
+    if (Array.isArray(desigsData?.data)) {
+      desigsData.data.forEach((d: any) => {
+        if (d?.name && !seen.has(d.name.toLowerCase())) {
+          seen.add(d.name.toLowerCase());
+          allDesigs.push({
+            id: d.id || d.name,
+            name: d.name,
+            departmentId: d.departmentId || d.department?.id,
+            departmentName: d.department?.name,
+          });
+        }
+      });
+    }
+
+    if (Array.isArray(data?.data)) {
+      data.data.forEach((e: any) => {
+        const name =
+          e.designation?.name ??
+          (typeof e.designation === "string" ? e.designation : null);
+        const id = e.designation?.id ?? e.designationId ?? name;
+        const empDeptName =
+          e.department?.name ??
+          (typeof e.department === "string" ? e.department : undefined);
+        const empDeptId = e.department?.id ?? e.departmentId;
+        if (name && !seen.has(name.toLowerCase())) {
+          seen.add(name.toLowerCase());
+          allDesigs.push({
+            id: id || name,
+            name,
+            departmentId: empDeptId,
+            departmentName: empDeptName,
+          });
+        }
+      });
+    }
+
+    // If no department is selected, return all designations
+    if (!dept || dept === "ALL") {
+      return allDesigs;
+    }
+
+    // Filter designations according to selected department
+    return allDesigs.filter((d) => {
+      if (
+        selectedDeptObj?.id &&
+        d.departmentId &&
+        d.departmentId === selectedDeptObj.id
+      ) {
+        return true;
+      }
+      if (
+        selectedDeptObj?.name &&
+        d.departmentName &&
+        d.departmentName.toLowerCase() === selectedDeptObj.name.toLowerCase()
+      ) {
+        return true;
+      }
+      if (
+        d.departmentName &&
+        d.departmentName.toLowerCase() === dept.toLowerCase()
+      ) {
+        return true;
+      }
+      if (d.departmentId && d.departmentId === dept) {
+        return true;
+      }
+      return false;
+    });
+  }, [desigsData, data, dept, selectedDeptObj]);
 
   // Filtered list passed to DataGrid
   const employeeList = useMemo(() => {
@@ -69,18 +268,58 @@ export default function Employees() {
           .includes(query),
       );
     }
-    if (dept) {
-      source = source.filter(
-        (e) => (e.department?.name ?? e.department) === dept,
-      );
+    if (dept && dept !== "ALL") {
+      source = source.filter((e) => {
+        const dName =
+          e.department?.name ??
+          (typeof e.department === "string" ? e.department : "");
+        const dId = e.department?.id ?? e.departmentId;
+        return (
+          dName.toLowerCase() === dept.toLowerCase() ||
+          dId === dept ||
+          (selectedDeptObj &&
+            (dId === selectedDeptObj.id ||
+              dName.toLowerCase() === selectedDeptObj.name.toLowerCase()))
+        );
+      });
     }
-    if (status) {
+    if (desig && desig !== "ALL") {
+      source = source.filter((e) => {
+        const dName =
+          e.designation?.name ??
+          (typeof e.designation === "string" ? e.designation : "");
+        const dId = e.designation?.id ?? e.designationId;
+        return (
+          dName.toLowerCase() === desig.toLowerCase() ||
+          dId === desig ||
+          designationOptions.some(
+            (opt) =>
+              (opt.id === desig ||
+                opt.name.toLowerCase() === desig.toLowerCase()) &&
+              (opt.id === dId ||
+                opt.name.toLowerCase() === dName.toLowerCase()),
+          )
+        );
+      });
+    }
+    if (status && status !== "ALL") {
       source = source.filter(
-        (e) => (e.status ?? e.employmentStatus) === status,
+        (e) =>
+          (e.status ?? e.employmentStatus)?.toLowerCase() ===
+          status.toLowerCase(),
       );
     }
     return source;
-  }, [data, mockEmployees, deletedIds, q, dept, status]);
+  }, [
+    data,
+    deletedIds,
+    q,
+    dept,
+    desig,
+    status,
+    selectedDeptObj,
+    designationOptions,
+  ]);
 
   const handleDelete = useCallback((id: string | number, name: string) => {
     setDeletedIds((prev) => new Set([...prev, id]));
@@ -178,7 +417,11 @@ export default function Employees() {
           title="Employees"
           searchValue={q}
           onSearchChange={(v) => setParam("search", v)}
-          onAddNew={hasPermission("employees.create") ? () => nav("/employees/new") : undefined}
+          onAddNew={
+            hasPermission("employees.create")
+              ? () => nav("/employees/new")
+              : undefined
+          }
           addButtonText="Add Employee"
           onRefresh={refetch}
           onExportExcel={() =>
@@ -194,7 +437,7 @@ export default function Employees() {
           }
         />
 
-        <div className="flex gap-2 mb-3">
+        <div className="flex flex-wrap gap-2 mb-3">
           <Button
             variant="outline"
             size="sm"
@@ -204,29 +447,47 @@ export default function Employees() {
             Import
           </Button>
           <NativeSelect
-            value={dept}
-            onChange={(v) => setParam("department", v)}
+            value={dept || "ALL"}
+            onChange={handleDeptChange}
             placeholder="All Departments"
             className="w-[180px] h-8 text-xs bg-white"
           >
-            <option value="">All Departments</option>
-            <option>Engineering</option>
-            <option>Finance</option>
-            <option>Marketing</option>
-            <option>Sales</option>
-            <option>Human Resources</option>
+            <option value="ALL">All Departments</option>
+            {departmentOptions.map((d) => (
+              <option key={d.id} value={d.id}>
+                {d.name}
+              </option>
+            ))}
           </NativeSelect>
           <NativeSelect
-            value={status}
-            onChange={(v) => setParam("status", v)}
+            value={desig || "ALL"}
+            onChange={handleDesigChange}
+            placeholder={
+              dept && dept !== "ALL" && designationOptions.length === 0
+                ? "No Designations"
+                : "All Designations"
+            }
+            className="w-[180px] h-8 text-xs bg-white"
+            disabled={dept && dept !== "ALL" && designationOptions.length === 0}
+          >
+            <option value="ALL">All Designations</option>
+            {designationOptions.map((d) => (
+              <option key={d.id} value={d.id}>
+                {d.name}
+              </option>
+            ))}
+          </NativeSelect>
+          <NativeSelect
+            value={status || "ALL"}
+            onChange={handleStatusChange}
             placeholder="All Status"
             className="w-[160px] h-8 text-xs bg-white"
           >
-            <option value="">All Status</option>
-            <option>Active</option>
-            <option>On Leave</option>
-            <option>Probation</option>
-            <option>Inactive</option>
+            <option value="ALL">All Status</option>
+            <option value="Active">Active</option>
+            <option value="On Leave">On Leave</option>
+            <option value="Probation">Probation</option>
+            <option value="Inactive">Inactive</option>
           </NativeSelect>
         </div>
 
@@ -238,7 +499,8 @@ export default function Employees() {
             pageSize={15}
             gridOptions={{
               onRowDoubleClicked: (e) => {
-                if (e.data?.id && hasPermission("employees.edit")) nav(`/employees/${e.data.id}/edit`);
+                if (e.data?.id && hasPermission("employees.edit"))
+                  nav(`/employees/${e.data.id}/edit`);
                 else if (e.data?.id) nav(`/employees/${e.data.id}`);
               },
             }}
