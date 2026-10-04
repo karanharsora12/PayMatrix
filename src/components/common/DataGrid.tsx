@@ -74,7 +74,7 @@ const lightTheme = themeQuartz.withParams({
   rangeSelectionBorderColor: "hsl(var(--primary))",
   oddRowBackgroundColor: "color-mix(in srgb, hsl(var(--primary)) 3%, white)",
   borderRadius: 6,
-  wrapperBorderRadius: 0,
+  wrapperBorderRadius: 4,
   cellHorizontalPadding: 12,
   headerCellHoverBackgroundColor:
     "color-mix(in srgb, hsl(var(--primary)) 22%, white)",
@@ -105,7 +105,8 @@ const darkTheme = themeQuartz.withPart(colorSchemeDark).withParams({
   rangeSelectionBackgroundColor:
     "color-mix(in srgb, hsl(var(--primary)) 22%, black)",
   rangeSelectionBorderColor: "hsl(var(--primary))",
-  oddRowBackgroundColor: "color-mix(in srgb, hsl(var(--primary)) 6%, hsl(240 10% 5.5%))",
+  oddRowBackgroundColor:
+    "color-mix(in srgb, hsl(var(--primary)) 6%, hsl(240 10% 5.5%))",
   borderRadius: 6,
   wrapperBorderRadius: 8,
   cellHorizontalPadding: 12,
@@ -172,7 +173,7 @@ export const DataGrid = React.forwardRef<AgGridReact, DataGridProps>(
           const sort = params.sortModel[0];
 
           try {
-            const response = await apiClient.post(apiName, {
+            const response = await apiClient.post(apiName!, {
               ...apiInput,
               page: Math.floor(params.startRow / requestedPageSize) + 1,
               limit: requestedPageSize,

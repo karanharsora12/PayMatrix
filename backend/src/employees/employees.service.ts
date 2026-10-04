@@ -4,6 +4,7 @@ import { DRIZZLE } from '../database/database.module';
 import * as schema from '../db/schema';
 import { PaginationDto, paginated } from '../common/dto/pagination.dto';
 import { CreateEmployeeDto, UpdateEmployeeDto } from './dto/create-employee.dto';
+import * as bcrypt from 'bcrypt';
 
 @Injectable()
 export class EmployeesService {
@@ -41,7 +42,39 @@ export class EmployeesService {
       with: { branch: true, department: true, designation: true, manager: true },
     });
     if (!row || row.deletedAt) throw new NotFoundException({ code: 'EMPLOYEE_NOT_FOUND', message: 'Employee not found' });
-    return { success: true, data: row };
+
+    const user = await this.db.query.users.findFirst({
+      where: (u: any, { eq, and }: any) => and(eq(u.employeeId, id), eq(u.companyId, companyId)),
+    });
+    
+    let userRoles: any[] = [];
+    if (user) {
+      const ur = await this.db.query.userRoles.findMany({
+        where: (r: any, { eq }: any) => eq(r.userId, user.id),
+      });
+      userRoles = ur.map((x: any) => ({ id: x.roleId }));
+    }
+
+    const address = await this.db.query.employeeAddresses.findFirst({
+      where: (a: any, { eq }: any) => eq(a.employeeId, id),
+    });
+
+    const bankAccount = await this.db.query.employeeBankAccounts.findFirst({
+      where: (b: any, { eq }: any) => eq(b.employeeId, id),
+    });
+
+    return {
+      success: true,
+      data: {
+        ...row,
+        user: user ? { ...user, roles: userRoles } : null,
+        address: address?.addressLine1 || "",
+        bankName: bankAccount?.bankName || "",
+        accountNumber: bankAccount?.accountNumber || "",
+        ifscCode: bankAccount?.ifscCode || "",
+        accountHolder: bankAccount?.accountHolderName || "",
+      },
+    };
   }
 
   // ── Aggregated Profile ──────────────────────────────────────────────────────
@@ -116,12 +149,52 @@ export class EmployeesService {
       if (!mgr) throw new BadRequestException({ code: 'MANAGER_NOT_FOUND', message: 'Reporting manager not found' });
     }
     try {
+      const {
+        address, bankName, accountNumber, ifscCode, accountHolder, roleId, password,
+        ...empFields
+      } = dto;
+
       const [row] = await this.db.insert(schema.employees).values({
-        ...dto,
+        ...empFields,
         companyId,
-        employeeCode: dto.employeeCode.toUpperCase(),
-        joiningDate: dto.joiningDate as any,
+        employeeCode: empFields.employeeCode.toUpperCase(),
+        joiningDate: empFields.joiningDate as any,
       }).returning();
+
+      if (address) {
+        await this.db.insert(schema.employeeAddresses).values({
+          employeeId: row.id,
+          addressType: 'RESIDENTIAL',
+          addressLine1: address,
+        }).catch(() => {});
+      }
+
+      if (bankName || accountNumber || ifscCode) {
+        await this.db.insert(schema.employeeBankAccounts).values({
+          employeeId: row.id,
+          bankName: bankName || '',
+          accountNumber: accountNumber || '',
+          ifscCode: ifscCode || '',
+          accountHolderName: accountHolder || '',
+          isPrimary: true,
+        }).catch(() => {});
+      }
+
+      if (dto.email && roleId && password) {
+        const hash = await bcrypt.hash(password, 10);
+        const [u] = await this.db.insert(schema.users).values({
+          companyId,
+          employeeId: row.id,
+          email: dto.email,
+          passwordHash: hash,
+          isActive: true,
+        }).returning();
+        await this.db.insert(schema.userRoles).values({
+          userId: u.id,
+          roleId: roleId,
+        }).catch(() => {});
+      }
+
       await this.db.insert(schema.auditLogs).values({ companyId, userId, module: 'employees', entityType: 'employee', entityId: row.id, action: 'CREATE', newValues: dto as any }).catch(() => {});
       return { success: true, data: row, message: 'Employee created' };
     } catch (e: any) {
@@ -133,7 +206,66 @@ export class EmployeesService {
   async update(companyId: string, id: string, dto: UpdateEmployeeDto, userId: string) {
     const existing = await this.db.query.employees.findFirst({ where: (e: any, { eq, and }: any) => and(eq(e.id, id), eq(e.companyId, companyId)) });
     if (!existing || existing.deletedAt) throw new NotFoundException({ code: 'EMPLOYEE_NOT_FOUND', message: 'Employee not found' });
-    const [row] = await this.db.update(schema.employees).set({ ...dto, updatedAt: new Date() } as any).where(and(eq(schema.employees.id, id), eq(schema.employees.companyId, companyId))).returning();
+    
+    const { address, bankName, accountNumber, ifscCode, accountHolder, roleId, password, ...empFields } = dto;
+    
+    const [row] = await this.db.update(schema.employees).set({ ...empFields, updatedAt: new Date() } as any).where(and(eq(schema.employees.id, id), eq(schema.employees.companyId, companyId))).returning();
+    
+    if (address !== undefined) {
+      const existingAddress = await this.db.query.employeeAddresses.findFirst({ where: (a: any, { eq }: any) => eq(a.employeeId, id) });
+      if (existingAddress) {
+        await this.db.update(schema.employeeAddresses).set({ addressLine1: address }).where(eq(schema.employeeAddresses.id, existingAddress.id));
+      } else if (address) {
+        await this.db.insert(schema.employeeAddresses).values({ employeeId: id, addressType: 'RESIDENTIAL', addressLine1: address });
+      }
+    }
+
+    if (bankName !== undefined || accountNumber !== undefined || ifscCode !== undefined) {
+      const existingBank = await this.db.query.employeeBankAccounts.findFirst({ where: (b: any, { eq }: any) => eq(b.employeeId, id) });
+      if (existingBank) {
+        await this.db.update(schema.employeeBankAccounts).set({ 
+          bankName: bankName !== undefined ? bankName : existingBank.bankName,
+          accountNumber: accountNumber !== undefined ? accountNumber : existingBank.accountNumber,
+          ifscCode: ifscCode !== undefined ? ifscCode : existingBank.ifscCode,
+          accountHolderName: accountHolder !== undefined ? accountHolder : existingBank.accountHolderName,
+        }).where(eq(schema.employeeBankAccounts.id, existingBank.id));
+      } else if (bankName || accountNumber) {
+        await this.db.insert(schema.employeeBankAccounts).values({
+          employeeId: id,
+          bankName: bankName || '',
+          accountNumber: accountNumber || '',
+          ifscCode: ifscCode || '',
+          accountHolderName: accountHolder || '',
+          isPrimary: true,
+        });
+      }
+    }
+
+    if (roleId) {
+      let u = await this.db.query.users.findFirst({ where: (u: any, { eq, and }: any) => and(eq(u.employeeId, id), eq(u.companyId, companyId)) });
+      if (!u && dto.email) {
+        const hash = password ? await bcrypt.hash(password, 10) : await bcrypt.hash('PayMatrix@123', 10);
+        const [newU] = await this.db.insert(schema.users).values({
+          companyId,
+          employeeId: row.id,
+          email: dto.email,
+          passwordHash: hash,
+          isActive: true,
+        }).returning();
+        u = newU;
+      }
+      if (u) {
+        await this.db.delete(schema.userRoles).where(eq(schema.userRoles.userId, u.id));
+        await this.db.insert(schema.userRoles).values({ userId: u.id, roleId: roleId }).catch(() => {});
+      }
+    } else if (password) {
+      const u = await this.db.query.users.findFirst({ where: (u: any, { eq, and }: any) => and(eq(u.employeeId, id), eq(u.companyId, companyId)) });
+      if (u) {
+        const hash = await bcrypt.hash(password, 10);
+        await this.db.update(schema.users).set({ passwordHash: hash }).where(eq(schema.users.id, u.id));
+      }
+    }
+
     await this.db.insert(schema.auditLogs).values({ companyId, userId, module: 'employees', entityType: 'employee', entityId: id, action: 'UPDATE', oldValues: existing as any, newValues: dto as any }).catch(() => {});
     return { success: true, data: row, message: 'Employee updated' };
   }

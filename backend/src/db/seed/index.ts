@@ -13,14 +13,22 @@
  * deterministic. In production use `gen_random_uuid()` defaults.
  */
 
+import dotenv from "dotenv";
+import path from "path";
 import { Pool } from "pg";
 import { drizzle } from "drizzle-orm/node-postgres";
+
+dotenv.config({ path: path.resolve(__dirname, "../../../.env") });
+
+if (!process.env.DATABASE_URL) {
+  throw new Error("DATABASE_URL is not defined in .env");
+}
 
 // Import schema tables for typed inserts (optional, but helpful)
 import * as schema from "../schema";
 
 const pool = new Pool({
-  connectionString: process.env.DATABASE_URL ?? "postgresql://postgres:Karan%40123@localhost:5432/paymatrix",
+  connectionString: process.env.DATABASE_URL,
 });
 const db = drizzle(pool, { schema });
 
@@ -378,7 +386,7 @@ async function seed() {
     await client.query(
       `INSERT INTO user_roles (user_id, role_id)
        SELECT u.id, r.id FROM users u, roles r
-       WHERE u.email = 'admin@paymatrix.com' AND r.slug = 'super_admin'
+       WHERE u.email = 'admin@paymatrix.com' AND r.slug = 'SUPER_ADMIN'
        ON CONFLICT DO NOTHING`
     );
 

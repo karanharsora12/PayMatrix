@@ -18,6 +18,19 @@ export class CreateEmployeeDto {
   // Extended
   @ApiPropertyOptional() @IsOptional() @IsString() panNumber?: string;
   @ApiPropertyOptional() @IsOptional() @IsString() nationalIdNumber?: string;
+  @ApiPropertyOptional() @IsOptional() @IsString() bloodGroup?: string;
+  @ApiPropertyOptional() @IsOptional() @IsString() pfNumber?: string;
+  @ApiPropertyOptional() @IsOptional() @IsString() esiNumber?: string;
+  @ApiPropertyOptional() @IsOptional() @IsString() profilePhotoUrl?: string;
+  @ApiPropertyOptional() @IsOptional() @IsString() roleId?: string;
+  @ApiPropertyOptional() @IsOptional() @IsString() password?: string;
+
+  // Address and Bank (mapped in service)
+  @ApiPropertyOptional() @IsOptional() @IsString() address?: string;
+  @ApiPropertyOptional() @IsOptional() @IsString() bankName?: string;
+  @ApiPropertyOptional() @IsOptional() @IsString() accountNumber?: string;
+  @ApiPropertyOptional() @IsOptional() @IsString() ifscCode?: string;
+  @ApiPropertyOptional() @IsOptional() @IsString() accountHolder?: string;
 }
 
 export class UpdateEmployeeDto extends CreateEmployeeDto {}

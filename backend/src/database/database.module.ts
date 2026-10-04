@@ -1,4 +1,5 @@
 import { Global, Module } from '@nestjs/common';
+import { ConfigService } from '@nestjs/config';
 import { Pool } from 'pg';
 import { drizzle } from 'drizzle-orm/node-postgres';
 import * as schema from '../db/schema';
@@ -10,8 +11,12 @@ export const DRIZZLE = 'DRIZZLE';
   providers: [
     {
       provide: Pool,
-      useFactory: () => {
-        const connectionString = process.env.DATABASE_URL ?? 'postgresql://postgres:Karan%40123@localhost:5432/paymatrix';
+      inject: [ConfigService],
+      useFactory: (configService: ConfigService) => {
+        const connectionString = configService.get<string>('DATABASE_URL') || process.env.DATABASE_URL;
+        if (!connectionString) {
+          throw new Error('DATABASE_URL is not defined in .env');
+        }
         return new Pool({ connectionString, max: 10 });
       },
     },

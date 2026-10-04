@@ -1,7 +1,23 @@
 import { api, unwrap } from './client';
 
 export type LoginPayload = { email: string; password: string };
-export type AuthUser = { id: string; email: string; companyId: string | null; roles: string[]; permissions: string[] };
+export type AuthUser = {
+  id: string;
+  email: string;
+  name?: string;
+  profilePhotoUrl?: string | null;
+  companyId: string | null;
+  employeeId?: string | null;
+  roles: string[];
+  permissions: string[];
+  employee?: {
+    id: string;
+    firstName: string;
+    lastName: string;
+    employeeCode?: string;
+    profilePhotoUrl?: string | null;
+  } | null;
+};
 
 export const authApi = {
   login: async (payload: LoginPayload) => {

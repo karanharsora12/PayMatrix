@@ -7,6 +7,7 @@ export * from './designations';
 export * from './attendance';
 export * from './leave';
 export * from './salary';
-export * from './payroll';
 export * from './dashboard';
 export * from './reports';
+export * from './users';
+export * from './uploads';

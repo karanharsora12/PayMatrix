@@ -17,7 +17,7 @@ const SelectTrigger = React.forwardRef<
   <SelectPrimitive.Trigger
     ref={ref}
     className={cn(
-      "flex h-9 w-full items-center justify-between rounded-md border border-input bg-transparent px-3 py-2 text-sm shadow-sm ring-offset-background placeholder:text-muted-foreground focus:outline-none focus:ring-1 focus:ring-ring disabled:cursor-not-allowed disabled:opacity-50",
+      "flex h-10 w-full items-center justify-between rounded-md border border-input bg-transparent px-3 py-2 text-sm shadow-sm ring-offset-background placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/40 focus:border-primary disabled:cursor-not-allowed disabled:opacity-50 transition-all duration-200",
       className
     )}
     {...props}
@@ -170,11 +170,12 @@ export function NativeSelect({ value, onChange, children, className, placeholder
 
   React.Children.forEach(children, child => {
     if (React.isValidElement(child) && child.type === 'option') {
-      const val = child.props.value;
+      const childProps = child.props as any;
+      const val = childProps.value;
       if (val !== undefined && val !== "") {
-        options.push({ value: String(val), label: child.props.children });
+        options.push({ value: String(val), label: childProps.children });
       } else if (!foundPlaceholder && val === "") {
-        foundPlaceholder = child.props.children as string;
+        foundPlaceholder = childProps.children as string;
       }
     }
   });

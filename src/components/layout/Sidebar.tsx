@@ -32,95 +32,71 @@ import {
   UsersRound,
   History,
   SlidersHorizontal,
+  Mail,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useState } from "react";
+import { useAuth } from "@/context/AuthContext";
 
 const nav = [
   { label: "Dashboard", icon: LayoutDashboard, path: "/" },
   {
     group: "Organization",
     items: [
-      { label: "Company", icon: Building, path: "/organization/company" },
-      { label: "Branches", icon: Building2, path: "/branches" },
-      { label: "Departments", icon: Layers, path: "/departments" },
-      { label: "Designations", icon: Layers2, path: "/designations" },
-      { label: "Locations", icon: MapPin, path: "/locations" },
+      { label: "Company", icon: Building, path: "/organization/company", perm: "settings.view" },
+      { label: "Branches", icon: Building2, path: "/branches", perm: "branches.view" },
+      { label: "Departments", icon: Layers, path: "/departments", perm: "departments.view" },
+      { label: "Designations", icon: Layers2, path: "/designations", perm: "designations.view" },
+      { label: "Locations", icon: MapPin, path: "/locations", perm: "settings.view" },
     ],
   },
   {
     group: "Employees",
     items: [
-      { label: "Employees", icon: Users, path: "/employees" },
-      { label: "Employee Groups", icon: UsersRound, path: "/employee-groups" },
-      { label: "Documents", icon: File, path: "/documents" },
-      { label: "Bank Accounts", icon: Landmark, path: "/bank-accounts" },
+      { label: "Employees", icon: Users, path: "/employees", perm: "employees.view" },
+      { label: "Employee Groups", icon: UsersRound, path: "/employee-groups", perm: "employees.view" },
+      { label: "Documents", icon: File, path: "/documents", perm: "documents.view" },
     ],
   },
   {
     group: "Attendance",
     items: [
-      { label: "Attendance", icon: Clock, path: "/attendance" },
+      { label: "Attendance", icon: Clock, path: "/attendance", perm: "attendance.view" },
       {
         label: "Attendance Register",
         icon: ClipboardList,
         path: "/attendance-register",
+        perm: "attendance.view"
       },
-      { label: "Shifts", icon: Timer, path: "/shifts" },
-      { label: "Holidays", icon: CalendarRange, path: "/holidays" },
-      { label: "Overtime", icon: Timer, path: "/overtime" },
+      { label: "Shifts", icon: Timer, path: "/shifts", perm: "attendance.view" },
+      { label: "Holidays", icon: CalendarRange, path: "/holidays", perm: "attendance.view" },
     ],
   },
   {
     group: "Leave",
-    items: [
-      { label: "Leave Types", icon: Palmtree, path: "/leave-types" },
-      { label: "Leave Requests", icon: FileText, path: "/leave-requests" },
-      { label: "Leave Balances", icon: Scale, path: "/leave-balances" },
-      { label: "Leave Calendar", icon: CalendarDays, path: "/leave-calendar" },
-    ],
+    items: [{ label: "Leave Management", icon: Palmtree, path: "/leave", perm: "leave.view" }],
   },
   {
     group: "Payroll",
     items: [
-      { label: "Salary Components", icon: Coins, path: "/salary-components" },
+      { label: "Salary Components", icon: Coins, path: "/salary-components", perm: "salary.view" },
       {
         label: "Salary Structures",
         icon: SlidersHorizontal,
         path: "/salary-structures",
+        perm: "salary.view"
       },
-      { label: "Employee Salary", icon: UserCheck, path: "/employee-salary" },
-      { label: "Payroll Runs", icon: Wallet, path: "/payroll" },
-      { label: "Payslips", icon: Receipt, path: "/payslips" },
-      { label: "Bonuses", icon: Gift, path: "/bonuses" },
-      { label: "Deductions", icon: MinusCircle, path: "/deductions" },
-      { label: "Loans", icon: Banknote, path: "/loans" },
-      { label: "Advances", icon: Banknote, path: "/advances" },
+      { label: "Employee Salary", icon: UserCheck, path: "/employee-salary", perm: "salary.view" },
+      { label: "Payslips", icon: Receipt, path: "/payslips", perm: "payroll.view" },
     ],
-  },
-  {
-    group: "Compliance",
-    items: [
-      { label: "Tax", icon: Scale, path: "/compliance/tax" },
-      {
-        label: "PF / Provident Fund",
-        icon: ShieldCheck,
-        path: "/compliance/pf",
-      },
-      { label: "ESI", icon: ShieldCheck, path: "/compliance/esi" },
-    ],
-  },
-  {
-    group: "Reports",
-    items: [{ label: "Reports", icon: BarChart3, path: "/reports" }],
   },
   {
     group: "Administration",
     items: [
-      { label: "Users", icon: UserCog, path: "/users" },
-      { label: "Roles & Permissions", icon: ShieldCheck, path: "/roles" },
-      { label: "Audit Logs", icon: History, path: "/audit-logs" },
-      { label: "Settings", icon: Settings, path: "/settings" },
+      { label: "Roles & Permissions", icon: ShieldCheck, path: "/roles", perm: "roles.view" },
+      { label: "User Parameters", icon: SlidersHorizontal, path: "/user-parameters", perm: "roles.view" },
+      { label: "Email Templates", icon: Mail, path: "/email-templates", perm: "settings.view" },
+      { label: "Settings", icon: Settings, path: "/settings", perm: "settings.view" },
     ],
   },
 ];
@@ -136,6 +112,7 @@ export function Sidebar({
   mobileOpen: boolean;
   setMobileOpen: (v: boolean) => void;
 }) {
+  const { hasPermission } = useAuth();
   const loc = useLocation();
   const [openGroups, setOpenGroups] = useState<Record<string, boolean>>({
     Organization: true,
@@ -143,10 +120,22 @@ export function Sidebar({
     Payroll: true,
   });
   const toggle = (g: string) => setOpenGroups((s) => ({ ...s, [g]: !s[g] }));
+
+  const filteredNav = nav
+    .map((g) => {
+      if (g.items) {
+        return {
+          ...g,
+          items: g.items.filter((i) => !i.perm || hasPermission(i.perm)),
+        };
+      }
+      return g;
+    })
+    .filter((g) => !g.items || g.items.length > 0);
   const content = (
     <div
       className={cn(
-        "flex flex-col h-full bg-[#fcfcfd] dark:bg-zinc-900 border-r",
+        "flex flex-col h-full bg-sidebar border-r border-sidebar-border",
         collapsed ? "w-[64px]" : "w-[260px]",
       )}
     >
@@ -164,7 +153,7 @@ export function Sidebar({
         )}
       </div>
       <div className="flex-1 overflow-y-auto py-2 px-2 space-y-4">
-        {nav.map((item: any) => {
+        {filteredNav.map((item: any) => {
           if (item.path)
             return (
               <NavLink
@@ -174,7 +163,7 @@ export function Sidebar({
                   cn(
                     "flex items-center gap-3 px-2.5 py-2 rounded-md text-sm",
                     isActive
-                      ? "bg-primary text-primary-foreground"
+                      ? "bg-primary/10 text-primary font-medium dark:bg-primary/20 dark:text-indigo-300"
                       : "hover:bg-accent text-muted-foreground hover:text-foreground",
                     collapsed && "justify-center",
                   )
@@ -210,7 +199,7 @@ export function Sidebar({
                         cn(
                           "flex items-center gap-3 px-2.5 py-1.5 rounded-md text-[13px]",
                           isActive
-                            ? "bg-primary text-primary-foreground"
+                            ? "bg-primary/10 text-primary font-medium dark:bg-primary/20 dark:text-indigo-300"
                             : "hover:bg-accent text-zinc-600 dark:text-zinc-400 hover:text-foreground",
                           collapsed && "justify-center",
                         )
@@ -225,19 +214,6 @@ export function Sidebar({
             </div>
           );
         })}
-      </div>
-      <div className="p-3 border-t">
-        {!collapsed && (
-          <div className="rounded-lg bg-primary/10 p-3">
-            <div className="text-xs font-medium">Payroll Due</div>
-            <div className="text-[11px] text-muted-foreground">
-              September 2026 processing
-            </div>
-            <div className="mt-2 h-1.5 bg-primary/20 rounded-full">
-              <div className="h-full w-[89%] bg-primary rounded-full" />
-            </div>
-          </div>
-        )}
       </div>
     </div>
   );

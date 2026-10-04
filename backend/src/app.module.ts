@@ -24,8 +24,14 @@ import { DashboardModule } from './dashboard/dashboard.module';
 import { UsersModule } from './users/users.module';
 import { RolesModule } from './roles/roles.module';
 import { AuditModule } from './audit/audit.module';
+import { LocationsModule } from './locations/locations.module';
+import { EmployeeGroupsModule } from './employee-groups/employee-groups.module';
+import { DocumentMasterModule } from './document-master/document-master.module';
 import { NotificationsModule } from './notifications/notifications.module';
 import { HealthModule } from './health/health.module';
+import { UploadsModule } from './uploads/uploads.module';
+import { ParametersModule } from './parameters/parameters.module';
+import { EmailTemplatesModule } from './email-templates/email-templates.module';
 import { JwtAuthGuard } from './common/guards/jwt-auth.guard';
 import { RolesGuard } from './common/guards/roles.guard';
 
@@ -55,8 +61,14 @@ import { RolesGuard } from './common/guards/roles.guard';
     UsersModule,
     RolesModule,
     AuditModule,
+    LocationsModule,
+    EmployeeGroupsModule,
+    DocumentMasterModule,
     NotificationsModule,
     HealthModule,
+    UploadsModule,
+    ParametersModule,
+    EmailTemplatesModule,
   ],
   providers: [
     Reflector,

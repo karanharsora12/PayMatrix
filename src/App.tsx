@@ -10,9 +10,13 @@ import Dashboard from "@/pages/Dashboard";
 import Employees from "@/pages/Employees";
 import EmployeeProfile from "@/pages/EmployeeProfile";
 import AddEmployee from "@/pages/AddEmployee";
+import Company from "@/pages/Company";
 import Departments from "@/pages/Departments";
 import Designations from "@/pages/Designations";
 import Branches from "@/pages/Branches";
+import Locations from "@/pages/Locations";
+import EmployeeGroups from "@/pages/EmployeeGroups";
+import DocumentMaster from "@/pages/DocumentMaster";
 import Attendance from "@/pages/Attendance";
 import Shifts from "@/pages/Shifts";
 import Holidays from "@/pages/Holidays";
@@ -20,15 +24,14 @@ import Leave from "@/pages/Leave";
 import SalaryComponents from "@/pages/SalaryComponents";
 import SalaryStructures from "@/pages/SalaryStructures";
 import EmployeeSalary from "@/pages/EmployeeSalary";
-import PayrollRuns from "@/pages/PayrollRuns";
-import PayrollWizard from "@/pages/PayrollWizard";
-import PayrollDetails from "@/pages/PayrollDetails";
 import Payslip from "@/pages/Payslip";
 import Loans from "@/pages/Loans";
 import Bonuses from "@/pages/Bonuses";
 import Compliance from "@/pages/Compliance";
 import Reports from "@/pages/Reports";
 import UsersRoles from "@/pages/UsersRoles";
+import UserParameters from "@/pages/UserParameters";
+import EmailTemplates from "@/pages/EmailTemplates";
 import Settings from "@/pages/Settings";
 import Placeholder from "@/pages/Placeholder";
 import Login from "@/pages/Login";
@@ -48,8 +51,15 @@ function Protected() {
   const { user, loading } = useAuth();
   if (loading)
     return (
-      <div className="min-h-screen flex items-center justify-center">
-        Loading...
+      <div className="min-h-screen flex flex-col items-center justify-center bg-background">
+        <div className="flex flex-col items-center animate-pulse">
+          <div className="h-16 w-16 mb-6 rounded-2xl bg-primary text-primary-foreground flex items-center justify-center font-bold text-3xl shadow-lg">
+            PM
+          </div>
+          <div className="text-2xl font-bold tracking-tight text-foreground">
+            PayMatrix
+          </div>
+        </div>
       </div>
     );
   if (!user) return <Navigate to="/login" replace />;
@@ -128,6 +138,7 @@ export default function App() {
             <Route path="/" element={<Dashboard />} />
             <Route path="/employees" element={<Employees />} />
             <Route path="/employees/new" element={<AddEmployee />} />
+            <Route path="/employees/:id/edit" element={<AddEmployee />} />
             <Route path="/employees/:id" element={<EmployeeProfile />} />
             <Route path="/departments" element={<Departments />} />
             <Route path="/designations" element={<Designations />} />
@@ -136,20 +147,10 @@ export default function App() {
             <Route path="/attendance-register" element={<Attendance />} />
             <Route path="/shifts" element={<Shifts />} />
             <Route path="/holidays" element={<Holidays />} />
-            <Route
-              path="/overtime"
-              element={<Placeholder title="Overtime" />}
-            />
-            <Route path="/leave-types" element={<Leave />} />
-            <Route path="/leave-requests" element={<Leave />} />
-            <Route path="/leave-balances" element={<Leave />} />
-            <Route path="/leave-calendar" element={<Leave />} />
+            <Route path="/leave" element={<Leave />} />
             <Route path="/salary-components" element={<SalaryComponents />} />
             <Route path="/salary-structures" element={<SalaryStructures />} />
             <Route path="/employee-salary" element={<EmployeeSalary />} />
-            <Route path="/payroll" element={<PayrollRuns />} />
-            <Route path="/payroll/new" element={<PayrollWizard />} />
-            <Route path="/payroll/:id" element={<PayrollDetails />} />
             <Route path="/payslips" element={<Payslip />} />
             <Route path="/payslips/:id" element={<Payslip />} />
             <Route path="/loans" element={<Loans />} />
@@ -160,31 +161,17 @@ export default function App() {
             <Route path="/reports" element={<Reports />} />
             <Route path="/users" element={<UsersRoles />} />
             <Route path="/roles" element={<UsersRoles />} />
+            <Route path="/user-parameters" element={<UserParameters />} />
+            <Route path="/email-templates" element={<EmailTemplates />} />
             <Route
               path="/audit-logs"
               element={<Placeholder title="Audit Logs" />}
             />
             <Route path="/settings" element={<Settings />} />
-            <Route
-              path="/organization/company"
-              element={<Placeholder title="Company" />}
-            />
-            <Route
-              path="/locations"
-              element={<Placeholder title="Locations" />}
-            />
-            <Route
-              path="/employee-groups"
-              element={<Placeholder title="Employee Groups" />}
-            />
-            <Route
-              path="/documents"
-              element={<Placeholder title="Employee Documents" />}
-            />
-            <Route
-              path="/bank-accounts"
-              element={<Placeholder title="Bank Accounts" />}
-            />
+            <Route path="/organization/company" element={<Company />} />
+            <Route path="/locations" element={<Locations />} />
+            <Route path="/employee-groups" element={<EmployeeGroups />} />
+            <Route path="/documents" element={<DocumentMaster />} />
             <Route path="*" element={<Navigate to="/" replace />} />
           </Route>
         </Route>

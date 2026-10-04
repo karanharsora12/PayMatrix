@@ -1,8 +1,9 @@
 const pg = require('pg');
 const bcrypt = require('bcrypt');
+require('dotenv').config();
 
 const pool = new pg.Pool({
-  connectionString: 'postgresql://postgres:Karan%40123@localhost:5432/paymatrix',
+  connectionString: process.env.DATABASE_URL,
 });
 
 bcrypt.hash('Password123!', 10)

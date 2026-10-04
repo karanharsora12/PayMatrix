@@ -12,9 +12,11 @@ export * from "./helpers";
 // Core org
 export * from "./companies";
 export * from "./branches";
+export * from "./locations";
 export * from "./departments";
 export * from "./designations";
 export * from "./employment-types";
+export * from "./document-master";
 
 // Employee domain
 export * from "./employees";
@@ -52,8 +54,10 @@ export * from "./statutory";
 export * from "./permissions";
 export * from "./roles";
 export * from "./users";
+export * from "./user-parameters";
 
 // Cross-cutting
 export * from "./audit-logs";
 export * from "./notifications";
 export * from "./settings";
+export * from "./email-templates";

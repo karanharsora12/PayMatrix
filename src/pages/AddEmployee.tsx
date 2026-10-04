@@ -1,6 +1,9 @@
-import { useState } from "react";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
+import { uploadApi, getFileUrl } from "@/api";
+import { branchApi } from "@/api/branches";
+import { departmentApi } from "@/api/departments";
+import { designationApi } from "@/api/designations";
+import { FormFooter } from "@/components/common/FormFooter";
+import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import {
   Select,
@@ -9,64 +12,224 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { toast } from "sonner";
-import { useNavigate, Link } from "react-router-dom";
-import { ArrowLeft, Check } from "lucide-react";
-import { useForm, Controller } from "react-hook-form";
+import {
+  useCreateEmployee,
+  useEmployee,
+  useUpdateEmployee,
+} from "@/hooks/useEmployees";
+import { useRoles } from "@/hooks/useUsersRoles";
+import { cn } from "@/lib/utils";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { z } from "zod";
-import { useCreateEmployee } from "@/hooks/useEmployees";
 import { useQuery } from "@tanstack/react-query";
-import { departmentApi } from "@/api/departments";
-import { branchApi } from "@/api/branches";
-import { designationApi } from "@/api/designations";
+import {
+  ArrowLeft,
+  Banknote,
+  Briefcase,
+  Camera,
+  CreditCard,
+  Eye,
+  EyeOff,
+  Info,
+  KeyRound,
+  Phone,
+  Shield,
+  User,
+} from "lucide-react";
+import { useEffect, useRef, useState } from "react";
+import { Controller, useForm } from "react-hook-form";
+import { useNavigate, useParams } from "react-router-dom";
+import { toast } from "sonner";
+import { z } from "zod";
 
 const schema = z.object({
-  employeeCode: z.string().min(2, "Required"),
-  firstName: z.string().min(1, "Required"),
-  lastName: z.string().min(1, "Required"),
-  email: z.string().email().optional().or(z.literal("")),
+  employeeCode: z.string().min(2, "Employee code is required"),
+  firstName: z.string().min(1, "First name is required"),
+  lastName: z.string().min(1, "Last name is required"),
+  email: z.string().email("Invalid email").optional().or(z.literal("")),
   phone: z.string().optional(),
-  joiningDate: z.string().min(1, "Required"),
-  branchId: z.string().optional(),
-  departmentId: z.string().optional(),
-  designationId: z.string().optional(),
+  address: z.string().optional(),
+  joiningDate: z.string().min(1, "Joining date is required"),
   gender: z.string().optional(),
   bloodGroup: z.string().optional(),
+  departmentId: z.string().optional(),
+  designationId: z.string().optional(),
+  branchId: z.string().optional(),
   panNumber: z.string().optional(),
   nationalIdNumber: z.string().optional(),
+  uanNumber: z.string().optional(),
+  esiNumber: z.string().optional(),
+  bankName: z.string().optional(),
+  accountNumber: z.string().optional(),
+  ifscCode: z.string().optional(),
+  accountHolder: z.string().optional(),
+  roleId: z.string().optional(),
+  password: z.string().optional(),
 });
-
 type FormValues = z.infer<typeof schema>;
-const steps = [
-  "Personal",
-  "Contact",
-  "Employment",
-  "Bank",
-  "Statutory",
-  "Documents",
-];
+
+function SectionHeader({
+  icon: Icon,
+  title,
+  subtitle,
+  badge,
+}: {
+  icon: React.ElementType;
+  title: string;
+  subtitle?: string;
+  badge?: string;
+}) {
+  return (
+    <div className="flex items-center gap-3 mb-5 pb-3 border-b border-slate-100 dark:border-slate-800">
+      <div className="flex items-center justify-center h-9 w-9 rounded-lg bg-primary/10 text-primary shrink-0">
+        <Icon className="h-4 w-4" />
+      </div>
+      <div className="flex-1 min-w-0">
+        <div className="flex items-center gap-2">
+          <p className="text-sm font-semibold text-slate-800 dark:text-slate-100 leading-none">
+            {title}
+          </p>
+          {badge && (
+            <Badge variant="secondary" className="text-[10px] py-0 px-1.5">
+              {badge}
+            </Badge>
+          )}
+        </div>
+        {subtitle && (
+          <p className="text-xs text-muted-foreground mt-0.5">{subtitle}</p>
+        )}
+      </div>
+    </div>
+  );
+}
+
+function Field({
+  label,
+  required,
+  error,
+  children,
+  className,
+  hint,
+}: {
+  label: string;
+  required?: boolean;
+  error?: string;
+  children: React.ReactNode;
+  className?: string;
+  hint?: string;
+}) {
+  return (
+    <div className={cn("space-y-1.5", className)}>
+      <label className="text-[11px] font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider flex items-center gap-1">
+        {label}
+        {required && <span className="text-red-500">*</span>}
+      </label>
+      {children}
+      {hint && !error && (
+        <p className="text-[10px] text-muted-foreground flex items-center gap-1">
+          <Info className="h-2.5 w-2.5 shrink-0" /> {hint}
+        </p>
+      )}
+      {error && <p className="text-[11px] text-red-500 mt-0.5">{error}</p>}
+    </div>
+  );
+}
 
 export default function AddEmployee() {
   const nav = useNavigate();
-  const [step, setStep] = useState(0);
+  const { id } = useParams<{ id: string }>();
+  const isEdit = !!id;
+
+  const createMut = useCreateEmployee();
+  const updateMut = useUpdateEmployee(id || "");
+  const { data: empData } = useEmployee(id || "");
+  const { data: rolesResp } = useRoles();
+
+  const [showPassword, setShowPassword] = useState(false);
+  const [avatarPreview, setAvatarPreview] = useState<string | null>(null);
+  const fileRef = useRef<HTMLInputElement>(null);
+
   const {
     register,
     handleSubmit,
-    formState: { errors },
-    trigger,
+    reset,
     control,
+    watch,
+    formState: { errors },
   } = useForm<FormValues>({
     resolver: zodResolver(schema),
     defaultValues: {
-      employeeCode: "EMP-10051",
+      employeeCode: "EMP-",
       firstName: "",
       lastName: "",
       email: "",
+      phone: "",
+      address: "",
       joiningDate: new Date().toISOString().slice(0, 10),
+      gender: "",
+      bloodGroup: "",
+      departmentId: "",
+      designationId: "",
+      branchId: "",
+      panNumber: "",
+      nationalIdNumber: "",
+      uanNumber: "",
+      esiNumber: "",
+      bankName: "",
+      accountNumber: "",
+      ifscCode: "",
+      accountHolder: "",
+      roleId: "",
+      password: "PayMatrix@123",
     },
   });
-  const createMut = useCreateEmployee();
+
+  const eData: any = (empData as any)?.data || empData;
+  const tiedUser = isEdit ? eData?.user : null;
+  const userRole = tiedUser?.roles?.[0]?.id || "";
+
+  const watchedFirstName = watch("firstName");
+  const watchedLastName = watch("lastName");
+
+  const initials =
+    (
+      (watchedFirstName?.[0] || "") + (watchedLastName?.[0] || "")
+    ).toUpperCase() || "?";
+
+  useEffect(() => {
+    if (isEdit && empData) {
+      const e: any = (empData as any)?.data || empData;
+      if (e.profilePhotoUrl && !avatarPreview) {
+        setAvatarPreview(getFileUrl(e.profilePhotoUrl));
+      }
+      reset({
+        employeeCode: e.employeeCode || e.employeeId || "",
+        firstName: e.firstName || "",
+        lastName: e.lastName || "",
+        email: e.email || "",
+        phone: e.phone || "",
+        address: e.address || "",
+        joiningDate: e.joiningDate
+          ? new Date(e.joiningDate).toISOString().slice(0, 10)
+          : new Date().toISOString().slice(0, 10),
+        gender: e.gender || "",
+        bloodGroup: e.bloodGroup || "",
+        departmentId: e.departmentId || e.department?.id || "",
+        designationId: e.designationId || e.designation?.id || "",
+        branchId: e.branchId || e.branch?.id || "",
+        panNumber: e.panNumber || "",
+        nationalIdNumber: e.nationalIdNumber || "",
+        uanNumber: e.uanNumber || "",
+        esiNumber: e.esiNumber || "",
+        bankName: e.bankName || "",
+        accountNumber: e.accountNumber || "",
+        ifscCode: e.ifscCode || "",
+        accountHolder: e.accountHolder || "",
+        roleId: userRole,
+        password: "",
+      });
+    }
+  }, [isEdit, empData, userRole, reset]);
+
   const { data: depts } = useQuery({
     queryKey: ["departments", "list"],
     queryFn: () =>
@@ -87,269 +250,520 @@ export default function AddEmployee() {
         .catch(() => ({ data: [] })),
   });
 
+  const deptList = (depts as any)?.data ?? [];
+  const branchList = (branches as any)?.data ?? [];
+  const desigList = (desigs as any)?.data ?? [];
+  const rolesList: any[] = (rolesResp as any)?.data ?? [];
+
+  const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      try {
+        const url = await uploadApi.uploadImage(file);
+        setAvatarPreview(url);
+      } catch (err) {
+        toast.error("Failed to upload image");
+      }
+    }
+  };
+
   const onSubmit = async (values: FormValues) => {
     try {
-      await createMut.mutateAsync({
+      const payload = {
         employeeCode: values.employeeCode,
         firstName: values.firstName,
         lastName: values.lastName,
         email: values.email || undefined,
-        phone: values.phone,
+        phone: values.phone || undefined,
+        address: values.address || undefined,
         joiningDate: values.joiningDate,
         branchId: values.branchId || undefined,
         departmentId: values.departmentId || undefined,
         designationId: values.designationId || undefined,
         gender: values.gender || undefined,
+        bloodGroup: values.bloodGroup || undefined,
         panNumber: values.panNumber || undefined,
         nationalIdNumber: values.nationalIdNumber || undefined,
-      });
-      toast.success("Employee created");
+        pfNumber: values.uanNumber || undefined,
+        esiNumber: values.esiNumber || undefined,
+        bankName: values.bankName || undefined,
+        accountNumber: values.accountNumber || undefined,
+        ifscCode: values.ifscCode || undefined,
+        accountHolder: values.accountHolder || undefined,
+        profilePhotoUrl: avatarPreview || undefined,
+        roleId: values.roleId || undefined,
+        password: values.password || undefined,
+      };
+
+      if (isEdit) {
+        await updateMut.mutateAsync(payload);
+        toast.success("Employee updated successfully");
+      } else {
+        await createMut.mutateAsync(payload);
+        if (values.email) {
+          toast.success(
+            `Employee created! Login: ${values.email} · Password: ${values.password?.trim() || "PayMatrix@123"}`,
+          );
+        } else {
+          toast.success("Employee created successfully.");
+        }
+      }
       nav("/employees");
     } catch (e: any) {
-      const msg =
+      toast.error(
         e?.normalizedError?.message ??
-        e?.response?.data?.error?.message ??
-        e.message ??
-        "Failed to create";
-      toast.error(msg);
+          e?.response?.data?.error?.message ??
+          e?.message ??
+          (isEdit ? "Failed to update employee" : "Failed to create employee"),
+      );
     }
   };
 
-  const next = async () => {
-    const fieldsByStep: Record<number, (keyof FormValues)[]> = {
-      0: ["employeeCode", "firstName", "lastName"],
-      1: ["email", "phone"],
-      2: ["joiningDate", "branchId", "departmentId", "designationId"],
-      3: [],
-      4: ["panNumber", "nationalIdNumber"],
-      5: [],
-    };
-    const ok = await trigger(fieldsByStep[step] ?? []);
-    if (ok) setStep((s) => s + 1);
-  };
-
   return (
-    <div className="max-w-4xl mx-auto space-y-4">
-      <Link
-        to="/employees"
-        className="inline-flex items-center text-sm text-muted-foreground"
-      >
-        <ArrowLeft className="h-4 w-4 mr-1" /> Back
-      </Link>
-      <div>
-        <h1 className="text-xl font-semibold">Add Employee</h1>
-        <p className="text-sm text-muted-foreground">
-          Create a new employee record • Step {step + 1} of {steps.length}
-        </p>
-      </div>
-      <div className="flex gap-2 overflow-auto">
-        {steps.map((s, i) => (
-          <div
-            key={s}
-            className={`flex items-center gap-2 px-3 py-2 rounded-full text-sm whitespace-nowrap ${i === step ? "bg-primary text-primary-foreground" : i < step ? "bg-emerald-100 text-emerald-700" : "bg-muted"}`}
+    <div>
+      <div className="flex flex-col min-h-[calc(100vh-64px)] p-4 max-w-screen-xl mx-auto">
+        {/* Header */}
+        <div className="flex items-center gap-3 mb-6">
+          <button
+            type="button"
+            onClick={() => nav("/employees")}
+            className="flex items-center justify-center h-8 w-8 rounded-md border border-slate-200 dark:border-slate-700 text-muted-foreground hover:text-foreground hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors"
           >
-            {i < step ? <Check className="h-3 w-3" /> : i + 1} {s}
+            <ArrowLeft className="h-4 w-4" />
+          </button>
+          <div>
+            <h1 className="text-lg font-semibold text-slate-800 dark:text-slate-100 leading-none">
+              Employee
+            </h1>
+            <p className="text-xs text-muted-foreground mt-0.5">
+              {isEdit
+                ? "Update employee record details below"
+                : "Fill in all sections to create a complete employee profile"}
+            </p>
           </div>
-        ))}
-      </div>
-      <Card>
-        <CardHeader>
-          <CardTitle>{steps[step]} Information</CardTitle>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          <form onSubmit={handleSubmit(onSubmit)}>
-            {step === 0 && (
-              <div className="grid md:grid-cols-2 gap-4">
-                <div>
-                  <Input
-                    placeholder="Employee Code *"
-                    {...register("employeeCode")}
-                  />
-                  {errors.employeeCode && (
-                    <p className="text-xs text-red-500 mt-1">
-                      {errors.employeeCode.message}
-                    </p>
-                  )}
-                </div>
-                <div>
-                  <Input
-                    placeholder="Joining Date *"
-                    type="date"
-                    {...register("joiningDate")}
-                  />
-                  {errors.joiningDate && (
-                    <p className="text-xs text-red-500">
-                      {errors.joiningDate.message}
-                    </p>
-                  )}
-                </div>
-                <div>
-                  <Input
-                    placeholder="First Name *"
-                    {...register("firstName")}
-                  />
-                  {errors.firstName && (
-                    <p className="text-xs text-red-500">
-                      {errors.firstName.message}
-                    </p>
-                  )}
-                </div>
-                <div>
-                  <Input placeholder="Last Name *" {...register("lastName")} />
-                  {errors.lastName && (
-                    <p className="text-xs text-red-500">
-                      {errors.lastName.message}
-                    </p>
-                  )}
-                </div>
-                <Controller
-                  control={control}
-                  name="gender"
-                  render={({ field }) => (
-                    <Select onValueChange={field.onChange} value={field.value || ""}>
-                      <SelectTrigger>
-                        <SelectValue placeholder="Gender" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="MALE">Male</SelectItem>
-                        <SelectItem value="FEMALE">Female</SelectItem>
-                        <SelectItem value="OTHER">Other</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  )}
-                />
-                <Input placeholder="Blood Group" {...register("bloodGroup")} />
-              </div>
-            )}
-            {step === 1 && (
-              <div className="grid md:grid-cols-2 gap-4">
-                <div>
-                  <Input placeholder="Email" {...register("email")} />
-                  {errors.email && (
-                    <p className="text-xs text-red-500">
-                      {errors.email.message}
-                    </p>
-                  )}
-                </div>
-                <Input placeholder="Mobile" {...register("phone")} />
-                <Input placeholder="Address" className="md:col-span-2" />
-              </div>
-            )}
-            {step === 2 && (
-              <div className="grid md:grid-cols-2 gap-4">
-                <Controller
-                  control={control}
-                  name="departmentId"
-                  render={({ field }) => (
-                    <Select onValueChange={field.onChange} value={field.value || ""}>
-                      <SelectTrigger>
-                        <SelectValue placeholder="Department" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {(depts as any)?.data?.map((d: any) => (
-                          <SelectItem key={d.id} value={d.id}>
-                            {d.name}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  )}
-                />
-                <Controller
-                  control={control}
-                  name="designationId"
-                  render={({ field }) => (
-                    <Select onValueChange={field.onChange} value={field.value || ""}>
-                      <SelectTrigger>
-                        <SelectValue placeholder="Designation" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {(desigs as any)?.data?.map((d: any) => (
-                          <SelectItem key={d.id} value={d.id}>
-                            {d.name}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  )}
-                />
-                <Controller
-                  control={control}
-                  name="branchId"
-                  render={({ field }) => (
-                    <Select onValueChange={field.onChange} value={field.value || ""}>
-                      <SelectTrigger>
-                        <SelectValue placeholder="Branch" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {(branches as any)?.data?.map((b: any) => (
-                          <SelectItem key={b.id} value={b.id}>
-                            {b.name}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  )}
-                />
-              </div>
-            )}
-            {step === 3 && (
-              <div className="grid md:grid-cols-2 gap-4">
-                <Input placeholder="Bank Name" />
-                <Input placeholder="Account Number" />
-                <Input placeholder="IFSC" />
-                <Input placeholder="Account Holder" />
-              </div>
-            )}
-            {step === 4 && (
-              <div className="grid md:grid-cols-2 gap-4">
-                <Input placeholder="PAN" {...register("panNumber")} />
-                <Input
-                  placeholder="Aadhaar / National ID"
-                  {...register("nationalIdNumber")}
-                />
-              </div>
-            )}
-            {step === 5 && (
-              <div className="space-y-3">
-                {["ID Proof", "Address Proof", "Offer Letter"].map((d) => (
-                  <div
-                    key={d}
-                    className="border-2 border-dashed rounded-lg p-6 flex justify-between items-center"
-                  >
-                    <span className="text-sm">{d}</span>
-                    <Button type="button" variant="outline" size="sm">
-                      Upload
-                    </Button>
-                  </div>
-                ))}
-              </div>
-            )}
+        </div>
 
-            <div className="flex justify-between pt-4">
-              <Button
-                type="button"
-                variant="outline"
-                disabled={step === 0}
-                onClick={() => setStep((s) => s - 1)}
-              >
-                Previous
-              </Button>
-              <div className="flex gap-2">
-                {step < steps.length - 1 ? (
-                  <Button type="button" onClick={next}>
-                    Next
-                  </Button>
-                ) : (
-                  <Button type="submit" disabled={createMut.isPending}>
-                    {createMut.isPending ? "Saving..." : "Create Employee"}
-                  </Button>
-                )}
+        <form
+          id="employee-form"
+          onSubmit={handleSubmit(onSubmit)}
+          className="flex-1 pb-28"
+        >
+          <div className="grid grid-cols-1 xl:grid-cols-[300px_1fr] gap-5">
+            {/* LEFT: Profile + Code + Access */}
+            <div className="space-y-5">
+              {/* Profile Card */}
+              <div className="bg-white dark:bg-slate-900/50 border border-slate-200 dark:border-slate-800 rounded-xl p-5 shadow-sm">
+                <SectionHeader
+                  icon={User}
+                  title="Profile"
+                  subtitle="Photo and basic ID"
+                />
+
+                {/* Avatar */}
+                <div className="flex flex-col items-center gap-3">
+                  <div
+                    className="relative group cursor-pointer"
+                    onClick={() => fileRef.current?.click()}
+                  >
+                    <div className="h-20 w-20 rounded-full border-2 border-dashed border-primary/30 group-hover:border-primary overflow-hidden bg-primary/5 flex items-center justify-center transition-colors">
+                      {avatarPreview ? (
+                        <img
+                          src={getFileUrl(avatarPreview)}
+                          alt="Preview"
+                          className="h-full w-full object-cover"
+                          onError={() => {
+                            setAvatarPreview(null);
+                          }}
+                        />
+                      ) : (
+                        <span className="text-xl font-bold text-primary/60">
+                          {initials}
+                        </span>
+                      )}
+                    </div>
+                    <div className="absolute -bottom-0.5 -right-0.5 h-6 w-6 rounded-full bg-primary text-white flex items-center justify-center shadow-md group-hover:scale-110 transition-transform">
+                      <Camera className="h-3 w-3" />
+                    </div>
+                  </div>
+                  <input
+                    ref={fileRef}
+                    type="file"
+                    accept="image/*"
+                    className="hidden"
+                    onChange={handleImageUpload}
+                  />
+                  <div className="text-center">
+                    <p className="text-xs font-medium text-slate-600 dark:text-slate-300">
+                      {watchedFirstName && watchedLastName
+                        ? `${watchedFirstName} ${watchedLastName}`
+                        : "Employee Name"}
+                    </p>
+                    <p className="text-[10px] text-muted-foreground">
+                      Click to upload photo
+                    </p>
+                  </div>
+                </div>
+
+                {/* Code + Date */}
+                <div className="mt-4 pt-4 border-t border-slate-100 dark:border-slate-800 space-y-3">
+                  <Field
+                    label="Employee Code"
+                    required
+                    error={errors.employeeCode?.message}
+                  >
+                    <Input
+                      placeholder="EMP-001"
+                      className="font-mono"
+                      {...register("employeeCode")}
+                    />
+                  </Field>
+                  <Field
+                    label="Joining Date"
+                    required
+                    error={errors.joiningDate?.message}
+                  >
+                    <Input type="date" {...register("joiningDate")} />
+                  </Field>
+                </div>
+              </div>
+
+              {/* System Access */}
+              <div className="bg-white dark:bg-slate-900/50 border border-slate-200 dark:border-slate-800 rounded-xl p-5 shadow-sm">
+                <SectionHeader
+                  icon={Shield}
+                  title="System Access"
+                  subtitle={isEdit ? "Manage role" : "Role & login credentials"}
+                  badge={isEdit ? undefined : "Optional"}
+                />
+                <div className="space-y-3">
+                  <Field
+                    label={isEdit ? "Update Role" : "Assign Role"}
+                    hint={
+                      isEdit
+                        ? "Update employee's system role"
+                        : "Defaults to Employee if not selected"
+                    }
+                  >
+                    <Controller
+                      control={control}
+                      name="roleId"
+                      render={({ field }) => (
+                        <Select
+                          onValueChange={field.onChange}
+                          value={field.value || ""}
+                        >
+                          <SelectTrigger>
+                            <SelectValue placeholder="Select role..." />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {rolesList.map((r: any) => (
+                              <SelectItem key={r.id} value={r.id}>
+                                <div className="flex items-center gap-2">
+                                  <Shield className="h-3.5 w-3.5 text-muted-foreground" />
+                                  {r.name}
+                                </div>
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      )}
+                    />
+                  </Field>
+                  {!isEdit && (
+                    <>
+                      <Field
+                        label="Default Password"
+                        hint="Employee uses this to first log in"
+                      >
+                        <div className="relative">
+                          <KeyRound className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground" />
+                          <Input
+                            type={showPassword ? "text" : "password"}
+                            placeholder="PayMatrix@123"
+                            className="pl-8 pr-9 font-mono text-sm"
+                            {...register("password")}
+                          />
+                          <button
+                            type="button"
+                            className="absolute right-2.5 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors"
+                            onClick={() => setShowPassword((v) => !v)}
+                          >
+                            {showPassword ? (
+                              <EyeOff className="h-3.5 w-3.5" />
+                            ) : (
+                              <Eye className="h-3.5 w-3.5" />
+                            )}
+                          </button>
+                        </div>
+                      </Field>
+                      <div className="rounded-md bg-blue-50 dark:bg-blue-950/30 border border-blue-100 dark:border-blue-900 px-3 py-2.5 flex gap-2">
+                        <Info className="h-3.5 w-3.5 text-blue-500 mt-0.5 shrink-0" />
+                        <p className="text-[10px] text-blue-700 dark:text-blue-300 leading-relaxed">
+                          Login is only created if the employee has an email
+                          address. Ask them to change password on first login.
+                        </p>
+                      </div>
+                    </>
+                  )}
+                </div>
               </div>
             </div>
-          </form>
-        </CardContent>
-      </Card>
+
+            {/* RIGHT: All Details */}
+            <div className="space-y-5">
+              {/* Personal Information */}
+              <div className="bg-white dark:bg-slate-900/50 border border-slate-200 dark:border-slate-800 rounded-xl p-5 shadow-sm">
+                <SectionHeader
+                  icon={User}
+                  title="Personal Information"
+                  subtitle="Basic identity details"
+                />
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                  <Field
+                    label="First Name"
+                    required
+                    error={errors.firstName?.message}
+                  >
+                    <Input placeholder="Karan" {...register("firstName")} />
+                  </Field>
+                  <Field
+                    label="Last Name"
+                    required
+                    error={errors.lastName?.message}
+                  >
+                    <Input placeholder="Harsora" {...register("lastName")} />
+                  </Field>
+                  <Field label="Gender">
+                    <Controller
+                      control={control}
+                      name="gender"
+                      render={({ field }) => (
+                        <Select
+                          onValueChange={field.onChange}
+                          value={field.value || ""}
+                        >
+                          <SelectTrigger>
+                            <SelectValue placeholder="Select..." />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="MALE">Male</SelectItem>
+                            <SelectItem value="FEMALE">Female</SelectItem>
+                            <SelectItem value="OTHER">Other</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      )}
+                    />
+                  </Field>
+                  <Field label="Blood Group">
+                    <Input placeholder="B+" {...register("bloodGroup")} />
+                  </Field>
+                </div>
+              </div>
+
+              {/* Employment Details */}
+              <div className="bg-white dark:bg-slate-900/50 border border-slate-200 dark:border-slate-800 rounded-xl p-5 shadow-sm">
+                <SectionHeader
+                  icon={Briefcase}
+                  title="Employment Details"
+                  subtitle="Organizational assignment"
+                />
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                  <Field label="Department">
+                    <Controller
+                      control={control}
+                      name="departmentId"
+                      render={({ field }) => (
+                        <Select
+                          onValueChange={field.onChange}
+                          value={field.value || ""}
+                        >
+                          <SelectTrigger>
+                            <SelectValue placeholder="Department..." />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {deptList.map((d: any) => (
+                              <SelectItem key={d.id} value={d.id}>
+                                {d.name}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      )}
+                    />
+                  </Field>
+                  <Field label="Designation">
+                    <Controller
+                      control={control}
+                      name="designationId"
+                      render={({ field }) => (
+                        <Select
+                          onValueChange={field.onChange}
+                          value={field.value || ""}
+                        >
+                          <SelectTrigger>
+                            <SelectValue placeholder="Designation..." />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {desigList.map((d: any) => (
+                              <SelectItem key={d.id} value={d.id}>
+                                {d.name}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      )}
+                    />
+                  </Field>
+                  <Field label="Branch">
+                    <Controller
+                      control={control}
+                      name="branchId"
+                      render={({ field }) => (
+                        <Select
+                          onValueChange={field.onChange}
+                          value={field.value || ""}
+                        >
+                          <SelectTrigger>
+                            <SelectValue placeholder="Branch..." />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {branchList.map((b: any) => (
+                              <SelectItem key={b.id} value={b.id}>
+                                {b.name}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      )}
+                    />
+                  </Field>
+                </div>
+              </div>
+
+              {/* Contact Information */}
+              <div className="bg-white dark:bg-slate-900/50 border border-slate-200 dark:border-slate-800 rounded-xl p-5 shadow-sm">
+                <SectionHeader
+                  icon={Phone}
+                  title="Contact Information"
+                  subtitle="Email is used as login username"
+                />
+                <div className="grid grid-cols-2 gap-4">
+                  <Field
+                    label="Email"
+                    error={errors.email?.message}
+                    hint="Required for system login"
+                  >
+                    <Input
+                      type="email"
+                      placeholder="karan@company.com"
+                      {...register("email")}
+                    />
+                  </Field>
+                  <Field label="Mobile">
+                    <Input
+                      placeholder="+91 98765 43210"
+                      {...register("phone")}
+                    />
+                  </Field>
+                  <Field label="Address" className="col-span-2">
+                    <Input
+                      placeholder="Residential address"
+                      {...register("address")}
+                    />
+                  </Field>
+                </div>
+              </div>
+
+              {/* Bank Account */}
+              <div className="bg-white dark:bg-slate-900/50 border border-slate-200 dark:border-slate-800 rounded-xl p-5 shadow-sm">
+                <SectionHeader
+                  icon={Banknote}
+                  title="Bank Account"
+                  subtitle="For salary disbursement"
+                />
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                  <Field label="Bank Name" className="md:col-span-2">
+                    <Input
+                      placeholder="e.g. HDFC Bank"
+                      {...register("bankName")}
+                    />
+                  </Field>
+                  <Field label="IFSC Code">
+                    <Input
+                      placeholder="HDFC0001234"
+                      className="font-mono"
+                      {...register("ifscCode")}
+                    />
+                  </Field>
+                  <Field label="Account Number">
+                    <Input
+                      placeholder="Account number"
+                      className="font-mono"
+                      {...register("accountNumber")}
+                    />
+                  </Field>
+                  <Field label="Account Holder" className="md:col-span-2">
+                    <Input
+                      placeholder="As per bank records"
+                      {...register("accountHolder")}
+                    />
+                  </Field>
+                </div>
+              </div>
+
+              {/* Statutory & Compliance */}
+              <div className="bg-white dark:bg-slate-900/50 border border-slate-200 dark:border-slate-800 rounded-xl p-5 shadow-sm">
+                <SectionHeader
+                  icon={CreditCard}
+                  title="Statutory & Compliance"
+                  subtitle="Tax and government identifiers"
+                />
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                  <Field label="PAN Number">
+                    <Input
+                      placeholder="ABCDE1234F"
+                      className="font-mono uppercase"
+                      {...register("panNumber")}
+                    />
+                  </Field>
+                  <Field label="Aadhaar / National ID">
+                    <Input
+                      placeholder="1234 5678 9012"
+                      className="font-mono"
+                      {...register("nationalIdNumber")}
+                    />
+                  </Field>
+                  <Field label="UAN Number">
+                    <Input
+                      placeholder="Universal Account No."
+                      className="font-mono"
+                      {...register("uanNumber")}
+                    />
+                  </Field>
+                  <Field label="ESI Number">
+                    <Input
+                      placeholder="ESI / Insurance No."
+                      className="font-mono"
+                      {...register("esiNumber")}
+                    />
+                  </Field>
+                </div>
+              </div>
+            </div>
+          </div>
+        </form>
+      </div>
+
+      <FormFooter
+        formId="employee-form"
+        isSaving={createMut.isPending || updateMut.isPending}
+        saveLabel={isEdit ? "Update Employee" : "Save & Create Employee"}
+        onClear={() => {
+          reset();
+          setAvatarPreview(null);
+        }}
+        onCancel={() => nav("/employees")}
+      />
     </div>
   );
 }

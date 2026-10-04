@@ -5,13 +5,12 @@ import {
   HelpCircle,
   Moon,
   Sun,
-  ChevronRight,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import { Dropdown, DropdownItem } from "@/components/ui/dropdown";
-import { useLocation, Link } from "react-router-dom";
 import { useEffect, useState } from "react";
+import { useAuth } from "@/context/AuthContext";
+import { getImageUrl } from "@/config/env";
 
 export function Header({
   onToggleSidebar,
@@ -22,12 +21,25 @@ export function Header({
   onToggleMobile: () => void;
   onOpenCommand: () => void;
 }) {
+  const { user, logout } = useAuth();
   const [dark, setDark] = useState(false);
+  const [imgError, setImgError] = useState(false);
+
   useEffect(() => {
     document.documentElement.classList.toggle("dark", dark);
   }, [dark]);
-  const loc = useLocation();
-  const crumbs = loc.pathname.split("/").filter(Boolean);
+
+  const userPhoto = user?.employee?.profilePhotoUrl || user?.profilePhotoUrl;
+  const displayName = user?.employee
+    ? `${user.employee.firstName} ${user.employee.lastName}`
+    : user?.name || user?.email?.split("@")[0] || "User";
+
+  const initials = (
+    user?.employee
+      ? `${user.employee.firstName?.[0] || ""}${user.employee.lastName?.[0] || ""}`
+      : user?.email?.slice(0, 2) || "U"
+  ).toUpperCase();
+
   return (
     <header className="h-[56px] border-b bg-background flex items-center gap-3 px-4 sticky top-0 z-20">
       <Button
@@ -74,18 +86,28 @@ export function Header({
         <Dropdown
           trigger={
             <button className="flex items-center gap-2 ml-2">
-              <img
-                src="https://i.pravatar.cc/150?img=12"
-                className="h-8 w-8 rounded-full"
-              />
-              <span className="hidden md:block text-sm font-medium">Admin</span>
+              {userPhoto && !imgError ? (
+                <img
+                  src={getImageUrl(userPhoto)}
+                  alt={displayName}
+                  className="h-8 w-8 rounded-full object-cover border border-slate-200 dark:border-slate-700 shadow-sm"
+                  onError={() => setImgError(true)}
+                />
+              ) : (
+                <div className="h-8 w-8 rounded-full bg-primary/10 text-primary flex items-center justify-center font-bold text-xs border border-primary/20 shadow-sm">
+                  {initials}
+                </div>
+              )}
+              <span className="hidden md:block text-sm font-medium">
+                {displayName}
+              </span>
             </button>
           }
         >
           <DropdownItem>My Profile</DropdownItem>
           <DropdownItem>Preferences</DropdownItem>
           <DropdownItem>Security</DropdownItem>
-          <DropdownItem>Logout</DropdownItem>
+          <DropdownItem onClick={() => logout()}>Logout</DropdownItem>
         </Dropdown>
       </div>
     </header>

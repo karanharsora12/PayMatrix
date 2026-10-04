@@ -6,6 +6,7 @@ import { Users, UserCheck, Palmtree, Wallet, Clock, AlertCircle, ArrowUpRight, G
 import { LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer, PieChart, Pie, Cell, BarChart, Bar } from "recharts"
 import { useDashboardSummary } from "@/hooks/useDashboard"
 import { payrollChart } from "@/mock/data"
+import { useAuth } from "@/context/AuthContext"
 
 const donut=[{name:"Active",value:1120,color:"#2563eb"},{name:"On Leave",value:42,color:"#f59e0b"},{name:"Inactive",value:86,color:"#e5e7eb"}]
 const attendanceData=[{name:"Present",value:1086},{name:"Absent",value:64},{name:"Late",value:56},{name:"Half Day",value:42}]
@@ -13,6 +14,7 @@ const deptData=[{dept:"Engineering",count:342},{dept:"Sales",count:210},{dept:"M
 
 export default function Dashboard(){
   const { data: summary, isLoading, isError } = useDashboardSummary();
+  const { user } = useAuth();
 
   // Use live data if available, otherwise mock
   const kpis = summary ? [
@@ -20,25 +22,24 @@ export default function Dashboard(){
     {label:"Present Today", value: String(summary.attendance.present), change:`${summary.attendance.present} present`, icon:UserCheck, color:"text-emerald-600 bg-emerald-50"},
     {label:"On Leave", value: String(summary.attendance.onLeave), change:`${summary.attendance.onLeave} on leave`, icon:Palmtree, color:"text-amber-600 bg-amber-50"},
     {label:"Payroll This Month", value: formatCurrency(summary.payroll.net), change:"Net payable", icon:Wallet, color:"text-violet-600 bg-violet-50"},
-    {label:"Pending Payroll", value:"—", change:"View payroll runs", icon:Clock, color:"text-orange-600 bg-orange-50"},
+    {label:"Payslips Generated", value: "1,120", change:"This month", icon:Clock, color:"text-orange-600 bg-orange-50"},
     {label:"Inactive", value: String(summary.employees.inactive), change:"Inactive", icon:ArrowUpRight, color:"text-zinc-600 bg-zinc-100"},
   ] : [
     {label:"Total Employees", value:"1,248", change:"+4.8% vs last month", icon:Users, color:"text-blue-600 bg-blue-50"},
     {label:"Present Today", value:"1,086", change:"87% attendance", icon:UserCheck, color:"text-emerald-600 bg-emerald-50"},
     {label:"On Leave", value:"42", change:"3.4% of workforce", icon:Palmtree, color:"text-amber-600 bg-amber-50"},
     {label:"Payroll This Month", value:"₹80.1L", change:"Net payable", icon:Wallet, color:"text-violet-600 bg-violet-50"},
-    {label:"Pending Payroll", value:"128", change:"Awaiting process", icon:Clock, color:"text-orange-600 bg-orange-50"},
+    {label:"Payslips Generated", value:"1,120", change:"This month", icon:Clock, color:"text-orange-600 bg-orange-50"},
     {label:"Net Salary Avg", value:"₹64,200", change:"+2.1% vs last", icon:ArrowUpRight, color:"text-zinc-600 bg-zinc-100"},
   ];
 
   if (isLoading) {
-    return <div className="space-y-4"><div className="grid grid-cols-6 gap-4">{Array.from({length:6}).map((_,i)=><Card key={i} className="h-[110px] animate-pulse bg-muted"/> )}</div><Card className="h-[300px] animate-pulse bg-muted"/></div>
+    return <div className="space-y-4 p-4 md:p-6 lg:p-8"><div className="grid grid-cols-6 gap-4">{Array.from({length:6}).map((_,i)=><Card key={i} className="h-[110px] animate-pulse bg-muted"/> )}</div><Card className="h-[300px] animate-pulse bg-muted"/></div>
   }
 
-  return <div className="space-y-6">
+  return <div className="space-y-6 p-4 md:p-6 lg:p-8 max-w-screen-2xl mx-auto">
     <div className="flex flex-wrap items-start justify-between gap-4">
-      <div><h1 className="text-2xl font-semibold tracking-tight">Good Morning, Admin</h1><p className="text-sm text-muted-foreground">Here's what's happening with your workforce today.{isError && <span className="text-amber-600"> (showing cached data — API unavailable)</span>}</p></div>
-      <Button>Process Payroll</Button>
+      <div><h1 className="text-2xl font-semibold tracking-tight">Good Morning, {user?.name || user?.email?.split('@')[0] || "User"}</h1><p className="text-sm text-muted-foreground">Here's what's happening with your workforce today.{isError && <span className="text-amber-600"> (showing cached data — API unavailable)</span>}</p></div>
     </div>
 
     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-4">
@@ -102,24 +103,7 @@ export default function Dashboard(){
         </CardContent>
       </Card>
 
-      <Card className="col-span-12 lg:col-span-4">
-        <CardHeader><CardTitle>Payroll Status</CardTitle></CardHeader>
-        <CardContent className="space-y-3">
-          <div className="rounded-lg border p-4 bg-card">
-            <div className="text-xs text-muted-foreground">Payroll Period</div><div className="font-semibold">September 2026</div>
-            <div className="mt-3 grid grid-cols-2 gap-3 text-sm">
-              <div><div className="text-muted-foreground text-xs">Status</div><Badge variant="warning">Processing</Badge></div>
-              <div><div className="text-muted-foreground text-xs">Employees</div><div className="font-medium">{summary?.employees.total ?? 1248}</div></div>
-              <div><div className="text-muted-foreground text-xs">Processed</div><div className="font-medium text-emerald-600">{summary?.attendance.present ?? 1120}</div></div>
-              <div><div className="text-muted-foreground text-xs">Pending</div><div className="font-medium text-amber-600">{summary ? summary.employees.total - summary.attendance.present : 128}</div></div>
-            </div>
-            <div className="mt-3 w-full bg-muted rounded-full h-2"><div className="bg-primary h-2 rounded-full" style={{width:"89%"}}/></div>
-            <Button className="w-full mt-4">Process Remaining</Button>
-          </div>
-        </CardContent>
-      </Card>
-
-      <Card className="col-span-12 lg:col-span-8">
+      <Card className="col-span-12 lg:col-span-12">
         <CardHeader><CardTitle>Upcoming Events</CardTitle></CardHeader>
         <CardContent className="grid grid-cols-1 md:grid-cols-2 gap-3">
           <div className="rounded-lg border p-3 flex gap-3"><div className="h-9 w-9 rounded-full bg-pink-100 flex items-center justify-center"><Cake className="h-4 w-4 text-pink-600"/></div><div><div className="text-sm font-medium">Birthdays This Week</div><div className="text-xs text-muted-foreground">5 employees • Tomorrow: Priya Sharma</div></div></div>
