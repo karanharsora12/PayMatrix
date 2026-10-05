@@ -23,18 +23,20 @@ import type { AgGridReact } from "ag-grid-react";
 import { Upload, User, Edit2, Trash2 } from "lucide-react";
 import { useCallback, useMemo, useRef, useState } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
+import { useAlert } from "@/components/common/AlertProvider";
+import { employeeApi } from "@/api/employees";
 
 export default function Employees() {
   const { hasPermission } = useAuth();
   const gridRef = useRef<AgGridReact>(null);
   const nav = useNavigate();
   const [searchParams, setSearchParams] = useSearchParams();
+  const { confirm } = useAlert();
   const q = searchParams.get("search") ?? "";
   const dept = searchParams.get("department") ?? "";
   const desig = searchParams.get("designation") ?? "";
   const status = searchParams.get("status") ?? "";
   const [showImport, setShowImport] = useState(false);
-  const [deletedIds, setDeletedIds] = useState<Set<string | number>>(new Set());
 
   const setParam = (key: string, value: string) => {
     const next = new URLSearchParams(searchParams);
@@ -256,9 +258,6 @@ export default function Employees() {
     let source: any[] =
       data?.data && data.data.length > 0 ? [...data.data] : [];
 
-    // Filter out deleted
-    source = source.filter((e) => !deletedIds.has(e.id));
-
     if (q) {
       const query = q.toLowerCase();
       source = source.filter((e) =>
@@ -309,21 +308,27 @@ export default function Employees() {
       );
     }
     return source;
-  }, [
-    data,
-    deletedIds,
-    q,
-    dept,
-    desig,
-    status,
-    selectedDeptObj,
-    designationOptions,
-  ]);
+  }, [data, q, dept, desig, status, selectedDeptObj, designationOptions]);
 
-  const handleDelete = useCallback((id: string | number, name: string) => {
-    setDeletedIds((prev) => new Set([...prev, id]));
-    toast.success(`Removed ${name} successfully`);
-  }, []);
+  const handleDelete = useCallback(
+    (id: string | number, name: string) => {
+      confirm({
+        title: "Delete Employee",
+        message: `Are you sure you want to remove ${name}? This action cannot be undone.`,
+        confirmText: "Delete",
+        onConfirm: async () => {
+          try {
+            await employeeApi.remove(id.toString());
+            toast.success(`Removed ${name} successfully`);
+            refetch();
+          } catch (err: any) {
+            toast.error(err.message || "Failed to delete employee");
+          }
+        },
+      });
+    },
+    [confirm, refetch],
+  );
 
   const columnDefs = useMemo<ColDef[]>(() => {
     const cols: ColDef[] = [
@@ -367,14 +372,6 @@ export default function Employees() {
         width: 120,
         valueGetter: (params) =>
           params.data?.branch?.name ?? params.data?.branch ?? "—",
-      },
-      {
-        field: "salary",
-        headerName: "Salary",
-        width: 120,
-        type: "numericColumn",
-        valueGetter: (params) => Number(params.data?.salary ?? 0),
-        valueFormatter: (params) => formatCurrency(Number(params.value ?? 0)),
       },
       {
         field: "status",

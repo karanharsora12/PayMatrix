@@ -99,7 +99,7 @@ export function Header({
             </button>
           }
         >
-          <DropdownItem onClick={() => nav(`/employees/${user.employeeId}`)}>
+          <DropdownItem onClick={() => nav(`/employees/${user?.employeeId}`)}>
             My Profile
           </DropdownItem>
           <DropdownItem onClick={() => logout()}>Logout</DropdownItem>
