@@ -99,12 +99,9 @@ export function Header({
             </button>
           }
         >
-          {user?.employeeId ? (
-            <DropdownItem onClick={() => nav(`/employees/${user.employeeId}`)}>My Profile</DropdownItem>
-          ) : (
-            <DropdownItem>My Profile</DropdownItem>
-          )}
-          <DropdownItem>Preferences</DropdownItem>
+          <DropdownItem onClick={() => nav(`/employees/${user.employeeId}`)}>
+            My Profile
+          </DropdownItem>
           <DropdownItem onClick={() => logout()}>Logout</DropdownItem>
         </Dropdown>
       </div>

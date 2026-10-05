@@ -30,20 +30,12 @@ import Reports from "@/pages/Reports";
 import UsersRoles from "@/pages/UsersRoles";
 import UserParameters from "@/pages/UserParameters";
 import EmailTemplates from "@/pages/EmailTemplates";
-import Settings from "@/pages/Settings";
 import Placeholder from "@/pages/Placeholder";
 import Login from "@/pages/Login";
 import { useState } from "react";
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
-import { Input } from "@/components/ui/input";
-import { Search } from "lucide-react";
-import { useAuth } from "@/context/AuthContext";
+import { CommandPalette } from "@/components/layout/CommandPalette";
 import { Toaster } from "@/components/ui/toaster";
+import { useAuth } from "@/context/AuthContext";
 
 function Protected() {
   const { user, loading } = useAuth();
@@ -64,33 +56,7 @@ function Protected() {
   return <Outlet />;
 }
 
-function CommandPalette({
-  open,
-  onOpenChange,
-}: {
-  open: boolean;
-  onOpenChange: (v: boolean) => void;
-}) {
-  const [q, setQ] = useState("");
-  return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-xl" onClose={() => onOpenChange(false)}>
-        <DialogHeader>
-          <DialogTitle>Search PayMatrix</DialogTitle>
-        </DialogHeader>
-        <div className="relative">
-          <Search className="absolute left-3 top-2.5 h-4 w-4 text-muted-foreground" />
-          <Input
-            placeholder="Search employees, payroll, reports..."
-            className="pl-9"
-            value={q}
-            onChange={(e) => setQ(e.target.value)}
-          />
-        </div>
-      </DialogContent>
-    </Dialog>
-  );
-}
+
 
 export default function App() {
   const [cmd, setCmd] = useState(false);
@@ -128,7 +94,6 @@ export default function App() {
               path="/audit-logs"
               element={<Placeholder title="Audit Logs" />}
             />
-            <Route path="/settings" element={<Settings />} />
             <Route path="/organization/company" element={<Company />} />
             <Route path="/locations" element={<Locations />} />
             <Route path="/employee-groups" element={<EmployeeGroups />} />

@@ -91,7 +91,7 @@ function DocumentTypesTab({
   };
 
   const handleDelete = (id: string) => {
-    if (confirm("Are you sure?")) deleteMutation.mutate(id);
+    deleteMutation.mutate(id);
   };
 
   const handleSave = () => {
@@ -115,9 +115,9 @@ function DocumentTypesTab({
 
   const columnDefs = useMemo<ColDef[]>(
     () => [
-      { field: "code", headerName: "Code", width: 70 },
-      { field: "name", headerName: "Name", width: 150 },
-      { field: "description", headerName: "Description", width: 200 },
+      { field: "code", headerName: "Code", width: 120 },
+      { field: "name", headerName: "Name", width: 200 },
+      { field: "description", headerName: "Description", width: 300 },
       {
         headerName: "",
         width: 60,
@@ -125,7 +125,7 @@ function DocumentTypesTab({
         filter: false,
         cellRenderer: GridDeleteCell,
         cellRendererParams: {
-          onDelete: (params: any) => handleDelete(params.data.id),
+          onDelete: handleDelete,
         },
       },
     ],
@@ -312,17 +312,7 @@ function DocumentMasterTab({
   const columnDefs = useMemo<ColDef[]>(
     () => [
       { field: "code", headerName: "Code", width: 120 },
-      { field: "name", headerName: "Name", flex: 1 },
-      {
-        field: "templateContent",
-        headerName: "Template Status",
-        width: 150,
-        cellRenderer: (params: any) => (
-          <Badge variant={params.value ? "success" : "secondary"}>
-            {params.value ? "Configured" : "Pending"}
-          </Badge>
-        ),
-      },
+      { field: "name", headerName: "Name", width: 300 },
       {
         headerName: "",
         width: 80,
@@ -361,7 +351,7 @@ function DocumentMasterTab({
             ← Back to List
           </Button>
           <h2 className="text-lg font-semibold">
-            Editing Template: {selectedDoc?.name}
+            Template: {selectedDoc?.name}
           </h2>
         </div>
 
