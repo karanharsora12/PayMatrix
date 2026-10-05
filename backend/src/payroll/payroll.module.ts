@@ -9,6 +9,7 @@ import { PayslipsController } from './payslips/payslips.controller';
 import { PayrollGateway } from './payroll.gateway';
 
 import { EmailTemplatesModule } from '../email-templates/email-templates.module';
+import { ShiftsModule } from '../shifts/shifts.module';
 
 import { PayslipPdfService } from './payslips/payslip-pdf.service';
 
@@ -20,7 +21,7 @@ export { PayslipsService } from './payslips/payslips.service';
 export { PayslipPdfService } from './payslips/payslip-pdf.service';
 
 @Module({
-  imports: [EmailTemplatesModule],
+  imports: [EmailTemplatesModule, ShiftsModule],
   controllers: [PayrollRunsController, PayslipsController],
   providers: [
     PaidDaysCalculationService,
