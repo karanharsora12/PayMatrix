@@ -1,30 +1,28 @@
-import { useState, useMemo, useCallback, useRef } from "react";
-import { Card, CardContent } from "@/components/ui/card";
+import { departmentApi } from "@/api/departments";
+import { designationApi } from "@/api/designations";
+import { DataGrid } from "@/components/common/DataGrid";
+import { GridDeleteCell } from "@/components/common/GridDeleteCell";
+import { ListingCard } from "@/components/common/ListingCard";
+import { ListingHeader } from "@/components/common/ListingHeader";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { formatCurrency } from "@/lib/utils";
-import { Search, Plus, Upload, Download, Eye } from "lucide-react";
-import { useNavigate, useSearchParams } from "react-router-dom";
-import { NativeSelect } from "@/components/ui/select";
 import {
   Dialog,
   DialogContent,
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
+import { NativeSelect } from "@/components/ui/select";
+import { toast } from "@/components/ui/use-toast";
 import { useAuth } from "@/context/AuthContext";
-import { toast } from "sonner";
-import { useQuery } from "@tanstack/react-query";
-import { departmentApi } from "@/api/departments";
-import { designationApi } from "@/api/designations";
 import { useEmployees } from "@/hooks/useEmployees";
-import { DataGrid } from "@/components/common/DataGrid";
-import { GridDeleteCell } from "@/components/common/GridDeleteCell";
-import { ListingHeader } from "@/components/common/ListingHeader";
-import { ListingCard } from "@/components/common/ListingCard";
 import { gridExportExcel, gridExportPdf, gridPrint } from "@/lib/gridExport";
+import { formatCurrency } from "@/lib/utils";
+import { useQuery } from "@tanstack/react-query";
 import type { ColDef } from "ag-grid-community";
 import type { AgGridReact } from "ag-grid-react";
+import { Upload } from "lucide-react";
+import { useCallback, useMemo, useRef, useState } from "react";
+import { useNavigate, useSearchParams } from "react-router-dom";
 
 export default function Employees() {
   const { hasPermission } = useAuth();
@@ -151,11 +149,15 @@ export default function Employees() {
     }
 
     if (list.length === 0) {
-      ["Engineering", "Finance", "Marketing", "Sales", "Human Resources"].forEach(
-        (name) => {
-          list.push({ id: name, name });
-        },
-      );
+      [
+        "Engineering",
+        "Finance",
+        "Marketing",
+        "Sales",
+        "Human Resources",
+      ].forEach((name) => {
+        list.push({ id: name, name });
+      });
     }
 
     return list;
@@ -165,9 +167,7 @@ export default function Employees() {
     if (!dept || dept === "ALL") return null;
     return (
       departmentOptions.find(
-        (d) =>
-          d.id === dept ||
-          d.name.toLowerCase() === dept.toLowerCase(),
+        (d) => d.id === dept || d.name.toLowerCase() === dept.toLowerCase(),
       ) || null
     );
   }, [dept, departmentOptions]);
@@ -468,7 +468,9 @@ export default function Employees() {
                 : "All Designations"
             }
             className="w-[180px] h-8 text-xs bg-white"
-            disabled={Boolean(dept && dept !== "ALL" && designationOptions.length === 0)}
+            disabled={Boolean(
+              dept && dept !== "ALL" && designationOptions.length === 0,
+            )}
           >
             <option value="ALL">All Designations</option>
             {designationOptions.map((d) => (

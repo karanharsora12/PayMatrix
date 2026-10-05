@@ -25,7 +25,7 @@ import type { ColDef } from "ag-grid-community";
 import type { AgGridReact } from "ag-grid-react";
 import { Calculator, Edit2, Plus, RefreshCw, Trash2 } from "lucide-react";
 import { useMemo, useRef, useState } from "react";
-import { toast } from "sonner";
+import { toast } from "@/components/ui/use-toast";
 
 export default function SalaryComponents() {
   const [activeTab, setActiveTab] = useState("ALL");

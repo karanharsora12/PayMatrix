@@ -43,6 +43,7 @@ import {
 import { Input } from "@/components/ui/input";
 import { Search } from "lucide-react";
 import { useAuth } from "@/context/AuthContext";
+import { Toaster } from "@/components/ui/toaster";
 
 function Protected() {
   const { user, loading } = useAuth();
@@ -108,7 +109,6 @@ export default function App() {
             <Route path="/departments" element={<Departments />} />
             <Route path="/designations" element={<Designations />} />
             <Route path="/branches" element={<Branches />} />
-            <Route path="/attendance" element={<Attendance />} />
             <Route path="/attendance-register" element={<Attendance />} />
             <Route path="/shifts" element={<Shifts />} />
             <Route path="/holidays" element={<Holidays />} />
@@ -137,6 +137,7 @@ export default function App() {
           </Route>
         </Route>
       </Routes>
+      <Toaster />
     </BrowserRouter>
   );
 }

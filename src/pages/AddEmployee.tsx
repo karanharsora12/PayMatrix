@@ -1,10 +1,10 @@
-import { uploadApi, getFileUrl } from "@/api";
+import { getFileUrl, uploadApi } from "@/api";
 import { branchApi } from "@/api/branches";
 import { departmentApi } from "@/api/departments";
 import { designationApi } from "@/api/designations";
 import { employeeGroupApi } from "@/api/employeeGroups";
-import { FormFooter } from "@/components/common/FormFooter";
 import { DatePicker } from "@/components/common";
+import { FormFooter } from "@/components/common/FormFooter";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import {
@@ -14,6 +14,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { toast } from "@/components/ui/use-toast";
 import {
   useCreateEmployee,
   useEmployee,
@@ -38,7 +39,6 @@ import {
 } from "lucide-react";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
-import { toast } from "sonner";
 import { z } from "zod";
 
 const schema = z.object({
@@ -607,11 +607,7 @@ export default function AddEmployee() {
                   subtitle="Basic identity details"
                 />
                 <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                  <Field
-                    label="First Name"
-                    required
-                    error={errors.firstName}
-                  >
+                  <Field label="First Name" required error={errors.firstName}>
                     <Input
                       placeholder="Karan"
                       name="firstName"
@@ -619,11 +615,7 @@ export default function AddEmployee() {
                       onChange={handleInputChange}
                     />
                   </Field>
-                  <Field
-                    label="Last Name"
-                    required
-                    error={errors.lastName}
-                  >
+                  <Field label="Last Name" required error={errors.lastName}>
                     <Input
                       placeholder="Harsora"
                       name="lastName"

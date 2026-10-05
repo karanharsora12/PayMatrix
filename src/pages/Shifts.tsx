@@ -24,7 +24,7 @@ import {
 import type { ColDef } from "ag-grid-community";
 import { Clock, History, Moon } from "lucide-react";
 import { useMemo, useState } from "react";
-import { toast } from "sonner";
+import { toast } from "@/components/ui/use-toast";
 
 export default function Shifts() {
   const { data: shiftsData, isLoading } = useShifts({ pageSize: 50 });

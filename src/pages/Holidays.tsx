@@ -25,7 +25,7 @@ import type { ColDef } from "ag-grid-community";
 import type { AgGridReact } from "ag-grid-react";
 import { CalendarCheck, Flag, PartyPopper } from "lucide-react";
 import { useMemo, useRef, useState } from "react";
-import { toast } from "sonner";
+import { toast } from "@/components/ui/use-toast";
 
 export default function Holidays() {
   const gridRef = useRef<AgGridReact>(null);

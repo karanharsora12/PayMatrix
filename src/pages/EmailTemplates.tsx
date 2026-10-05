@@ -57,7 +57,7 @@ import {
   XCircle,
 } from "lucide-react";
 import { useEffect, useMemo, useRef, useState } from "react";
-import { toast } from "sonner";
+import { toast } from "@/components/ui/use-toast";
 
 const TEMPLATE_TYPES = [
   { value: "ALL", label: "All Types" },

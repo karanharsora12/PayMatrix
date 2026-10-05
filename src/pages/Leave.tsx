@@ -34,7 +34,7 @@ import type { ColDef } from "ag-grid-community";
 import type { AgGridReact } from "ag-grid-react";
 import { CheckCircle2, RotateCcw, Trash2, XCircle, User } from "lucide-react";
 import { useMemo, useRef, useState } from "react";
-import { toast } from "sonner";
+import { toast } from "@/components/ui/use-toast";
 
 export default function Leave() {
   const { confirm } = useAlert();

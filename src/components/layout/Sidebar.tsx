@@ -43,60 +43,151 @@ const nav = [
   {
     group: "Organization",
     items: [
-      { label: "Company", icon: Building, path: "/organization/company", perm: "settings.view" },
-      { label: "Branches", icon: Building2, path: "/branches", perm: "branches.view" },
-      { label: "Departments", icon: Layers, path: "/departments", perm: "departments.view" },
-      { label: "Designations", icon: Layers2, path: "/designations", perm: "designations.view" },
-      { label: "Locations", icon: MapPin, path: "/locations", perm: "settings.view" },
+      {
+        label: "Company",
+        icon: Building,
+        path: "/organization/company",
+        perm: "settings.view",
+      },
+      {
+        label: "Branches",
+        icon: Building2,
+        path: "/branches",
+        perm: "branches.view",
+      },
+      {
+        label: "Departments",
+        icon: Layers,
+        path: "/departments",
+        perm: "departments.view",
+      },
+      {
+        label: "Designations",
+        icon: Layers2,
+        path: "/designations",
+        perm: "designations.view",
+      },
+      {
+        label: "Locations",
+        icon: MapPin,
+        path: "/locations",
+        perm: "settings.view",
+      },
     ],
   },
   {
     group: "Employees",
     items: [
-      { label: "Employees", icon: Users, path: "/employees", perm: "employees.view" },
-      { label: "Employee Groups", icon: UsersRound, path: "/employee-groups", perm: "employees.view" },
-      { label: "Documents", icon: File, path: "/documents", perm: "documents.view" },
+      {
+        label: "Employees",
+        icon: Users,
+        path: "/employees",
+        perm: "employees.view",
+      },
+      {
+        label: "Employee Groups",
+        icon: UsersRound,
+        path: "/employee-groups",
+        perm: "employees.view",
+      },
+      {
+        label: "Documents",
+        icon: File,
+        path: "/documents",
+        perm: "documents.view",
+      },
     ],
   },
   {
     group: "Attendance",
     items: [
-      { label: "Attendance", icon: Clock, path: "/attendance", perm: "attendance.view" },
       {
         label: "Attendance Register",
         icon: ClipboardList,
         path: "/attendance-register",
-        perm: "attendance.view"
+        perm: "attendance.view",
       },
-      { label: "Shifts", icon: Timer, path: "/shifts", perm: "attendance.view" },
-      { label: "Holidays", icon: CalendarRange, path: "/holidays", perm: "attendance.view" },
+      {
+        label: "Shifts",
+        icon: Timer,
+        path: "/shifts",
+        perm: "attendance.view",
+      },
+      {
+        label: "Holidays",
+        icon: CalendarRange,
+        path: "/holidays",
+        perm: "attendance.view",
+      },
     ],
   },
   {
     group: "Leave",
-    items: [{ label: "Leave Management", icon: Palmtree, path: "/leave", perm: "leave.view" }],
+    items: [
+      {
+        label: "Leave Management",
+        icon: Palmtree,
+        path: "/leave",
+        perm: "leave.view",
+      },
+    ],
   },
   {
     group: "Payroll",
     items: [
-      { label: "Salary Components", icon: Coins, path: "/salary-components", perm: "salary.view" },
+      {
+        label: "Salary Components",
+        icon: Coins,
+        path: "/salary-components",
+        perm: "salary.view",
+      },
       {
         label: "Salary Structures",
         icon: SlidersHorizontal,
         path: "/salary-structures",
-        perm: "salary.view"
+        perm: "salary.view",
       },
-      { label: "Employee Salary", icon: UserCheck, path: "/employee-salary", perm: "salary.view" },
-      { label: "Payslips", icon: Receipt, path: "/payslips", perm: "payroll.view" },
+      {
+        label: "Employee Salary",
+        icon: UserCheck,
+        path: "/employee-salary",
+        perm: "salary.view",
+      },
+      {
+        label: "Payslips",
+        icon: Receipt,
+        path: "/payslips",
+        perm: "payroll.view",
+      },
     ],
   },
   {
     group: "Administration",
     items: [
-      { label: "Roles & Permissions", icon: ShieldCheck, path: "/roles", perm: "roles.view" },
-      { label: "User Parameters", icon: SlidersHorizontal, path: "/user-parameters", perm: "roles.view" },
-      { label: "Email Templates", icon: Mail, path: "/email-templates", perm: "settings.view" },
-      { label: "Settings", icon: Settings, path: "/settings", perm: "settings.view" },
+      {
+        label: "Roles & Permissions",
+        icon: ShieldCheck,
+        path: "/roles",
+        perm: "roles.view",
+      },
+      {
+        label: "User Parameters",
+        icon: SlidersHorizontal,
+        path: "/user-parameters",
+        perm: "roles.view",
+      },
+      {
+        label: "Email Templates",
+        icon: Mail,
+        path: "/email-templates",
+        perm: "settings.view",
+      },
+      {
+        label: "Settings",
+        icon: Settings,
+        path: "/settings",
+        perm: "settings.view",
+      },
     ],
   },
 ];

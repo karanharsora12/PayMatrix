@@ -1,14 +1,17 @@
-import { useState } from "react";
-import { Card, CardContent } from "@/components/ui/card";
-import { DataGrid } from "@/components/common/DataGrid";
+import type { AttendanceRecord } from "@/api/attendance";
 import { DatePicker } from "@/components/common";
-import type { ColDef } from "ag-grid-community";
-import { useMemo } from "react";
-import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
-import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
+import { DataGrid } from "@/components/common/DataGrid";
 import { ListingCard } from "@/components/common/ListingCard";
 import { ListingHeader } from "@/components/common/ListingHeader";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent } from "@/components/ui/card";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import {
   Select,
@@ -17,42 +20,33 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogDescription,
-} from "@/components/ui/dialog";
-import {
-  Clock,
-  CheckCircle2,
-  XCircle,
-  AlertTriangle,
-  Calendar as CalendarIcon,
-  Fingerprint,
-  Plus,
-  Pencil,
-  LogIn,
-  LogOut,
-  RefreshCw,
-} from "lucide-react";
-import { toast } from "sonner";
+import { toast } from "@/components/ui/use-toast";
+import { useAuth } from "@/context/AuthContext";
 import {
   useAttendance,
-  useAttendanceSummary,
   useAttendanceCalendar,
   useAttendanceLogs,
+  useAttendanceSummary,
   useCreateAttendance,
-  useUpdateAttendance,
   useRecordPunch,
+  useUpdateAttendance,
 } from "@/hooks/useAttendance";
 import { useEmployees } from "@/hooks/useEmployees";
-import type { AttendanceRecord } from "@/api/attendance";
-import { useAuth } from "@/context/AuthContext";
-import { useSelector } from "react-redux";
 import type { RootState } from "@/store";
-import { ShieldAlert, User } from "lucide-react";
+import type { ColDef } from "ag-grid-community";
+import {
+  AlertTriangle,
+  Calendar as CalendarIcon,
+  CheckCircle2,
+  Clock,
+  Fingerprint,
+  Plus,
+  RefreshCw,
+  User,
+  XCircle,
+} from "lucide-react";
+import { useMemo, useState } from "react";
+import { useSelector } from "react-redux";
 
 export default function Attendance() {
   const today = new Date().toISOString().substring(0, 10);

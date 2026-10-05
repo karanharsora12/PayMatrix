@@ -12,7 +12,7 @@ import {
   DialogFooter,
 } from "@/components/ui/dialog";
 import { useAuth } from "@/context/AuthContext";
-import { toast } from "sonner";
+import { toast } from "@/components/ui/use-toast";
 import {
   Eye,
   EyeOff,
@@ -83,7 +83,11 @@ export default function Login() {
         localStorage.removeItem(REMEMBERED_EMAIL_KEY);
       }
 
-      toast.success("Login successful. Welcome back!");
+      toast({
+        title: "Login successful",
+        description: "Welcome back!",
+        variant: "success",
+      });
       navigate("/");
     } catch (err: any) {
       const code =
@@ -118,7 +122,11 @@ export default function Login() {
       }
 
       setServerError(userFriendlyMessage);
-      toast.error(userFriendlyMessage);
+      toast({
+        title: "Authentication Failed",
+        description: userFriendlyMessage,
+        variant: "destructive",
+      });
     } finally {
       setLoading(false);
     }

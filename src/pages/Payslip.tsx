@@ -1,62 +1,48 @@
-import { useState, useMemo, useRef } from "react";
-import { useParams, useNavigate, useSearchParams } from "react-router-dom";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
+import { payslipsApi } from "@/api/payslips";
+import { ActionMenu } from "@/components/common/ActionMenu";
+import { DataGrid } from "@/components/common/DataGrid";
+import { ListingCard } from "@/components/common/ListingCard";
+import { ListingHeader } from "@/components/common/ListingHeader";
 import { Badge } from "@/components/ui/badge";
-import { NativeSelect } from "@/components/ui/select";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent } from "@/components/ui/card";
 import {
   Dialog,
   DialogContent,
-  DialogHeader,
-  DialogTitle,
   DialogDescription,
   DialogFooter,
+  DialogHeader,
+  DialogTitle,
 } from "@/components/ui/dialog";
-import { DataGrid } from "@/components/common/DataGrid";
-import type { ColDef } from "ag-grid-community";
+import { NativeSelect } from "@/components/ui/select";
+import { toast } from "@/components/ui/use-toast";
+import { useEmployees } from "@/hooks/useEmployees";
 import {
-  Printer,
-  FileText,
-  Search,
-  Calendar,
-  Eye,
-  ArrowLeft,
-  Building2,
-  Lock,
-  Mail,
-  Send,
-  Download,
-  PlusCircle,
-  Calculator,
-  CheckCircle2,
-  AlertCircle,
-  RefreshCw,
-  Clock,
-  CalendarDays,
-  FileSpreadsheet,
-} from "lucide-react";
-import { formatCurrency } from "@/lib/utils";
-import {
-  usePayslips,
-  usePayslip,
   useCalculatePayslipPreview,
   useGenerateSinglePayslip,
+  usePayslip,
+  usePayslips,
   useRetryPayslipEmail,
 } from "@/hooks/usePayslips";
-import { payslipsApi } from "@/api/payslips";
-import { useEmployees } from "@/hooks/useEmployees";
-import { toast } from "sonner";
-import { ListingCard } from "@/components/common/ListingCard";
-import { ListingHeader } from "@/components/common/ListingHeader";
 import { gridExportExcel, gridExportPdf, gridPrint } from "@/lib/gridExport";
-import { ActionMenu } from "@/components/common/ActionMenu";
+import { formatCurrency } from "@/lib/utils";
+import type { ColDef } from "ag-grid-community";
+import {
+  AlertCircle,
+  ArrowLeft,
+  Building2,
+  Calculator,
+  CalendarDays,
+  CheckCircle2,
+  Download,
+  Eye,
+  Lock,
+  Mail,
+  Printer,
+  RefreshCw,
+} from "lucide-react";
+import { useMemo, useRef, useState } from "react";
+import { useNavigate, useParams, useSearchParams } from "react-router-dom";
 
 // Helper to convert number to words for financial slip
 function numberToWords(num: number): string {

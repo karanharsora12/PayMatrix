@@ -6,6 +6,7 @@ import {
   fetchUserParameters,
   clearUserParameters,
 } from '@/store/slices/userParametersSlice';
+import { toast } from '@/components/ui/use-toast';
 
 type AuthContextType = {
   user: AuthUser | null;
@@ -53,6 +54,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     await authApi.logout();
     setUser(null);
     dispatch(clearUserParameters());
+    toast({
+      title: "Logged out",
+      description: "You have been successfully logged out.",
+      variant: "info",
+    });
   };
 
   const hasPermission = (perm: string) => {

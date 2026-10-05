@@ -2,7 +2,6 @@ import { useState, useEffect } from "react";
 import { Sidebar } from "./Sidebar";
 import { Header } from "./Header";
 import { Outlet } from "react-router-dom";
-import { Toaster } from "sonner";
 import { AlertProvider } from "@/components/common";
 
 export function AppShell({ onOpenCommand }: { onOpenCommand: () => void }) {
@@ -37,7 +36,6 @@ export function AppShell({ onOpenCommand }: { onOpenCommand: () => void }) {
             <Outlet />
           </main>
         </div>
-        <Toaster richColors position="top-right" />
       </div>
     </AlertProvider>
   );
