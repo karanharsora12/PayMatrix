@@ -96,13 +96,13 @@ export function DatePicker({
           disabled={disabled}
           size={size}
           className={cn(
-            "w-full justify-start text-left font-normal h-9 bg-background px-3 border-input hover:bg-accent/50 transition-colors",
+            "w-full justify-start text-left font-normal h-8 bg-background px-2.5 border-input hover:bg-accent/50 transition-colors text-xs",
             !dateValue && "text-muted-foreground",
             className
           )}
         >
-          <CalendarIcon className="mr-2 h-4 w-4 shrink-0 opacity-70" />
-          <span className="flex-1 truncate text-xs sm:text-sm">
+          <CalendarIcon className="mr-2 h-3.5 w-3.5 shrink-0 opacity-70" />
+          <span className="flex-1 truncate text-xs">
             {dateValue ? format(dateValue, displayFormat) : placeholder}
           </span>
           {clearable && dateValue && !disabled && (

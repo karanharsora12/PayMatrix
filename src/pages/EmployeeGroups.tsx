@@ -206,7 +206,7 @@ export default function EmployeeGroups() {
           <DialogHeader>
             <DialogTitle>Employee Group</DialogTitle>
           </DialogHeader>
-          <div className="space-y-3 mt-4">
+          <div className="space-y-3">
             <div>
               <label className="text-xs font-medium mb-1 block">
                 Group Code
@@ -243,25 +243,24 @@ export default function EmployeeGroups() {
                 }
               />
             </div>
-
-            <DialogFooter className="mt-4">
-              <Button
-                type="button"
-                variant="outline"
-                onClick={() => setOpen(false)}
-              >
-                Close
-              </Button>
-              <Button
-                onClick={handleSave}
-                disabled={createMutation.isPending || updateMutation.isPending}
-              >
-                {createMutation.isPending || updateMutation.isPending
-                  ? "Saving..."
-                  : "Save"}
-              </Button>
-            </DialogFooter>
           </div>
+          <DialogFooter>
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => setOpen(false)}
+            >
+              Close
+            </Button>
+            <Button
+              onClick={handleSave}
+              disabled={createMutation.isPending || updateMutation.isPending}
+            >
+              {createMutation.isPending || updateMutation.isPending
+                ? "Saving..."
+                : "Save"}
+            </Button>
+          </DialogFooter>
         </DialogContent>
       </Dialog>
     </div>

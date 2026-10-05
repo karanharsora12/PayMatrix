@@ -1,9 +1,9 @@
-import { useState, useMemo, useEffect, useRef } from "react";
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
+import { documentMasterApi } from "@/api/documentMaster";
 import { DataGrid } from "@/components/common/DataGrid";
-import { Plus, Pencil, Trash2, X } from "lucide-react";
+import { ListingCard } from "@/components/common/ListingCard";
+import { ListingHeader } from "@/components/common/ListingHeader";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 import {
   Dialog,
   DialogContent,
@@ -12,22 +12,15 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
-import { toast } from "sonner";
-import { documentMasterApi } from "@/api/documentMaster";
-import { ListingCard } from "@/components/common/ListingCard";
-import { ListingHeader } from "@/components/common/ListingHeader";
 import { gridExportExcel, gridExportPdf, gridPrint } from "@/lib/gridExport";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { EditorContent, useEditor } from "@tiptap/react";
+import StarterKit from "@tiptap/starter-kit";
 import type { ColDef } from "ag-grid-community";
 import type { AgGridReact } from "ag-grid-react";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
-import { useEditor, EditorContent } from "@tiptap/react";
-import StarterKit from "@tiptap/starter-kit";
+import { Trash2, X } from "lucide-react";
+import { useEffect, useMemo, useRef, useState } from "react";
+import { toast } from "sonner";
 
 function DocumentTypesTab({
   data,
@@ -254,18 +247,17 @@ function DocumentTypesTab({
                 </Button>
               </div>
             </div>
-
-            <DialogFooter className="mt-4">
-              <Button
-                type="button"
-                variant="outline"
-                onClick={() => setIsAddOpen(false)}
-              >
-                Close
-              </Button>
-              <Button onClick={handleSave}>Save Document Type</Button>
-            </DialogFooter>
           </div>
+          <DialogFooter>
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => setIsAddOpen(false)}
+            >
+              Close
+            </Button>
+            <Button onClick={handleSave}>Save Document Type</Button>
+          </DialogFooter>
         </DialogContent>
       </Dialog>
     </div>

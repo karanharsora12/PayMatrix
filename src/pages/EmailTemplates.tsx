@@ -1,10 +1,10 @@
-import { useState, useMemo, useEffect, useRef } from "react";
-import { useQueryClient } from "@tanstack/react-query";
-import { Button } from "@/components/ui/button";
+import type { EmailLog, EmailTemplate } from "@/api/emailTemplates";
+import { ActionMenu } from "@/components/common/ActionMenu";
+import { DataGrid } from "@/components/common/DataGrid";
+import { ListingCard } from "@/components/common/ListingCard";
+import { ListingHeader } from "@/components/common/ListingHeader";
 import { Badge } from "@/components/ui/badge";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Switch } from "@/components/ui/switch";
+import { Button } from "@/components/ui/button";
 import {
   Dialog,
   DialogContent,
@@ -13,6 +13,8 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import {
   Select,
   SelectContent,
@@ -20,51 +22,42 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { ListingCard } from "@/components/common/ListingCard";
-import { ListingHeader } from "@/components/common/ListingHeader";
-import { DataGrid } from "@/components/common/DataGrid";
+import { Switch } from "@/components/ui/switch";
 import {
-  useEmailTemplates,
-  useEmailVariables,
-  useEmailLogs,
   useCreateEmailTemplate,
-  useUpdateEmailTemplate,
   useDeleteEmailTemplate,
   useDuplicateEmailTemplate,
-  useToggleEmailTemplateStatus,
-  useSetDefaultEmailTemplate,
+  useEmailLogs,
+  useEmailTemplates,
+  useEmailVariables,
   useSendTestEmail,
+  useSetDefaultEmailTemplate,
+  useToggleEmailTemplateStatus,
+  useUpdateEmailTemplate,
 } from "@/hooks/useEmailTemplates";
-import type { EmailTemplate, EmailLog } from "@/api/emailTemplates";
-import { ActionMenu } from "@/components/common/ActionMenu";
-import { useEditor, EditorContent } from "@tiptap/react";
+import { useQueryClient } from "@tanstack/react-query";
+import { EditorContent, useEditor } from "@tiptap/react";
 import StarterKit from "@tiptap/starter-kit";
-import {
-  Mail,
-  Plus,
-  Pencil,
-  Trash2,
-  Copy,
-  Send,
-  Star,
-  Power,
-  Sparkles,
-  ChevronDown,
-  Info,
-  Clock,
-  CheckCircle2,
-  XCircle,
-  AlertCircle,
-  FileText,
-  User,
-  Building,
-  DollarSign,
-  Calendar,
-  Layers,
-} from "lucide-react";
-import { toast } from "sonner";
 import type { ColDef } from "ag-grid-community";
 import type { AgGridReact } from "ag-grid-react";
+import {
+  AlertCircle,
+  CheckCircle2,
+  ChevronDown,
+  Clock,
+  Copy,
+  Mail,
+  Pencil,
+  Plus,
+  Power,
+  Send,
+  Sparkles,
+  Star,
+  Trash2,
+  XCircle,
+} from "lucide-react";
+import { useEffect, useMemo, useRef, useState } from "react";
+import { toast } from "sonner";
 
 const TEMPLATE_TYPES = [
   { value: "ALL", label: "All Types" },
