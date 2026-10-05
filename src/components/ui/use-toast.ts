@@ -3,7 +3,7 @@ import type { ToastActionElement, ToastProps } from "@/components/ui/toast";
 
 const TOAST_LIMIT = 3;
 
-type ToasterToast = ToastProps & {
+type ToasterToast = Omit<ToastProps, "title"> & {
   id: string;
   title?: React.ReactNode;
   description?: React.ReactNode;
@@ -148,16 +148,25 @@ function getAutoDismissDuration(variant?: string): number {
   }
 }
 
+export type ToastOptions =
+  | string
+  | {
+      description?: React.ReactNode;
+      duration?: number;
+      action?: ToastActionElement;
+      [key: string]: any;
+    };
+
 interface ToastFunction {
   (props: Toast): {
     id: string;
     dismiss: () => void;
     update: (props: ToasterToast) => void;
   };
-  success: (message: string, description?: string) => void;
-  error: (message: string, description?: string) => void;
-  warning: (message: string, description?: string) => void;
-  info: (message: string, description?: string) => void;
+  success: (titleOrDescription: React.ReactNode, options?: ToastOptions) => void;
+  error: (titleOrDescription: React.ReactNode, options?: ToastOptions) => void;
+  warning: (titleOrDescription: React.ReactNode, options?: ToastOptions) => void;
+  info: (titleOrDescription: React.ReactNode, options?: ToastOptions) => void;
   dismiss: (toastId?: string) => void;
 }
 
@@ -197,34 +206,57 @@ const toast: ToastFunction = function (props: Toast) {
   };
 } as ToastFunction;
 
-toast.success = (titleOrDescription: string, description?: string) => {
+function parseOptions(
+  titleOrDescription: React.ReactNode,
+  options?: ToastOptions
+): { title?: React.ReactNode; description?: React.ReactNode; duration?: number; action?: ToastActionElement } {
+  if (typeof options === "string") {
+    return {
+      title: titleOrDescription,
+      description: options,
+    };
+  }
+  if (options && typeof options === "object") {
+    return {
+      title: titleOrDescription,
+      description: options.description,
+      duration: options.duration,
+      action: options.action,
+    };
+  }
+  return {
+    title: titleOrDescription,
+  };
+}
+
+toast.success = (titleOrDescription: React.ReactNode, options?: ToastOptions) => {
+  const parsed = parseOptions(titleOrDescription, options);
   toast({
-    title: description ? titleOrDescription : titleOrDescription,
-    description: description ? description : undefined,
+    ...parsed,
     variant: "success",
   });
 };
 
-toast.error = (titleOrDescription: string, description?: string) => {
+toast.error = (titleOrDescription: React.ReactNode, options?: ToastOptions) => {
+  const parsed = parseOptions(titleOrDescription, options);
   toast({
-    title: description ? titleOrDescription : titleOrDescription,
-    description: description ? description : undefined,
+    ...parsed,
     variant: "destructive",
   });
 };
 
-toast.warning = (titleOrDescription: string, description?: string) => {
+toast.warning = (titleOrDescription: React.ReactNode, options?: ToastOptions) => {
+  const parsed = parseOptions(titleOrDescription, options);
   toast({
-    title: description ? titleOrDescription : titleOrDescription,
-    description: description ? description : undefined,
+    ...parsed,
     variant: "warning",
   });
 };
 
-toast.info = (titleOrDescription: string, description?: string) => {
+toast.info = (titleOrDescription: React.ReactNode, options?: ToastOptions) => {
+  const parsed = parseOptions(titleOrDescription, options);
   toast({
-    title: description ? titleOrDescription : titleOrDescription,
-    description: description ? description : undefined,
+    ...parsed,
     variant: "info",
   });
 };

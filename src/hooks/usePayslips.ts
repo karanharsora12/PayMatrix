@@ -106,12 +106,11 @@ export function useGenerateSinglePayslip() {
       year: number;
       month: number;
       policy?: string;
-    }) => payslipsApi.generateSingle(data),
-    onSuccess: (data: GeneratedPayslipResult | unknown) => {
+    }) => payslipsApi.generateSingle(data) as Promise<GeneratedPayslipResult>,
+    onSuccess: (data: GeneratedPayslipResult) => {
       queryClient.invalidateQueries({ queryKey: payslipKeys.all });
-      const payslipObj = data as GeneratedPayslipResult | undefined;
       toast.success('Payslip Finalized', {
-        description: `Payslip ${payslipObj?.payslipNumber || ''} created and locked successfully.`,
+        description: `Payslip ${data?.payslipNumber || ''} created and locked successfully.`,
       });
     },
     onError: (err: unknown) => {

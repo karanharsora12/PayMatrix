@@ -1,11 +1,4 @@
-import {
-  Menu,
-  Search,
-  Bell,
-  HelpCircle,
-  Moon,
-  Sun,
-} from "lucide-react";
+import { Menu, Search, Bell, HelpCircle, Moon, Sun } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Dropdown, DropdownItem } from "@/components/ui/dropdown";
 import { useEffect, useState } from "react";
@@ -106,7 +99,6 @@ export function Header({
         >
           <DropdownItem>My Profile</DropdownItem>
           <DropdownItem>Preferences</DropdownItem>
-          <DropdownItem>Security</DropdownItem>
           <DropdownItem onClick={() => logout()}>Logout</DropdownItem>
         </Dropdown>
       </div>

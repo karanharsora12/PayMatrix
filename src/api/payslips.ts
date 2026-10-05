@@ -28,14 +28,14 @@ export const payslipsApi = {
     year: number;
     month: number;
     policy?: string;
-  }) => unwrap(await api.post('/payslips/calculate-preview', data)).data,
+  }) => unwrap<any>(await api.post('/payslips/calculate-preview', data)).data,
   generateSingle: async (data: {
     employeeId: string;
     year: number;
     month: number;
     policy?: string;
-  }) => unwrap(await api.post('/payslips/generate-single', data)).data,
-  sendEmail: async (id: string) => unwrap(await api.post(`/payslips/${id}/send-email`)).data,
-  retryEmail: async (id: string) => unwrap(await api.post(`/payslips/${id}/retry-email`)).data,
+  }) => unwrap<any>(await api.post('/payslips/generate-single', data)).data,
+  sendEmail: async (id: string) => unwrap<any>(await api.post(`/payslips/${id}/send-email`)).data,
+  retryEmail: async (id: string) => unwrap<any>(await api.post(`/payslips/${id}/retry-email`)).data,
 };
 
