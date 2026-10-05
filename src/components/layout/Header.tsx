@@ -4,6 +4,7 @@ import { Dropdown, DropdownItem } from "@/components/ui/dropdown";
 import { useEffect, useState } from "react";
 import { useAuth } from "@/context/AuthContext";
 import { getImageUrl } from "@/config/env";
+import { useNavigate } from "react-router-dom";
 
 export function Header({
   onToggleSidebar,
@@ -15,6 +16,7 @@ export function Header({
   onOpenCommand: () => void;
 }) {
   const { user, logout } = useAuth();
+  const nav = useNavigate();
   const [dark, setDark] = useState(false);
   const [imgError, setImgError] = useState(false);
 
@@ -97,7 +99,11 @@ export function Header({
             </button>
           }
         >
-          <DropdownItem>My Profile</DropdownItem>
+          {user?.employeeId ? (
+            <DropdownItem onClick={() => nav(`/employees/${user.employeeId}`)}>My Profile</DropdownItem>
+          ) : (
+            <DropdownItem>My Profile</DropdownItem>
+          )}
           <DropdownItem>Preferences</DropdownItem>
           <DropdownItem onClick={() => logout()}>Logout</DropdownItem>
         </Dropdown>

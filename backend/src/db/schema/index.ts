@@ -23,6 +23,7 @@ export * from "./employees";
 export * from "./employee-addresses";
 export * from "./employee-bank-accounts";
 export * from "./employee-documents";
+export * from "./employee-document-assignments";
 export * from "./employee-groups";
 
 // Attendance

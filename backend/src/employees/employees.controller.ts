@@ -201,6 +201,44 @@ export class EmployeesController {
     return this.svc.deleteDocument(u.companyId, id, documentId, u.sub);
   }
 
+  // ── Document Assignments ─────────────────────────────────────────────────────
+  @Get(':id/document-assignments')
+  @ApiOperation({ summary: 'List employee document assignments' })
+  listDocumentAssignments(@CurrentUser() u: any, @Param('id', ParseUUIDPipe) id: string) {
+    return this.svc.listDocumentAssignments(u.companyId, id);
+  }
+
+  @Post(':id/document-assignments')
+  @ApiOperation({ summary: 'Create employee document assignment' })
+  createDocumentAssignment(
+    @CurrentUser() u: any,
+    @Param('id', ParseUUIDPipe) id: string,
+    @Body() dto: any,
+  ) {
+    return this.svc.createDocumentAssignment(u.companyId, id, dto, u.sub);
+  }
+
+  @Patch(':id/document-assignments/:assignmentId')
+  @ApiOperation({ summary: 'Update employee document assignment' })
+  updateDocumentAssignment(
+    @CurrentUser() u: any,
+    @Param('id', ParseUUIDPipe) id: string,
+    @Param('assignmentId', ParseUUIDPipe) assignmentId: string,
+    @Body() dto: any,
+  ) {
+    return this.svc.updateDocumentAssignment(u.companyId, id, assignmentId, dto, u.sub);
+  }
+
+  @Delete(':id/document-assignments/:assignmentId')
+  @ApiOperation({ summary: 'Delete document assignment' })
+  deleteDocumentAssignment(
+    @CurrentUser() u: any,
+    @Param('id', ParseUUIDPipe) id: string,
+    @Param('assignmentId', ParseUUIDPipe) assignmentId: string,
+  ) {
+    return this.svc.deleteDocumentAssignment(u.companyId, id, assignmentId, u.sub);
+  }
+
   // ── Shifts (Phase 5) ─────────────────────────────────────────────────────────
   @Post(':id/shifts')
   @RequirePermission('shift.edit')

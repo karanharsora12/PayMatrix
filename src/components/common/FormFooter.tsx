@@ -25,6 +25,7 @@ interface FormFooterProps {
   cancelLabel?: string;
   clearLabel?: string;
   isSaving?: boolean;
+  hideSave?: boolean;
   /** Extra custom actions rendered before Save */
   extraActions?: FormFooterAction[];
   className?: string;
@@ -41,6 +42,7 @@ export function FormFooter({
   cancelLabel = "Cancel",
   clearLabel = "Clear",
   isSaving = false,
+  hideSave = false,
   extraActions = [],
   className,
 }: FormFooterProps) {
@@ -105,17 +107,19 @@ export function FormFooter({
             </Button>
           ))}
 
-          <Button
-            type="submit"
-            form={formId}
-            size="sm"
-            onClick={onSave}
-            disabled={isSaving}
-            className="gap-1.5 h-8 min-w-[110px] bg-primary hover:bg-primary/90 text-primary-foreground shadow-sm"
-          >
-            <Save className="h-3.5 w-3.5" />
-            {isSaving ? "Saving..." : saveLabel}
-          </Button>
+          {!hideSave && (
+            <Button
+              type="submit"
+              form={formId}
+              size="sm"
+              onClick={onSave}
+              disabled={isSaving}
+              className="gap-1.5 h-8 min-w-[110px] bg-primary hover:bg-primary/90 text-primary-foreground shadow-sm"
+            >
+              <Save className="h-3.5 w-3.5" />
+              {isSaving ? "Saving..." : saveLabel}
+            </Button>
+          )}
         </div>
       </div>
     </div>

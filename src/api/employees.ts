@@ -70,4 +70,21 @@ export const employeeApi = {
     const res = await api.get(`/payroll/employees/${id}/payslips`).catch(() => ({ data: { data: [] } } as any));
     return unwrap(res).data;
   },
+  // Document Assignments
+  listDocumentAssignments: async (employeeId: string) => {
+    const res = await api.get(`/employees/${employeeId}/document-assignments`);
+    return unwrap<any[]>(res).data;
+  },
+  createDocumentAssignment: async (employeeId: string, payload: any) => {
+    const res = await api.post(`/employees/${employeeId}/document-assignments`, payload);
+    return unwrap<any>(res).data;
+  },
+  updateDocumentAssignment: async (employeeId: string, assignmentId: string, payload: any) => {
+    const res = await api.patch(`/employees/${employeeId}/document-assignments/${assignmentId}`, payload);
+    return unwrap<any>(res).data;
+  },
+  deleteDocumentAssignment: async (employeeId: string, assignmentId: string) => {
+    const res = await api.delete(`/employees/${employeeId}/document-assignments/${assignmentId}`);
+    return unwrap(res).data;
+  },
 };

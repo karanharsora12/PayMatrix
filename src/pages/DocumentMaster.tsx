@@ -21,6 +21,7 @@ import type { AgGridReact } from "ag-grid-react";
 import { Trash2, X } from "lucide-react";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { toast } from "@/components/ui/use-toast";
+import { GridDeleteCell } from "@/components/common";
 
 function DocumentTypesTab({
   data,
@@ -114,29 +115,18 @@ function DocumentTypesTab({
 
   const columnDefs = useMemo<ColDef[]>(
     () => [
-      { field: "code", headerName: "Code", width: 120 },
-      { field: "name", headerName: "Name", flex: 1 },
-      { field: "description", headerName: "Description", flex: 1 },
+      { field: "code", headerName: "Code", width: 70 },
+      { field: "name", headerName: "Name", width: 150 },
+      { field: "description", headerName: "Description", width: 200 },
       {
         headerName: "",
-        width: 80,
+        width: 60,
         sortable: false,
         filter: false,
-        cellRenderer: (params: any) => (
-          <div className="flex gap-1 items-center justify-center h-full">
-            <Button
-              variant="ghost"
-              size="icon"
-              className="h-8 w-8 text-red-500 hover:text-red-600"
-              onClick={(e) => {
-                e.stopPropagation();
-                handleDelete(params.data.id);
-              }}
-            >
-              <Trash2 className="h-4 w-4" />
-            </Button>
-          </div>
-        ),
+        cellRenderer: GridDeleteCell,
+        cellRendererParams: {
+          onDelete: (params: any) => handleDelete(params.data.id),
+        },
       },
     ],
     [],

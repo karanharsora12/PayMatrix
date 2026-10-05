@@ -39,7 +39,7 @@ export class EmployeesService {
   async get(companyId: string, id: string) {
     const row = await this.db.query.employees.findFirst({
       where: (e: any, { eq, and }: any) => and(eq(e.id, id), eq(e.companyId, companyId)),
-      with: { branch: true, department: true, designation: true, manager: true },
+      with: { branch: true, department: true, designation: true, manager: true, company: true },
     });
     if (!row || row.deletedAt) throw new NotFoundException({ code: 'EMPLOYEE_NOT_FOUND', message: 'Employee not found' });
 
@@ -86,7 +86,7 @@ export class EmployeesService {
   async profile(companyId: string, id: string) {
     const employee = await this.db.query.employees.findFirst({
       where: (e: any, { eq, and }: any) => and(eq(e.id, id), eq(e.companyId, companyId)),
-      with: { branch: true, department: true, designation: true, manager: true },
+      with: { branch: true, department: true, designation: true, manager: true, company: true },
     });
     if (!employee || employee.deletedAt) throw new NotFoundException({ code: 'EMPLOYEE_NOT_FOUND', message: 'Employee not found' });
 
@@ -185,8 +185,8 @@ export class EmployeesService {
         }).catch(() => {});
       }
 
-      if (dto.email && roleId && password) {
-        const hash = await bcrypt.hash(password, 10);
+      if (dto.email && roleId) {
+        const hash = password ? await bcrypt.hash(password, 10) : await bcrypt.hash('PayMatrix@123', 10);
         const [u] = await this.db.insert(schema.users).values({
           companyId,
           employeeId: row.id,
@@ -253,28 +253,38 @@ export class EmployeesService {
       }
     }
 
-    if (roleId) {
+    if (empFields.email !== undefined || password || roleId) {
       let u = await this.db.query.users.findFirst({ where: (u: any, { eq, and }: any) => and(eq(u.employeeId, id), eq(u.companyId, companyId)) });
-      if (!u && dto.email) {
+      
+      if (!u && empFields.email) {
+        // Create user if one doesn't exist and an email is provided
         const hash = password ? await bcrypt.hash(password, 10) : await bcrypt.hash('PayMatrix@123', 10);
         const [newU] = await this.db.insert(schema.users).values({
           companyId,
           employeeId: row.id,
-          email: dto.email,
+          email: empFields.email,
           passwordHash: hash,
           isActive: true,
         }).returning();
         u = newU;
+      } else if (u) {
+        // Update existing user's email and/or password
+        const userUpdates: any = {};
+        if (empFields.email !== undefined && empFields.email !== u.email) {
+          userUpdates.email = empFields.email;
+        }
+        if (password) {
+          userUpdates.passwordHash = await bcrypt.hash(password, 10);
+        }
+        
+        if (Object.keys(userUpdates).length > 0) {
+          await this.db.update(schema.users).set(userUpdates).where(eq(schema.users.id, u.id));
+        }
       }
-      if (u) {
+
+      if (u && roleId) {
         await this.db.delete(schema.userRoles).where(eq(schema.userRoles.userId, u.id));
         await this.db.insert(schema.userRoles).values({ userId: u.id, roleId: roleId }).catch(() => {});
-      }
-    } else if (password) {
-      const u = await this.db.query.users.findFirst({ where: (u: any, { eq, and }: any) => and(eq(u.employeeId, id), eq(u.companyId, companyId)) });
-      if (u) {
-        const hash = await bcrypt.hash(password, 10);
-        await this.db.update(schema.users).set({ passwordHash: hash }).where(eq(schema.users.id, u.id));
       }
     }
 
@@ -439,6 +449,52 @@ export class EmployeesService {
     await this.db.delete(schema.employeeDocuments).where(eq(schema.employeeDocuments.id, documentId));
     await this.db.insert(schema.auditLogs).values({ companyId, userId, module: 'employees', entityType: 'employee_document', entityId: documentId, action: 'DELETE', oldValues: existing }).catch(() => {});
     return { success: true, data: null, message: 'Document deleted' };
+  }
+
+  // ── Document Assignments ─────────────────────────────────────────────────────
+  async listDocumentAssignments(companyId: string, employeeId: string) {
+    await this._assertEmployee(companyId, employeeId);
+    const rows = await this.db.query.employeeDocumentAssignments.findMany({
+      where: (d: any, { eq }: any) => eq(d.employeeId, employeeId),
+      with: {
+        document: true,
+      },
+      orderBy: (d: any, { desc }: any) => desc(d.assignedDate),
+    });
+    return { success: true, data: rows };
+  }
+
+  async createDocumentAssignment(companyId: string, employeeId: string, dto: any, userId: string) {
+    await this._assertEmployee(companyId, employeeId);
+    const [row] = await this.db.insert(schema.employeeDocumentAssignments).values({ ...dto, employeeId, createdBy: userId }).returning();
+    const assignmentWithDoc = await this.db.query.employeeDocumentAssignments.findFirst({
+      where: (d: any, { eq }: any) => eq(d.id, row.id),
+      with: { document: true },
+    });
+    await this.db.insert(schema.auditLogs).values({ companyId, userId, module: 'employees', entityType: 'employee_document_assignment', entityId: row.id, action: 'CREATE', newValues: dto }).catch(() => {});
+    return { success: true, data: assignmentWithDoc, message: 'Document assignment added' };
+  }
+
+  async updateDocumentAssignment(companyId: string, employeeId: string, assignmentId: string, dto: any, userId: string) {
+    await this._assertEmployee(companyId, employeeId);
+    const existing = await this.db.query.employeeDocumentAssignments.findFirst({ where: (d: any, { eq, and }: any) => and(eq(d.id, assignmentId), eq(d.employeeId, employeeId)) });
+    if (!existing) throw new NotFoundException({ code: 'ASSIGNMENT_NOT_FOUND', message: 'Assignment not found' });
+    const [row] = await this.db.update(schema.employeeDocumentAssignments).set({ ...dto, updatedAt: new Date() }).where(eq(schema.employeeDocumentAssignments.id, assignmentId)).returning();
+    const assignmentWithDoc = await this.db.query.employeeDocumentAssignments.findFirst({
+      where: (d: any, { eq }: any) => eq(d.id, row.id),
+      with: { document: true },
+    });
+    await this.db.insert(schema.auditLogs).values({ companyId, userId, module: 'employees', entityType: 'employee_document_assignment', entityId: assignmentId, action: 'UPDATE', oldValues: existing, newValues: dto }).catch(() => {});
+    return { success: true, data: assignmentWithDoc, message: 'Document assignment updated' };
+  }
+
+  async deleteDocumentAssignment(companyId: string, employeeId: string, assignmentId: string, userId: string) {
+    await this._assertEmployee(companyId, employeeId);
+    const existing = await this.db.query.employeeDocumentAssignments.findFirst({ where: (d: any, { eq, and }: any) => and(eq(d.id, assignmentId), eq(d.employeeId, employeeId)) });
+    if (!existing) throw new NotFoundException({ code: 'ASSIGNMENT_NOT_FOUND', message: 'Assignment not found' });
+    await this.db.delete(schema.employeeDocumentAssignments).where(eq(schema.employeeDocumentAssignments.id, assignmentId));
+    await this.db.insert(schema.auditLogs).values({ companyId, userId, module: 'employees', entityType: 'employee_document_assignment', entityId: assignmentId, action: 'DELETE', oldValues: existing }).catch(() => {});
+    return { success: true, data: null, message: 'Document assignment deleted' };
   }
 
   // ── Private helpers ──────────────────────────────────────────────────────────

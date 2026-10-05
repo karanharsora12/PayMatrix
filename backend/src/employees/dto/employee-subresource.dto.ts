@@ -38,3 +38,11 @@ export class CreateDocumentDto {
   @ApiPropertyOptional() @IsOptional() @IsString() issueDate?: string;
   @ApiPropertyOptional() @IsOptional() @IsString() expiryDate?: string;
 }
+
+export class CreateDocumentAssignmentDto {
+  @ApiPropertyOptional() @IsOptional() @IsString() documentId?: string;
+  @ApiPropertyOptional() @IsOptional() @IsString() assignmentReason?: string;
+  @ApiPropertyOptional() @IsOptional() @IsString() assignedDate?: string;
+  @ApiPropertyOptional() @IsOptional() @IsString() status?: string;
+  @ApiPropertyOptional() @IsOptional() @IsString() remarks?: string;
+}

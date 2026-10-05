@@ -1,7 +1,7 @@
 import { departmentApi } from "@/api/departments";
 import { designationApi } from "@/api/designations";
 import { DataGrid } from "@/components/common/DataGrid";
-import { GridDeleteCell } from "@/components/common/GridDeleteCell";
+import { ActionMenu } from "@/components/common/ActionMenu";
 import { ListingCard } from "@/components/common/ListingCard";
 import { ListingHeader } from "@/components/common/ListingHeader";
 import { Button } from "@/components/ui/button";
@@ -20,7 +20,7 @@ import { formatCurrency } from "@/lib/utils";
 import { useQuery } from "@tanstack/react-query";
 import type { ColDef } from "ag-grid-community";
 import type { AgGridReact } from "ag-grid-react";
-import { Upload } from "lucide-react";
+import { Upload, User, Edit2, Trash2 } from "lucide-react";
 import { useCallback, useMemo, useRef, useState } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 
@@ -119,7 +119,7 @@ export default function Employees() {
     };
   }, [q, dept, desig, status, deptsData, desigsData]);
 
-  const { data, refetch } = useEmployees(filters);
+  const { data, refetch, isLoading } = useEmployees(filters);
 
   // Available departments list (from API and fallback from employee data)
   const departmentOptions = useMemo(() => {
@@ -252,7 +252,6 @@ export default function Employees() {
     });
   }, [desigsData, data, dept, selectedDeptObj]);
 
-  // Filtered list passed to DataGrid
   const employeeList = useMemo(() => {
     let source: any[] =
       data?.data && data.data.length > 0 ? [...data.data] : [];
@@ -384,29 +383,49 @@ export default function Employees() {
       },
     ];
 
-    if (hasPermission("employees.delete")) {
-      cols.push({
-        headerName: "",
-        width: 60,
-        sortable: false,
-        filter: false,
-        resizable: false,
-        cellRenderer: (params: any) => {
-          if (!params.data) return null;
-          return (
-            <GridDeleteCell
-              {...params}
-              onDelete={(id) => {
-                const name =
-                  `${params.data.firstName ?? ""} ${params.data.lastName ?? ""}`.trim() ||
-                  "Employee";
-                handleDelete(id, name);
-              }}
-            />
-          );
-        },
-      });
-    }
+    const hasEdit = hasPermission("employees.edit");
+    const hasDelete = hasPermission("employees.delete");
+
+    cols.push({
+      headerName: "",
+      width: 60,
+      sortable: false,
+      filter: false,
+      resizable: false,
+      cellRenderer: (params: any) => {
+        if (!params.data) return null;
+        return (
+          <ActionMenu
+            items={[
+              {
+                label: "View Profile",
+                icon: <User className="h-4 w-4" />,
+                onClick: () => nav(`/employees/${params.data.id}`),
+              },
+              {
+                label: "Edit Employee",
+                icon: <Edit2 className="h-4 w-4" />,
+                onClick: () => nav(`/employees/${params.data.id}/edit`),
+                hidden: !hasEdit,
+              },
+              {
+                label: "Delete",
+                icon: <Trash2 className="h-4 w-4" />,
+                destructive: true,
+                separator: true,
+                onClick: () => {
+                  const name =
+                    `${params.data.firstName ?? ""} ${params.data.lastName ?? ""}`.trim() ||
+                    "Employee";
+                  handleDelete(params.data.id, name);
+                },
+                hidden: !hasDelete,
+              },
+            ]}
+          />
+        );
+      },
+    });
     return cols;
   }, [nav, handleDelete, hasPermission]);
 
@@ -505,6 +524,7 @@ export default function Employees() {
                   nav(`/employees/${e.data.id}/edit`);
                 else if (e.data?.id) nav(`/employees/${e.data.id}`);
               },
+              loading: isLoading,
             }}
           />
         </div>
