@@ -51,7 +51,7 @@ api.interceptors.response.use(
       const refreshToken = localStorage.getItem("refreshToken");
       if (!refreshToken) {
         localStorage.removeItem("accessToken");
-        window.location.href = "/login";
+
         return Promise.reject(normalized);
       }
       if (isRefreshing) {

@@ -27,6 +27,7 @@ import { AuditModule } from './audit/audit.module';
 import { LocationsModule } from './locations/locations.module';
 import { EmployeeGroupsModule } from './employee-groups/employee-groups.module';
 import { DocumentMasterModule } from './document-master/document-master.module';
+import { DocumentTypeModule } from './document-type/document-type.module';
 import { NotificationsModule } from './notifications/notifications.module';
 import { HealthModule } from './health/health.module';
 import { UploadsModule } from './uploads/uploads.module';
@@ -64,6 +65,7 @@ import { RolesGuard } from './common/guards/roles.guard';
     LocationsModule,
     EmployeeGroupsModule,
     DocumentMasterModule,
+    DocumentTypeModule,
     NotificationsModule,
     HealthModule,
     UploadsModule,

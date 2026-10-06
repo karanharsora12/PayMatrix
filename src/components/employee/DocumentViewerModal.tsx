@@ -38,52 +38,44 @@ export function DocumentViewerModal({
     try {
       const cleanPath = path.trim();
 
-      if (
-        cleanPath === "employeeName" ||
-        cleanPath === "Employee" ||
-        cleanPath === "candidateName"
-      ) {
-        return `${obj.firstName || ""} ${obj.lastName || ""}`.trim();
+      switch (cleanPath) {
+        case "EmployeeName":
+          return `${obj.firstName || ""} ${obj.lastName || ""}`.trim() || "—";
+        case "EmployeeCode":
+          return obj.employeeCode || "—";
+        case "DateOfJoining":
+          return obj.joiningDate
+            ? new Date(obj.joiningDate).toLocaleDateString("en-IN", {
+                day: "2-digit",
+                month: "short",
+                year: "numeric",
+              })
+            : "—";
+        case "Designation":
+        case "NewDesignation":
+          return obj.designation?.name || "—";
+        case "OldDesignation":
+          return obj.designation?.name
+            ? `Previous ${obj.designation.name}`
+            : "—";
+        case "Department":
+          return obj.department?.name || "—";
+        case "CompanyName":
+          return obj.company?.name || "PayMatrix Technologies";
+        case "CurrentDate":
+        case "EffectiveDate":
+          return new Date().toLocaleDateString("en-IN", {
+            day: "2-digit",
+            month: "short",
+            year: "numeric",
+          });
+        case "BasicSalary":
+          return "₹ " + (obj.salary?.basic || "0").toLocaleString("en-IN");
+        case "GrossSalary":
+          return "₹ " + (obj.salary?.gross || "0").toLocaleString("en-IN");
+        default:
+          return "";
       }
-
-      if (cleanPath === "company.name") {
-        return obj.company?.name || "PayMatrix Technologies";
-      }
-      if (cleanPath === "company.address") {
-        return (
-          obj.company?.address ||
-          [obj.company?.city, obj.company?.state, obj.company?.country]
-            .filter(Boolean)
-            .join(", ") ||
-          "Corporate Headquarters"
-        );
-      }
-      if (cleanPath === "company.email") {
-        return obj.company?.email || "hr@paymatrix.com";
-      }
-      if (cleanPath === "company.phone") {
-        return obj.company?.phone || "+91-9876543210";
-      }
-      if (cleanPath === "address") {
-        return (
-          obj.address ||
-          [obj.branch?.name, obj.branch?.city].filter(Boolean).join(", ") ||
-          "—"
-        );
-      }
-
-      const val = cleanPath
-        .split(".")
-        .reduce((acc, part) => acc && acc[part], obj);
-      if (val === undefined || val === null) return "";
-      if (typeof val === "string" && val.match(/^\d{4}-\d{2}-\d{2}/)) {
-        return new Date(val).toLocaleDateString("en-IN", {
-          day: "2-digit",
-          month: "long",
-          year: "numeric",
-        });
-      }
-      return String(val);
     } catch {
       return "";
     }

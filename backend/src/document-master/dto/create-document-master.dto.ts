@@ -1,13 +1,56 @@
-import { IsBoolean, IsOptional, IsString, MaxLength, IsArray } from 'class-validator';
+import {
+  IsBoolean,
+  IsOptional,
+  IsString,
+  MaxLength,
+  IsArray,
+  IsUUID,
+  ValidateNested,
+  IsIn,
+  IsInt,
+} from 'class-validator';
 import { ApiProperty, ApiPropertyOptional, PartialType } from '@nestjs/swagger';
+import { Type } from 'class-transformer';
+
+export class DocumentFieldDto {
+  @ApiProperty({ example: 'Employee Name' })
+  @IsString()
+  label: string;
+
+  @ApiProperty({ example: 'EmployeeName' })
+  @IsString()
+  variable: string;
+
+  @ApiPropertyOptional({ example: 'Text', enum: ['Text', 'Date', 'Number', 'Currency'] })
+  @IsOptional()
+  @IsString()
+  @IsIn(['Text', 'Date', 'Number', 'Currency'])
+  type?: string;
+
+  @ApiPropertyOptional({ default: false })
+  @IsOptional()
+  @IsBoolean()
+  required?: boolean;
+
+  @ApiPropertyOptional()
+  @IsOptional()
+  @IsString()
+  description?: string;
+
+  @ApiPropertyOptional({ default: 0 })
+  @IsOptional()
+  @Type(() => Number)
+  @IsInt()
+  order?: number;
+}
 
 export class CreateDocumentMasterDto {
-  @ApiProperty()
+  @ApiProperty({ example: 'JOINING_LETTER' })
   @IsString()
   @MaxLength(30)
   code: string;
 
-  @ApiProperty()
+  @ApiProperty({ example: 'Joining Letter' })
   @IsString()
   @MaxLength(255)
   name: string;
@@ -19,19 +62,30 @@ export class CreateDocumentMasterDto {
 
   @ApiPropertyOptional()
   @IsOptional()
+  @IsUUID()
+  documentTypeId?: string;
+
+  @ApiPropertyOptional({ default: false })
+  @IsOptional()
   @IsBoolean()
   isRequired?: boolean;
 
-  @ApiPropertyOptional()
+  @ApiPropertyOptional({ default: false })
+  @IsOptional()
+  @IsBoolean()
+  isRepeatable?: boolean;
+
+  @ApiPropertyOptional({ default: true })
   @IsOptional()
   @IsBoolean()
   isActive?: boolean;
 
-  @ApiPropertyOptional()
+  @ApiPropertyOptional({ type: [DocumentFieldDto] })
   @IsOptional()
   @IsArray()
-  @IsString({ each: true })
-  fields?: string[];
+  @ValidateNested({ each: true })
+  @Type(() => DocumentFieldDto)
+  fields?: DocumentFieldDto[];
 
   @ApiPropertyOptional()
   @IsOptional()

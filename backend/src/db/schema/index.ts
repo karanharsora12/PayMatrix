@@ -16,6 +16,7 @@ export * from "./locations";
 export * from "./departments";
 export * from "./designations";
 export * from "./employment-types";
+export * from "./document-type";
 export * from "./document-master";
 
 // Employee domain
