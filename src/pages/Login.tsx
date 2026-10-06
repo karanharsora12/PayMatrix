@@ -425,7 +425,7 @@ export default function Login() {
           </form>
 
           {/* Quick Demo Credentials Assistant */}
-          <div className="mt-4 pt-3.5 border-t border-border">
+          {/* <div className="mt-4 pt-3.5 border-t border-border">
             <div className="flex items-center justify-between text-xs text-muted-foreground mb-1.5">
               <span className="flex items-center gap-1 font-medium text-[11px]">
                 <Sparkles className="h-3 w-3 text-amber-500" />
@@ -447,7 +447,7 @@ export default function Login() {
               <span className="text-muted-foreground/60">/</span>
               <span>Password123!</span>
             </div>
-          </div>
+          </div> */}
         </div>
       </div>
 

@@ -1,11 +1,9 @@
-import { useState, useMemo, useRef } from "react";
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
+import { branchApi } from "@/api/branches";
+import { useAlert } from "@/components/common/AlertProvider";
 import { DataGrid } from "@/components/common/DataGrid";
-import { ListingHeader } from "@/components/common/ListingHeader";
 import { ListingCard } from "@/components/common/ListingCard";
-import { Trash2, Building2, MapPin } from "lucide-react";
+import { ListingHeader } from "@/components/common/ListingHeader";
+import { Button } from "@/components/ui/button";
 import {
   Dialog,
   DialogContent,
@@ -15,13 +13,16 @@ import {
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { toast } from "@/components/ui/use-toast";
-import { branchApi } from "@/api/branches";
 import { gridExportExcel, gridExportPdf, gridPrint } from "@/lib/gridExport";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import type { ColDef } from "ag-grid-community";
 import type { AgGridReact } from "ag-grid-react";
+import { Trash2 } from "lucide-react";
+import { useMemo, useRef, useState } from "react";
 
 export default function Branches() {
   const gridRef = useRef<AgGridReact>(null);
+  const { confirm } = useAlert();
   const [open, setOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
   const [editingId, setEditingId] = useState<string | null>(null);
@@ -101,8 +102,10 @@ export default function Branches() {
     setOpen(true);
   };
 
-  const handleDelete = (id: string) => {
-    if (confirm("Are you sure you want to delete this branch?")) {
+  const handleDelete = async (id: string) => {
+    if (
+      await confirm({ message: "Are you sure you want to delete this branch?" })
+    ) {
       deleteMutation.mutate(id);
     }
   };

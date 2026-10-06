@@ -1,5 +1,6 @@
 import { useState, useMemo, useRef } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { useAlert } from "@/components/common/AlertProvider";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { DataGrid } from "@/components/common/DataGrid";
@@ -22,6 +23,7 @@ import type { AgGridReact } from "ag-grid-react";
 
 export default function Locations() {
   const gridRef = useRef<AgGridReact>(null);
+  const { confirm } = useAlert();
   const [open, setOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
   const [editingId, setEditingId] = useState<string | null>(null);
@@ -104,8 +106,8 @@ export default function Locations() {
     setOpen(true);
   };
 
-  const handleDelete = (id: string) => {
-    if (confirm("Are you sure you want to delete this location?")) {
+  const handleDelete = async (id: string) => {
+    if (await confirm({ message: "Are you sure you want to delete this location?" })) {
       deleteMutation.mutate(id);
     }
   };

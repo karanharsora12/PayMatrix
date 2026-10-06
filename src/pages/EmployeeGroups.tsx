@@ -1,5 +1,6 @@
 import { useState, useMemo, useRef } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { useAlert } from "@/components/common/AlertProvider";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { DataGrid } from "@/components/common/DataGrid";
@@ -23,6 +24,7 @@ import type { AgGridReact } from "ag-grid-react";
 export default function EmployeeGroups() {
   const gridRef = useRef<AgGridReact>(null);
   const [open, setOpen] = useState(false);
+  const { confirm } = useAlert();
   const [searchQuery, setSearchQuery] = useState("");
   const [editingId, setEditingId] = useState<string | null>(null);
   const [formData, setFormData] = useState({
@@ -88,8 +90,8 @@ export default function EmployeeGroups() {
     setOpen(true);
   };
 
-  const handleDelete = (id: string) => {
-    if (confirm("Are you sure you want to delete this group?")) {
+  const handleDelete = async (id: string) => {
+    if (await confirm({ message: "Are you sure you want to delete this group?" })) {
       deleteMutation.mutate(id);
     }
   };

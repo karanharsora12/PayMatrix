@@ -1,4 +1,5 @@
 import { departmentApi } from "@/api/departments";
+import { useAlert } from "@/components/common/AlertProvider";
 import { GridDateFloatingFilter, GridDeleteCell } from "@/components/common";
 import { DataGrid } from "@/components/common/DataGrid";
 import { ListingCard } from "@/components/common/ListingCard";
@@ -21,6 +22,7 @@ import { toast } from "@/components/ui/use-toast";
 
 export default function Departments() {
   const gridRef = useRef<AgGridReact>(null);
+  const { confirm } = useAlert();
   const [open, setOpen] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [formData, setFormData] = useState({
@@ -87,8 +89,8 @@ export default function Departments() {
     setOpen(true);
   };
 
-  const handleDelete = (id: string) => {
-    if (confirm("Are you sure you want to delete this department?")) {
+  const handleDelete = async (id: string) => {
+    if (await confirm({ message: "Are you sure you want to delete this department?" })) {
       deleteMutation.mutate(id);
     }
   };
