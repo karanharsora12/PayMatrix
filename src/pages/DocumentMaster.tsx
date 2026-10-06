@@ -143,9 +143,7 @@ function DocTypeFormDialog({
     <Dialog open={open} onOpenChange={(v) => !v && onClose()}>
       <DialogContent className="max-w-lg">
         <DialogHeader>
-          <DialogTitle>
-            {editingType ? "Edit Document Type" : "Create Document Type"}
-          </DialogTitle>
+          <DialogTitle>Document Type</DialogTitle>
         </DialogHeader>
         <div className="space-y-4 py-2">
           <div className="grid grid-cols-2 gap-3">
@@ -238,12 +236,15 @@ function DocTypeFormDialog({
 }
 
 // ─── Document Types Tab ───────────────────────────────────────────────────────
-function DocumentTypesTab() {
+function DocumentTypesTab({
+  search,
+  onEdit,
+}: {
+  search: string;
+  onEdit: (t: any) => void;
+}) {
   const qc = useQueryClient();
   const { confirm } = useAlert();
-  const [search, setSearch] = useState("");
-  const [dialogOpen, setDialogOpen] = useState(false);
-  const [editingType, setEditingType] = useState<any | null>(null);
 
   const { data: typesRes, isLoading } = useQuery({
     queryKey: ["documentTypes"],
@@ -285,15 +286,6 @@ function DocumentTypesTab() {
       toast.error(e?.response?.data?.message || "Cannot delete"),
   });
 
-  const openNew = () => {
-    setEditingType(null);
-    setDialogOpen(true);
-  };
-  const openEdit = (t: any) => {
-    setEditingType(t);
-    setDialogOpen(true);
-  };
-
   const gridRef = useRef<AgGridReact>(null);
 
   const columnDefs = useMemo<ColDef[]>(
@@ -320,30 +312,11 @@ function DocumentTypesTab() {
         field: "documentCount",
         headerName: "Documents",
         width: 120,
-        cellClass: "flex items-center justify-center",
-        cellRenderer: (p: any) => (
-          <span className="text-xs font-semibold px-2 py-0.5 rounded-full bg-muted">
-            {p.value ?? 0}
-          </span>
-        ),
       },
       {
         field: "isActive",
         headerName: "Status",
         width: 120,
-        cellClass: "flex items-center",
-        cellRenderer: (p: any) => (
-          <Badge
-            variant={p.value ? "default" : "secondary"}
-            className={cn(
-              "text-xs",
-              p.value &&
-                "bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400 border-emerald-200",
-            )}
-          >
-            {p.value ? "Active" : "Inactive"}
-          </Badge>
-        ),
       },
       {
         headerName: "Actions",
@@ -361,7 +334,7 @@ function DocumentTypesTab() {
                 {
                   label: "Edit",
                   icon: <Edit2 className="h-3.5 w-3.5" />,
-                  onClick: () => openEdit(t),
+                  onClick: () => onEdit(t),
                 },
                 t.isActive
                   ? {
@@ -401,35 +374,6 @@ function DocumentTypesTab() {
 
   return (
     <div className="space-y-4">
-      {/* Header row */}
-      <div className="flex items-center justify-between gap-3 flex-wrap">
-        <div className="relative">
-          <Input
-            placeholder="Search document types..."
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-            className="w-64 pl-8 text-sm"
-          />
-          <FileText className="absolute left-2.5 top-2.5 h-3.5 w-3.5 text-muted-foreground" />
-        </div>
-        <div className="flex items-center gap-2">
-          <Button
-            variant="outline"
-            size="icon"
-            className="h-9 w-9"
-            onClick={() =>
-              qc.invalidateQueries({ queryKey: ["documentTypes"] })
-            }
-            title="Refresh"
-          >
-            <RefreshCw className="h-3.5 w-3.5" />
-          </Button>
-          <Button size="sm" className="h-9" onClick={openNew}>
-            <Plus className="h-4 w-4 mr-1" /> Add Type
-          </Button>
-        </div>
-      </div>
-
       {/* DataGrid */}
       <div className="h-[480px]">
         <DataGrid
@@ -437,19 +381,10 @@ function DocumentTypesTab() {
           rowData={filtered}
           columnDefs={columnDefs}
           gridOptions={{
-            onRowDoubleClicked: (e) => e.data && openEdit(e.data),
+            onRowDoubleClicked: (e) => e.data && onEdit(e.data),
           }}
         />
       </div>
-
-      <DocTypeFormDialog
-        open={dialogOpen}
-        onClose={() => {
-          setDialogOpen(false);
-          setEditingType(null);
-        }}
-        editingType={editingType}
-      />
     </div>
   );
 }
@@ -1116,17 +1051,18 @@ function DocumentMasterForm({
 }
 // ─── Document Master List ─────────────────────────────────────────────────────
 function DocumentMasterList({
+  search,
   onNew,
   onEdit,
 }: {
+  search: string;
   onNew: () => void;
   onEdit: (doc: any) => void;
 }) {
   const qc = useQueryClient();
   const { confirm } = useAlert();
-  const [search, setSearch] = useState("");
-  const [filterTypeId, setFilterTypeId] = useState("");
-  const [filterActive, setFilterActive] = useState("");
+  const [filterTypeId, setFilterTypeId] = useState<string>("all");
+  const [filterActive, setFilterActive] = useState<string>("all");
 
   const { data: typesRes } = useQuery({
     queryKey: ["documentTypes"],
@@ -1280,15 +1216,6 @@ function DocumentMasterList({
     <div className="space-y-4">
       {/* Filters */}
       <div className="flex flex-col sm:flex-row gap-3">
-        <div className="relative flex-1 max-w-sm">
-          <Input
-            placeholder="Search code or name..."
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-            className="pl-8"
-          />
-          <FileText className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
-        </div>
         <div className="flex items-center gap-3">
           <Select value={filterTypeId} onValueChange={setFilterTypeId}>
             <SelectTrigger className="w-[180px]">
@@ -1314,11 +1241,6 @@ function DocumentMasterList({
               <SelectItem value="inactive">Inactive</SelectItem>
             </SelectContent>
           </Select>
-
-          <Button onClick={onNew}>
-            <Plus className="h-4 w-4 mr-2" />
-            New Document
-          </Button>
         </div>
       </div>
 
@@ -1339,8 +1261,16 @@ function DocumentMasterList({
 // ─── Main Page ────────────────────────────────────────────────────────────────
 export default function DocumentMaster() {
   const [activeTab, setActiveTab] = useState<"types" | "master">("types");
+
+  // Master form state
   const [editingDoc, setEditingDoc] = useState<any | null>(null);
   const [isFormOpen, setIsFormOpen] = useState(false);
+
+  // Types form state
+  const [editingType, setEditingType] = useState<any | null>(null);
+  const [isTypeFormOpen, setIsTypeFormOpen] = useState(false);
+
+  const [search, setSearch] = useState("");
 
   const qc = useQueryClient();
 
@@ -1351,6 +1281,14 @@ export default function DocumentMaster() {
   const handleEditDoc = (doc: any) => {
     setEditingDoc(doc);
     setIsFormOpen(true);
+  };
+  const handleNewType = () => {
+    setEditingType(null);
+    setIsTypeFormOpen(true);
+  };
+  const handleEditType = (t: any) => {
+    setEditingType(t);
+    setIsTypeFormOpen(true);
   };
 
   if (isFormOpen) {
@@ -1368,7 +1306,7 @@ export default function DocumentMaster() {
   }
 
   return (
-    <div className="p-4 md:p-6 space-y-6">
+    <div>
       <ListingCard>
         <ListingHeader
           title="Document Library"
@@ -1379,16 +1317,42 @@ export default function DocumentMaster() {
               { label: "Document Master", value: "master" },
             ],
             value: activeTab,
-            onChange: setActiveTab as any,
+            onChange: (v) => {
+              setActiveTab(v as any);
+              setSearch("");
+            },
           }}
+          searchValue={search}
+          onSearchChange={setSearch}
+          onRefresh={() =>
+            qc.invalidateQueries({
+              queryKey:
+                activeTab === "types" ? ["documentTypes"] : ["documentMaster"],
+            })
+          }
+          onAddNew={activeTab === "types" ? handleNewType : handleNewDoc}
+          addButtonText={activeTab === "types" ? "Add Type" : "Add Document"}
         />
 
         {activeTab === "types" ? (
-          <DocumentTypesTab />
+          <DocumentTypesTab search={search} onEdit={handleEditType} />
         ) : (
-          <DocumentMasterList onNew={handleNewDoc} onEdit={handleEditDoc} />
+          <DocumentMasterList
+            search={search}
+            onNew={handleNewDoc}
+            onEdit={handleEditDoc}
+          />
         )}
       </ListingCard>
+
+      <DocTypeFormDialog
+        open={isTypeFormOpen}
+        onClose={() => {
+          setIsTypeFormOpen(false);
+          setEditingType(null);
+        }}
+        editingType={editingType}
+      />
     </div>
   );
 }
