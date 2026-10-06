@@ -1,4 +1,5 @@
 import type { EmailLog, EmailTemplate } from "@/api/emailTemplates";
+import { useAlert } from "@/components/common/AlertProvider";
 import { ActionMenu } from "@/components/common/ActionMenu";
 import { DataGrid } from "@/components/common/DataGrid";
 import { ListingCard } from "@/components/common/ListingCard";
@@ -69,6 +70,7 @@ const TEMPLATE_TYPES = [
 ];
 
 export default function EmailTemplates() {
+  const { confirm } = useAlert();
   const queryClient = useQueryClient();
   const gridRef = useRef<AgGridReact>(null);
   const logsGridRef = useRef<AgGridReact>(null);
@@ -486,11 +488,11 @@ export default function EmailTemplates() {
                   icon: <Trash2 className="h-3.5 w-3.5" />,
                   destructive: true,
                   separator: true,
-                  onClick: () => {
+                  onClick: async () => {
                     if (
-                      confirm(
-                        `Are you sure you want to delete template "${tpl.templateName}"?`,
-                      )
+                      await confirm({
+                        message: `Are you sure you want to delete template "${tpl.templateName}"?`,
+                      })
                     ) {
                       deleteMutation.mutate(tpl.id);
                     }
