@@ -11,6 +11,7 @@ import type {
   SalaryStructureItem,
   StructureComponentItem,
 } from "@/api/salaryStructures";
+import { useAlert } from "@/components/common/AlertProvider";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -43,6 +44,7 @@ import { ListingHeader } from "@/components/common/ListingHeader";
 import { DatePicker } from "@/components/common";
 
 export default function SalaryStructures() {
+  const { confirm } = useAlert();
   const {
     data: structuresResp,
     isLoading,
@@ -117,12 +119,12 @@ export default function SalaryStructures() {
   }, [builderComponents]);
 
   // Handle Structure Switch
-  const handleSelectStructure = (struct: SalaryStructureItem) => {
+  const handleSelectStructure = async (struct: SalaryStructureItem) => {
     if (hasChanges) {
       if (
-        !confirm(
-          "You have unsaved changes in the current structure. Switch anyway?",
-        )
+        !(await confirm({
+          message: "You have unsaved changes in the current structure. Switch anyway?",
+        }))
       ) {
         return;
       }
