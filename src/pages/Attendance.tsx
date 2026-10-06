@@ -24,7 +24,6 @@ import { toast } from "@/components/ui/use-toast";
 import { useAuth } from "@/context/AuthContext";
 import {
   useAttendance,
-  useAttendanceCalendar,
   useAttendanceLogs,
   useAttendanceSummary,
   useCreateAttendance,
@@ -86,11 +85,6 @@ export default function Attendance() {
     date: fromDate === toDate ? fromDate : undefined,
     fromDate: fromDate !== toDate ? fromDate : undefined,
     toDate: fromDate !== toDate ? toDate : undefined,
-  });
-
-  const { data: calendarRecords } = useAttendanceCalendar({
-    month: calendarMonth,
-    employeeId: effectiveFilterEmployeeId || undefined,
   });
 
   const { data: punchLogs } = useAttendanceLogs({
@@ -515,7 +509,6 @@ export default function Attendance() {
             onChange: setActiveTab,
             options: [
               { label: "Attendance Register", value: "register" },
-              { label: "Calendar View", value: "calendar" },
               { label: "Raw Punch Logs", value: "punches" },
             ],
           }}
