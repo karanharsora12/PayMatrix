@@ -4,6 +4,7 @@ import {
   fetchUserParameters,
   selectCanManageAttendance,
   selectCanManageLeave,
+  selectCanAssignDocument,
   selectUserParameter,
   selectUserParameters,
 } from '@/store/slices/userParametersSlice';
@@ -13,6 +14,7 @@ export function useUserParameters() {
   const parameters = useAppSelector(selectUserParameters);
   const canManageAttendance = useAppSelector(selectCanManageAttendance);
   const canManageLeave = useAppSelector(selectCanManageLeave);
+  const canAssignDocument = useAppSelector(selectCanAssignDocument);
   const loading = useAppSelector((state) => state.userParameters.loading);
   const error = useAppSelector((state) => state.userParameters.error);
   const isInitialized = useAppSelector((state) => state.userParameters.isInitialized);
@@ -39,6 +41,7 @@ export function useUserParameters() {
     parameters,
     canManageAttendance,
     canManageLeave,
+    canAssignDocument,
     loading,
     error,
     isInitialized,
@@ -54,4 +57,8 @@ export function useCanManageAttendance(): boolean {
 
 export function useCanManageLeave(): boolean {
   return useAppSelector(selectCanManageLeave);
+}
+
+export function useCanAssignDocument(): boolean {
+  return useAppSelector(selectCanAssignDocument);
 }

@@ -26,6 +26,15 @@ export const PARAMETER_DEFINITIONS: ParameterDefinition[] = [
     defaultValueLabel: 'No',
     type: 'boolean',
   },
+  {
+    srNo: 3,
+    name: 'CanAssignDocument',
+    description:
+      'Controls whether the user has permission to assign documents (e.g. Joining Letter, Salary Revision) to employees.',
+    defaultValue: false,
+    defaultValueLabel: 'No',
+    type: 'boolean',
+  },
 ];
 
 export const DEFAULT_PARAMETERS: Record<string, boolean | string> =

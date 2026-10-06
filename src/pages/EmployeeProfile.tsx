@@ -1,5 +1,6 @@
 import { useParams, Link } from "react-router-dom";
 import { useEmployee } from "@/hooks/useEmployees";
+import { useCanAssignDocument } from "@/hooks/useUserParameters";
 import { useEmployeeSalary } from "@/hooks/useSalary";
 import { EmployeePreference } from "@/components/employee/EmployeePreference";
 import { AssignDocumentModal } from "@/components/employee/AssignDocumentModal";
@@ -34,6 +35,7 @@ export default function EmployeeProfile() {
   const salary: any = (salaryResp as any)?.data || salaryResp;
 
   const nav = useNavigate();
+  const canAssignDocument = useCanAssignDocument();
 
   if (isLoading) {
     return (
@@ -105,7 +107,7 @@ export default function EmployeeProfile() {
                     </div>
                   </div>
                   <div className="flex gap-2 self-start mt-4 md:mt-4 md:self-end">
-                    <AssignDocumentModal employeeId={e.id} />
+                    {canAssignDocument && <AssignDocumentModal employeeId={e.id} />}
                     <Link to="/employee-salary">
                       <Button className="shadow-md hover:shadow-lg transition-all">
                         Manage Salary

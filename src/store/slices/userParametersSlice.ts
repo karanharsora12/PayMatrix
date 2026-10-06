@@ -6,6 +6,7 @@ export interface UserParametersState {
   parameters: Record<string, boolean | string>;
   CanManageAttendance: boolean;
   CanManageLeave: boolean;
+  CanAssignDocument: boolean;
   loading: boolean;
   error: string | null;
   isInitialized: boolean;
@@ -15,9 +16,11 @@ const initialState: UserParametersState = {
   parameters: {
     CanManageAttendance: false,
     CanManageLeave: false,
+    CanAssignDocument: false,
   },
   CanManageAttendance: false,
   CanManageLeave: false,
+  CanAssignDocument: false,
   loading: false,
   error: null,
   isInitialized: false,
@@ -58,6 +61,9 @@ export const userParametersSlice = createSlice({
       if (name === 'CanManageLeave') {
         state.CanManageLeave = Boolean(value);
       }
+      if (name === 'CanAssignDocument') {
+        state.CanAssignDocument = Boolean(value);
+      }
     },
     setUserParameters: (
       state,
@@ -69,6 +75,9 @@ export const userParametersSlice = createSlice({
       }
       if ('CanManageLeave' in action.payload) {
         state.CanManageLeave = Boolean(action.payload['CanManageLeave']);
+      }
+      if ('CanAssignDocument' in action.payload) {
+        state.CanAssignDocument = Boolean(action.payload['CanAssignDocument']);
       }
       state.isInitialized = true;
     },
@@ -92,6 +101,9 @@ export const userParametersSlice = createSlice({
         state.CanManageLeave = Boolean(
           action.payload?.['CanManageLeave'] ?? false,
         );
+        state.CanAssignDocument = Boolean(
+          action.payload?.['CanAssignDocument'] ?? false,
+        );
       })
       .addCase(fetchUserParameters.rejected, (state, action) => {
         state.loading = false;
@@ -99,6 +111,7 @@ export const userParametersSlice = createSlice({
         // Safe default on failure
         state.CanManageAttendance = false;
         state.CanManageLeave = false;
+        state.CanAssignDocument = false;
       });
   },
 });
@@ -117,6 +130,10 @@ export const selectCanManageAttendance = (state: {
 export const selectCanManageLeave = (state: {
   userParameters: UserParametersState;
 }) => state.userParameters.CanManageLeave;
+
+export const selectCanAssignDocument = (state: {
+  userParameters: UserParametersState;
+}) => state.userParameters.CanAssignDocument;
 
 export const selectUserParameter = (
   state: { userParameters: UserParametersState },
