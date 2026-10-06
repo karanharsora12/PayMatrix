@@ -730,7 +730,7 @@ export default function EmailTemplates() {
             <DialogTitle className="text-lg font-bold flex items-center gap-2">
               <Mail className="h-5 w-5 text-[#1d7c8a]" />
               {editingTemplate
-                ? `Edit Template: ${editingTemplate.templateName}`
+                ? `Template: ${editingTemplate.templateName}`
                 : "Create New Email Template"}
             </DialogTitle>
             <DialogDescription>
@@ -829,56 +829,6 @@ export default function EmailTemplates() {
                 <Label className="text-xs font-semibold">
                   Email Subject <span className="text-red-500">*</span>
                 </Label>
-
-                {/* Variable inserter for Subject */}
-                <div className="relative">
-                  <Button
-                    type="button"
-                    variant="outline"
-                    size="sm"
-                    className="h-6 text-[11px] px-2 flex items-center gap-1 border-dashed text-[#1d7c8a]"
-                    onClick={() =>
-                      setSubjectVarDropdownOpen(!subjectVarDropdownOpen)
-                    }
-                  >
-                    <Sparkles className="h-3 w-3" />
-                    Insert in Subject
-                    <ChevronDown className="h-3 w-3" />
-                  </Button>
-
-                  {subjectVarDropdownOpen && (
-                    <div className="absolute right-0 top-7 z-50 w-64 max-h-60 overflow-y-auto bg-white border rounded shadow-lg p-1.5 space-y-2 text-xs">
-                      {Object.entries(groupedVariables).map(
-                        ([category, vars]) => (
-                          <div key={category} className="space-y-1">
-                            <span className="font-bold text-[10px] uppercase text-muted-foreground tracking-wider px-1">
-                              {category}
-                            </span>
-                            <div className="flex flex-col gap-0.5">
-                              {vars.map((v) => (
-                                <button
-                                  key={v.variable}
-                                  type="button"
-                                  className="text-left px-2 py-1 rounded hover:bg-slate-100 flex items-center justify-between group"
-                                  onClick={() =>
-                                    handleInsertSubjectVariable(v.variable)
-                                  }
-                                >
-                                  <span className="font-medium text-slate-800">
-                                    {v.label}
-                                  </span>
-                                  <code className="text-[10px] text-muted-foreground group-hover:text-primary">
-                                    {`{{${v.variable}}}`}
-                                  </code>
-                                </button>
-                              ))}
-                            </div>
-                          </div>
-                        ),
-                      )}
-                    </div>
-                  )}
-                </div>
               </div>
 
               <Input
@@ -925,51 +875,6 @@ export default function EmailTemplates() {
                 <Label className="text-xs font-semibold">
                   Email Body (HTML) <span className="text-red-500">*</span>
                 </Label>
-                <div className="relative">
-                  <Button
-                    type="button"
-                    variant="outline"
-                    size="sm"
-                    className="h-7 text-xs px-2.5 flex items-center gap-1 text-[#1d7c8a] font-medium"
-                    onClick={() => setVarDropdownOpen(!varDropdownOpen)}
-                  >
-                    <Plus className="h-3.5 w-3.5" />
-                    Insert Variable ▼
-                  </Button>
-
-                  {varDropdownOpen && (
-                    <div className="absolute right-0 top-8 z-50 w-72 max-h-72 overflow-y-auto bg-white border rounded shadow-xl p-2 space-y-2.5 text-xs">
-                      {Object.entries(groupedVariables).map(
-                        ([category, vars]) => (
-                          <div key={category} className="space-y-1">
-                            <span className="font-bold text-[10px] uppercase text-muted-foreground tracking-wider px-1">
-                              {category}
-                            </span>
-                            <div className="flex flex-col gap-0.5">
-                              {vars.map((v) => (
-                                <button
-                                  key={v.variable}
-                                  type="button"
-                                  className="text-left px-2 py-1 rounded hover:bg-slate-100 flex items-center justify-between group"
-                                  onClick={() =>
-                                    handleInsertVariable(v.variable)
-                                  }
-                                >
-                                  <span className="font-medium text-slate-800">
-                                    {v.label}
-                                  </span>
-                                  <code className="text-[10px] text-muted-foreground group-hover:text-primary">
-                                    {`{{${v.variable}}}`}
-                                  </code>
-                                </button>
-                              ))}
-                            </div>
-                          </div>
-                        ),
-                      )}
-                    </div>
-                  )}
-                </div>
               </div>
 
               {/* Tiptap Toolbar & Editor Container */}
