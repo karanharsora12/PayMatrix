@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
+import { ForgotPasswordModal } from "@/components/auth/ForgotPasswordModal";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -452,51 +453,11 @@ export default function Login() {
       </div>
 
       {/* Forgot Password Modal */}
-      <Dialog open={forgotPasswordOpen} onOpenChange={setForgotPasswordOpen}>
-        <DialogContent className="max-w-md">
-          <DialogHeader>
-            <div className="h-10 w-10 rounded-xl bg-primary/10 text-primary flex items-center justify-center mb-2">
-              <KeyRound className="h-5 w-5" />
-            </div>
-            <DialogTitle>Reset Password</DialogTitle>
-            <DialogDescription className="text-xs text-muted-foreground">
-              For enterprise security, password resets are handled by your
-              organization's system administrator.
-            </DialogDescription>
-          </DialogHeader>
-
-          <div className="space-y-3 py-2 text-xs text-muted-foreground">
-            <div className="p-3 rounded-lg bg-muted/50 border border-border">
-              <p className="font-semibold text-foreground mb-1">
-                How to regain access:
-              </p>
-              <ul className="list-disc list-inside space-y-1">
-                <li>Contact your company's HR or Payroll administrator.</li>
-                <li>Request an account reset or temporary credentials.</li>
-              </ul>
-            </div>
-          </div>
-
-          <DialogFooter>
-            <Button
-              type="button"
-              variant="outline"
-              onClick={() => setForgotPasswordOpen(false)}
-            >
-              Close
-            </Button>
-            <Button
-              type="button"
-              onClick={() => {
-                setForgotPasswordOpen(false);
-                handleFillDemo();
-              }}
-            >
-              Use Demo Admin
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+      <ForgotPasswordModal 
+        open={forgotPasswordOpen} 
+        onOpenChange={setForgotPasswordOpen} 
+        initialEmail={email} 
+      />
     </div>
   );
 }

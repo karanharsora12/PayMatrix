@@ -44,6 +44,14 @@ export const authApi = {
   },
   changePassword: async (payload: { oldPassword: string; newPassword: string }) => {
     const res = await api.post('/auth/change-password', payload);
-    return unwrap(res).data;
+    return unwrap<any>(res).data;
+  },
+  sendPasswordResetOtp: async (email: string) => {
+    const res = await api.post('/auth/forgot-password/send-otp', { email });
+    return unwrap<any>(res);
+  },
+  verifyOtpAndResetPassword: async (payload: { email: string; otp: string; newPassword: string }) => {
+    const res = await api.post('/auth/forgot-password/verify-otp', payload);
+    return unwrap<any>(res);
   },
 };

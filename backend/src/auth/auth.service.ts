@@ -5,6 +5,8 @@ import { eq } from 'drizzle-orm';
 import * as bcrypt from 'bcrypt';
 import { DRIZZLE } from '../database/database.module';
 import * as schema from '../db/schema';
+import { EmailSenderService } from '../email-templates/email-sender.service';
+import { randomBytes, randomInt } from 'crypto';
 
 @Injectable()
 export class AuthService {
@@ -12,6 +14,7 @@ export class AuthService {
     @Inject(DRIZZLE) private db: any,
     private jwt: JwtService,
     private config: ConfigService,
+    private emailSender: EmailSenderService,
   ) {}
 
   private async loadPermissions(userId: string) {
@@ -145,6 +148,80 @@ export class AuthService {
 
   async hashPassword(plain: string) {
     return bcrypt.hash(plain, 10);
+  }
+
+  async sendPasswordResetOtp(email: string) {
+    const user = await this.db.query.users.findFirst({
+      where: (u: any, { eq }: any) => eq(u.email, email.toLowerCase())
+    });
+    if (!user) {
+      // Don't leak if user exists, but act like it worked
+      return { message: 'If that email exists, an OTP has been sent.' };
+    }
+
+    // Generate 6 digit OTP
+    const otp = randomInt(100000, 999999).toString();
+    const expiresAt = new Date();
+    expiresAt.setMinutes(expiresAt.getMinutes() + 10); // 10 mins expiry
+
+    const id = randomBytes(16).toString('hex');
+    await this.db.insert(schema.passwordResetOtps).values({
+      id,
+      email: email.toLowerCase(),
+      otp,
+      expiresAt,
+      createdAt: new Date(),
+    });
+
+    // Send email
+    await this.emailSender.sendEmail({
+      companyId: user.companyId || 'SYSTEM',
+      toEmail: email,
+      subject: 'Your Password Reset OTP',
+      bodyHtml: `<p>Your OTP for password reset is <strong>${otp}</strong>. It is valid for 10 minutes.</p>`,
+    });
+
+    return { message: 'OTP sent to your email address.' };
+  }
+
+  async verifyOtpAndResetPassword(email: string, otp: string, newPassword: string) {
+    const user = await this.db.query.users.findFirst({
+      where: (u: any, { eq }: any) => eq(u.email, email.toLowerCase())
+    });
+    if (!user) throw new BadRequestException({ message: 'Invalid request' });
+
+    const now = new Date();
+    const record = await this.db.query.passwordResetOtps.findFirst({
+      where: (r: any, { eq, and, gt }: any) => and(
+        eq(r.email, email.toLowerCase()),
+        eq(r.otp, otp),
+        gt(r.expiresAt, now)
+      ),
+      orderBy: (r: any, { desc }: any) => [desc(r.createdAt)]
+    });
+
+    if (!record) {
+      throw new BadRequestException({ message: 'Invalid or expired OTP' });
+    }
+
+    const hash = await this.hashPassword(newPassword);
+    await this.db.update(schema.users).set({ passwordHash: hash, updatedAt: new Date() }).where(eq(schema.users.id, user.id));
+    
+    // Cleanup OTPs for this user
+    await this.db.delete(schema.passwordResetOtps).where(eq(schema.passwordResetOtps.email, email.toLowerCase()));
+
+    // Audit log
+    await this.db.insert(schema.auditLogs).values({
+      id: randomBytes(16).toString('hex'),
+      companyId: user.companyId,
+      userId: user.id,
+      action: 'PASSWORD_RESET',
+      entity: 'users',
+      entityId: user.id,
+      details: { method: 'otp' },
+    });
+
+    return { message: 'Password reset successful.' };
   }
 }
 

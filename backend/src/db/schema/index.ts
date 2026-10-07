@@ -63,3 +63,4 @@ export * from "./audit-logs";
 export * from "./notifications";
 export * from "./settings";
 export * from "./email-templates";
+export * from "./password-resets";

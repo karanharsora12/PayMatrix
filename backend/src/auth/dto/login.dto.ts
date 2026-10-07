@@ -25,6 +25,27 @@ export class ChangePasswordDto {
 
   @ApiProperty()
   @IsString()
-  @MinLength(8)
+  @MinLength(6)
+  newPassword: string;
+}
+
+export class SendOtpDto {
+  @ApiProperty({ example: 'admin@paymatrix.com' })
+  @IsEmail()
+  email: string;
+}
+
+export class VerifyOtpResetPasswordDto {
+  @ApiProperty()
+  @IsEmail()
+  email: string;
+
+  @ApiProperty()
+  @IsString()
+  otp: string;
+
+  @ApiProperty()
+  @IsString()
+  @MinLength(6)
   newPassword: string;
 }

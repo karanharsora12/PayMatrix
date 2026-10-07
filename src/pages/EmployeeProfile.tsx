@@ -1,9 +1,11 @@
+import { useState } from "react";
 import { useParams, Link } from "react-router-dom";
 import { useEmployee } from "@/hooks/useEmployees";
 import { useCanAssignDocument } from "@/hooks/useUserParameters";
 import { useEmployeeSalary } from "@/hooks/useSalary";
 import { EmployeePreference } from "@/components/employee/EmployeePreference";
 import { AssignDocumentModal } from "@/components/employee/AssignDocumentModal";
+import { UpdatePasswordModal } from "@/components/employee/UpdatePasswordModal";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -19,6 +21,7 @@ import {
   CreditCard,
   Layers,
   Plus,
+  ShieldCheck,
 } from "lucide-react";
 import { ListingCard } from "@/components/common/ListingCard";
 import { ListingHeader } from "@/components/common/ListingHeader";
@@ -36,6 +39,7 @@ export default function EmployeeProfile() {
 
   const nav = useNavigate();
   const canAssignDocument = useCanAssignDocument();
+  const [updatePasswordOpen, setUpdatePasswordOpen] = useState(false);
 
   if (isLoading) {
     return (
@@ -298,6 +302,10 @@ export default function EmployeeProfile() {
                           Leave Management
                         </Button>
                       </Link>
+                      <Button variant="outline" size="sm" onClick={() => setUpdatePasswordOpen(true)}>
+                        <ShieldCheck className="h-3.5 w-3.5 mr-1" />
+                        Change Password
+                      </Button>
                     </CardContent>
                   </Card>
                 </div>
@@ -601,6 +609,7 @@ export default function EmployeeProfile() {
         cancelLabel="Back to Employees"
         hideSave={true}
       />
+      <UpdatePasswordModal open={updatePasswordOpen} onOpenChange={setUpdatePasswordOpen} />
     </div>
   );
 }

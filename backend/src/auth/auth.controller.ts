@@ -1,7 +1,7 @@
 import { Body, Controller, Get, Post, UseGuards } from '@nestjs/common';
 import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
 import { AuthService } from './auth.service';
-import { LoginDto, RefreshDto, ChangePasswordDto } from './dto/login.dto';
+import { LoginDto, RefreshDto, ChangePasswordDto, SendOtpDto, VerifyOtpResetPasswordDto } from './dto/login.dto';
 import { Public } from '../common/decorators/public.decorator';
 import { CurrentUser } from '../common/decorators/current-user.decorator';
 
@@ -22,6 +22,20 @@ export class AuthController {
   async refresh(@Body() dto: RefreshDto) {
     const data = await this.auth.refresh(dto.refreshToken);
     return { success: true, data, message: 'Token refreshed' };
+  }
+
+  @Public()
+  @Post('forgot-password/send-otp')
+  async sendForgotPasswordOtp(@Body() dto: SendOtpDto) {
+    const data = await this.auth.sendPasswordResetOtp(dto.email);
+    return { success: true, data, message: data.message };
+  }
+
+  @Public()
+  @Post('forgot-password/verify-otp')
+  async verifyOtpAndResetPassword(@Body() dto: VerifyOtpResetPasswordDto) {
+    const data = await this.auth.verifyOtpAndResetPassword(dto.email, dto.otp, dto.newPassword);
+    return { success: true, data, message: data.message };
   }
 
   @Post('logout')
