@@ -15,8 +15,60 @@ import type {
 } from "ag-grid-community";
 import apiClient from "@/api/client";
 import "@/styles/ag-grid.css";
+import { SearchX } from "lucide-react";
 
 ModuleRegistry.registerModules([AllCommunityModule]);
+
+const NoRowsOverlay = () => {
+  return (
+    <div
+      className="flex flex-col items-center justify-center h-full w-full p-8 select-none group"
+      aria-label="No records found"
+    >
+      <div className="relative mb-6">
+        <div
+          className="absolute inset-0 bg-primary-action/20 blur-xl rounded-full
+          transition-all duration-500
+          group-hover:bg-primary-action/30
+          group-focus-within:bg-primary-action/30"
+        />
+        <div
+          className="relative flex h-20 w-20 items-center justify-center rounded-2xl
+          bg-gradient-to-tr from-primary-action/10 to-primary-action/5
+          border border-primary-action/20
+          shadow-sm
+          transition-all duration-500
+          group-hover:scale-105 group-hover:rotate-2 group-hover:border-primary-action/30
+          group-focus-within:scale-105 group-focus-within:rotate-2 group-focus-within:border-primary-action/30
+          active:scale-95"
+        >
+          <SearchX
+            className="h-10 w-10 text-primary-action/80
+            transition-transform duration-500
+            group-hover:scale-110
+            group-focus-within:scale-110
+            active:scale-90"
+            strokeWidth={1.5}
+          />
+        </div>
+      </div>
+      <div className="text-center space-y-2 max-w-sm">
+        <h3
+          className="text-lg font-semibold tracking-tight text-foreground
+          transition-colors
+          group-hover:text-primary-action
+          group-focus-within:text-primary-action"
+        >
+          No records found
+        </h3>
+        <p className="text-sm text-muted-foreground leading-relaxed">
+          We couldn't find any data matching your criteria. Try adjusting your
+          search or filters to see results.
+        </p>
+      </div>
+    </div>
+  );
+};
 
 export interface DataGridProps<TData = any> {
   rowData?: TData[];
@@ -257,6 +309,7 @@ export const DataGrid = React.forwardRef<AgGridReact, DataGridProps>(
           rowSelection="single"
           animateRows={true}
           pinnedBottomRowData={pinnedBottomRowData ?? apiSummary}
+          noRowsOverlayComponent={NoRowsOverlay}
           {...restGridOptions}
         />
       </div>
