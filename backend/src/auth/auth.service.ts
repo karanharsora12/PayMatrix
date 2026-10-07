@@ -155,8 +155,10 @@ export class AuthService {
       where: (u: any, { eq }: any) => eq(u.email, email.toLowerCase())
     });
     if (!user) {
-      // Don't leak if user exists, but act like it worked
-      return { message: 'If that email exists, an OTP has been sent.' };
+      throw new BadRequestException({ message: 'User not found with this email address.' });
+    }
+    if (!user.isActive) {
+      throw new BadRequestException({ message: 'This user account is inactive. Please contact support.' });
     }
 
     // Generate 6 digit OTP

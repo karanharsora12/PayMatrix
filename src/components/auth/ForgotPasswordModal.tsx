@@ -59,7 +59,7 @@ export function ForgotPasswordModal({ open, onOpenChange, initialEmail = "" }: F
     } catch (err: any) {
       toast({
         title: "Failed to send OTP",
-        description: err.response?.data?.message || err.message,
+        description: err.response?.data?.error?.message || err.message,
         variant: "destructive",
       });
     } finally {
@@ -89,7 +89,7 @@ export function ForgotPasswordModal({ open, onOpenChange, initialEmail = "" }: F
     } catch (err: any) {
       toast({
         title: "Reset Failed",
-        description: err.response?.data?.message || err.message,
+        description: err.response?.data?.error?.message || err.message,
         variant: "destructive",
       });
     } finally {
