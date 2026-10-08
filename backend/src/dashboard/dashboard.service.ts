@@ -14,14 +14,58 @@ export class DashboardService {
     const payrollAgg: any = await this.db.select({ gross: sql`coalesce(sum(${schema.payrollRuns.grossAmount}),0)`, deductions: sql`coalesce(sum(${schema.payrollRuns.totalDeductions}),0)`, net: sql`coalesce(sum(${schema.payrollRuns.netAmount}),0)` }).from(schema.payrollRuns).where(eq(schema.payrollRuns.companyId, companyId)).then((r: any) => r[0]);
     const deptRows: any[] = await this.db.select({ dept: schema.departments.name, count: sql`count(${schema.employees.id})` }).from(schema.employees).leftJoin(schema.departments, eq(schema.employees.departmentId, schema.departments.id)).where(eq(schema.employees.companyId, companyId)).groupBy(schema.departments.name);
     const upcomingHolidays = await this.db.query.holidays.findMany({ where: (h: any, { eq, and, gte }: any) => and(eq(h.companyId, companyId), gte(h.holidayDate, today)), limit: 5, orderBy: (h: any, { asc }: any) => asc(h.holidayDate) });
+
+    // Get today's attendance records for the table
+    const todayAttendance = await this.db.query.attendance.findMany({
+      where: and(
+        eq(schema.attendance.companyId, companyId),
+        eq(schema.attendance.attendanceDate, today)
+      ),
+      with: {
+        employee: {
+          with: {
+            department: true,
+            designation: true,
+          },
+        },
+      },
+      orderBy: (attendance, { asc }) => asc(schema.attendance.attendanceDate),
+    });
+
+    const todayAttendanceRecords = todayAttendance.map(record => ({
+      employee: {
+        id: record.employee.id,
+        firstName: record.employee.firstName,
+        lastName: record.employee.lastName,
+        employeeCode: record.employee.employeeCode,
+        department: record.employee.department ? {
+          id: record.employee.department.id,
+          name: record.employee.department.name,
+        } : null,
+        designation: record.employee.designation ? {
+          id: record.employee.designation.id,
+          name: record.employee.designation.name,
+        } : null,
+      },
+      attendanceDate: record.attendanceDate,
+      checkIn: record.checkIn,
+      checkOut: record.checkOut,
+      breakMinutes: record.breakMinutes,
+      overtimeMinutes: record.overtimeMinutes,
+      status: record.status,
+      remarks: record.remarks,
+      shiftName: record.shiftName || 'Not Assigned',
+    }));
+
     return {
       success: true,
       data: {
         employees: { total, active, inactive: total - active },
-        attendance: { present: map.PRESENT ?? 0, absent: map.ABSENT ?? 0, late: map.LATE ?? 0, onLeave: map.ON_LEAVE ?? 0 },
+        attendance: { present: map.PRESENT ?? 0, absent: map.ABSENT ?? 0, late: map.LATE ?? 0, onLeave: map.ON_LEAVE ?? 0, halfDay: map.HALF_DAY ?? 0 },
         payroll: { gross: Number(payrollAgg.gross), deductions: Number(payrollAgg.deductions), net: Number(payrollAgg.net) },
         departments: deptRows,
         upcomingHolidays,
+        todayAttendance: todayAttendanceRecords,
       },
     };
   }
