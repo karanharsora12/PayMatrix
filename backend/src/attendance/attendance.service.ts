@@ -5,7 +5,7 @@ import {
   Injectable,
   NotFoundException,
 } from '@nestjs/common';
-import { and, desc, eq, gte, inArray, lte, sql } from 'drizzle-orm';
+import { and, asc, desc, eq, gte, inArray, isNull, lte, or, sql } from 'drizzle-orm';
 import { DRIZZLE } from '../database/database.module';
 import * as schema from '../db/schema';
 import { paginated } from '../common/dto/pagination.dto';
@@ -342,6 +342,10 @@ export class AttendanceService {
       }
     }
 
+    if (filter.employeeId) {
+      conditions.push(eq(schema.attendance.employeeId, filter.employeeId));
+    }
+
     if (filter.branchId || filter.departmentId) {
       const empConditions = [eq(schema.employees.companyId, companyId)];
       if (filter.branchId) empConditions.push(eq(schema.employees.branchId, filter.branchId));
@@ -372,13 +376,27 @@ export class AttendanceService {
 
     const where = and(...conditions);
 
-    // Total employees count in company (or filtered branch/dept)
+    // Total employees count in company (or filtered branch/dept / single employee)
     const empCountWhere = [
       eq(schema.employees.companyId, companyId),
       eq(schema.employees.isActive, true),
+      isNull(schema.employees.deletedAt),
     ];
-    if (filter.branchId) empCountWhere.push(eq(schema.employees.branchId, filter.branchId));
-    if (filter.departmentId) empCountWhere.push(eq(schema.employees.departmentId, filter.departmentId));
+    if (filter.employeeId) {
+      empCountWhere.push(eq(schema.employees.id, filter.employeeId));
+    } else {
+      if (filter.branchId) empCountWhere.push(eq(schema.employees.branchId, filter.branchId));
+      if (filter.departmentId) empCountWhere.push(eq(schema.employees.departmentId, filter.departmentId));
+      if (dateVal) {
+        empCountWhere.push(lte(schema.employees.joiningDate, dateVal as any));
+        empCountWhere.push(
+          or(
+            isNull(schema.employees.lastWorkingDate),
+            gte(schema.employees.lastWorkingDate, dateVal as any),
+          ) as any,
+        );
+      }
+    }
 
     const totalEmployees = await this.db
       .select({ count: sql`count(*)` })
@@ -428,6 +446,37 @@ export class AttendanceService {
         overtimeMinutes: totalOvertimeMinutes,
       },
     };
+  }
+
+  async statusSeries(
+    companyId: string,
+    filter: { fromDate: string; toDate: string; employeeId?: string },
+  ) {
+    const conditions = [
+      eq(schema.attendance.companyId, companyId),
+      gte(schema.attendance.attendanceDate, filter.fromDate as any),
+      lte(schema.attendance.attendanceDate, filter.toDate as any),
+    ];
+    if (filter.employeeId) {
+      conditions.push(eq(schema.attendance.employeeId, filter.employeeId));
+    }
+
+    const rows = await this.db
+      .select({
+        date: schema.attendance.attendanceDate,
+        status: schema.attendance.status,
+        count: sql`count(*)`,
+      })
+      .from(schema.attendance)
+      .where(and(...conditions))
+      .groupBy(schema.attendance.attendanceDate, schema.attendance.status)
+      .orderBy(asc(schema.attendance.attendanceDate));
+
+    return rows.map((r: any) => ({
+      date: r.date,
+      status: r.status,
+      count: Number(r.count),
+    }));
   }
 
   async calendar(companyId: string, employeeId?: string, month?: string) {

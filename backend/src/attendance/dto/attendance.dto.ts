@@ -198,6 +198,11 @@ export class AttendanceFilterDto extends PaginationDto {
 }
 
 export class AttendanceSummaryFilterDto {
+  @ApiPropertyOptional()
+  @IsOptional()
+  @IsUUID()
+  employeeId?: string;
+
   @ApiPropertyOptional({ example: '2026-09-21' })
   @IsOptional()
   @IsString()

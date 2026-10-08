@@ -214,13 +214,13 @@ export class AuthService {
 
     // Audit log
     await this.db.insert(schema.auditLogs).values({
-      id: randomBytes(16).toString('hex'),
       companyId: user.companyId,
       userId: user.id,
-      action: 'PASSWORD_RESET',
-      entity: 'users',
+      module: 'auth',
+      action: 'UPDATE',
+      entityType: 'users',
       entityId: user.id,
-      details: { method: 'otp' },
+      newValues: { method: 'otp', event: 'password_reset' } as any,
     });
 
     return { message: 'Password reset successful.' };

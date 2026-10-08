@@ -311,6 +311,87 @@ export class LeaveService {
     return paginated(rows, total, filter, 'Leave requests fetched successfully');
   }
 
+  async summary(
+    companyId: string,
+    filter: { fromDate: string; toDate: string; employeeId?: string },
+  ) {
+    const overlapConditions = [
+      eq(schema.leaveRequests.companyId, companyId),
+      lte(schema.leaveRequests.fromDate, filter.toDate as any),
+      gte(schema.leaveRequests.toDate, filter.fromDate as any),
+    ];
+    if (filter.employeeId) {
+      overlapConditions.push(eq(schema.leaveRequests.employeeId, filter.employeeId));
+    }
+    const overlapWhere = and(...overlapConditions);
+
+    const statusRows: any[] = await this.db
+      .select({
+        status: schema.leaveRequests.status,
+        count: sql`count(*)`,
+        days: sql`coalesce(sum(${schema.leaveRequests.totalDays}), 0)`,
+      })
+      .from(schema.leaveRequests)
+      .where(overlapWhere)
+      .groupBy(schema.leaveRequests.status);
+
+    const typeRows: any[] = await this.db
+      .select({
+        leaveTypeId: schema.leaveRequests.leaveTypeId,
+        name: schema.leaveTypes.name,
+        count: sql`count(*)`,
+      })
+      .from(schema.leaveRequests)
+      .leftJoin(
+        schema.leaveTypes,
+        eq(schema.leaveRequests.leaveTypeId, schema.leaveTypes.id),
+      )
+      .where(overlapWhere)
+      .groupBy(schema.leaveRequests.leaveTypeId, schema.leaveTypes.name);
+
+    const today = new Date().toISOString().slice(0, 10);
+    const todayConditions = [
+      eq(schema.leaveRequests.companyId, companyId),
+      eq(schema.leaveRequests.status, 'APPROVED'),
+      lte(schema.leaveRequests.fromDate, today as any),
+      gte(schema.leaveRequests.toDate, today as any),
+    ];
+    if (filter.employeeId) {
+      todayConditions.push(eq(schema.leaveRequests.employeeId, filter.employeeId));
+    }
+    const onLeaveToday = await this.db
+      .select({
+        count: sql`count(distinct ${schema.leaveRequests.employeeId})`,
+      })
+      .from(schema.leaveRequests)
+      .where(and(...todayConditions))
+      .then((r: any) => Number(r[0].count));
+
+    const byStatus: Record<string, { count: number; days: number }> = {};
+    for (const r of statusRows) {
+      byStatus[r.status] = { count: Number(r.count), days: Number(r.days) };
+    }
+
+    return {
+      period: {
+        approved: byStatus['APPROVED']?.count ?? 0,
+        pending: byStatus['PENDING']?.count ?? 0,
+        rejected: byStatus['REJECTED']?.count ?? 0,
+        cancelled: byStatus['CANCELLED']?.count ?? 0,
+        approvedDays: byStatus['APPROVED']?.days ?? 0,
+        pendingDays: byStatus['PENDING']?.days ?? 0,
+      },
+      byType: typeRows
+        .map((r: any) => ({
+          leaveTypeId: r.leaveTypeId,
+          name: r.name ?? 'Unknown',
+          count: Number(r.count),
+        }))
+        .sort((a: any, b: any) => b.count - a.count),
+      onLeaveToday,
+    };
+  }
+
   async getRequest(companyId: string, id: string) {
     const row = await this.db.query.leaveRequests.findFirst({
       where: (r: any, { eq, and }: any) =>
