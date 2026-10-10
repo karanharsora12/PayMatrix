@@ -218,7 +218,13 @@ export default function AddEmployee() {
 
   const eData: any = (empData as any)?.data || empData;
   const tiedUser = isEdit ? eData?.user : null;
-  const userRole = tiedUser?.roles?.[0]?.id || "";
+  const userRole =
+    eData?.roleId ||
+    tiedUser?.roleId ||
+    tiedUser?.roles?.[0]?.id ||
+    tiedUser?.roles?.[0]?.roleId ||
+    (typeof tiedUser?.roles?.[0] === "string" ? tiedUser?.roles?.[0] : "") ||
+    "";
 
   const watchedFirstName = formData.firstName;
   const watchedLastName = formData.lastName;
@@ -235,7 +241,17 @@ export default function AddEmployee() {
         setAvatarPreview(getFileUrl(e.profilePhotoUrl));
       }
 
-      setFormData({
+      const roleFromEmp =
+        e.roleId ||
+        e.user?.roleId ||
+        e.user?.roles?.[0]?.id ||
+        e.user?.roles?.[0]?.roleId ||
+        (typeof e.user?.roles?.[0] === "string" ? e.user.roles[0] : "") ||
+        userRole ||
+        "";
+
+      setFormData((prev) => ({
+        ...prev,
         employeeCode: e.employeeCode || e.employeeId || "",
         firstName: e.firstName || "",
         lastName: e.lastName || "",
@@ -258,12 +274,19 @@ export default function AddEmployee() {
         accountNumber: e.accountNumber || "",
         ifscCode: e.ifscCode || "",
         accountHolder: e.accountHolder || "",
-        roleId: userRole,
+        roleId: roleFromEmp || prev.roleId || "",
         password: "",
         employeeGroupId: e.employeeGroupId || e.employeeGroup?.id || "",
-      });
+      }));
     }
   }, [isEdit, empData, userRole]);
+
+  // Sync roleId if userRole becomes available asynchronously
+  useEffect(() => {
+    if (userRole && !formData.roleId) {
+      setFormData((prev) => ({ ...prev, roleId: userRole }));
+    }
+  }, [userRole, formData.roleId]);
 
   const { data: depts } = useQuery({
     queryKey: ["departments", "list"],
@@ -294,6 +317,20 @@ export default function AddEmployee() {
   const desigList = (desigs as any)?.data ?? [];
   const rolesList: any[] = (rolesResp as any)?.data ?? [];
   const employeeGroupList = (employeeGroups as any)?.data ?? [];
+
+  // Ensure the employee's role is always present in select options even during async loading
+  const effectiveRolesList = useMemo(() => {
+    const list = [...rolesList];
+    const targetRoleId = formData.roleId || userRole;
+    if (targetRoleId && !list.some((r: any) => r.id === targetRoleId)) {
+      const knownRoleName =
+        tiedUser?.role?.name ||
+        tiedUser?.roles?.[0]?.name ||
+        (targetRoleId === userRole ? "Employee" : "Selected Role");
+      list.push({ id: targetRoleId, name: knownRoleName });
+    }
+    return list;
+  }, [rolesList, formData.roleId, userRole, tiedUser]);
 
   const watchedDepartmentId = formData.departmentId;
   const watchedDesignationId = formData.designationId;
@@ -550,6 +587,7 @@ export default function AddEmployee() {
                     }
                   >
                     <Select
+                      key={`role-select-${formData.roleId || "empty"}-${effectiveRolesList.length}`}
                       onValueChange={(val) => handleSelectChange("roleId", val)}
                       value={formData.roleId || ""}
                     >
@@ -557,11 +595,11 @@ export default function AddEmployee() {
                         <SelectValue placeholder="Select role..." />
                       </SelectTrigger>
                       <SelectContent>
-                        {rolesList.map((r: any) => (
+                        {effectiveRolesList.map((r: any) => (
                           <SelectItem key={r.id} value={r.id}>
                             <div className="flex items-center gap-2">
                               <Shield className="h-3.5 w-3.5 text-muted-foreground" />
-                              {r.name}
+                              <span>{r.name}</span>
                             </div>
                           </SelectItem>
                         ))}

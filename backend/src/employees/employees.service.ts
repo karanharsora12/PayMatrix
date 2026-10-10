@@ -95,18 +95,38 @@ export class EmployeesService {
         message: "Employee not found",
       });
 
-    const user = await this.db.query.users.findFirst({
+    let user = await this.db.query.users.findFirst({
       where: (u: any, { eq, and }: any) =>
         and(eq(u.employeeId, id), eq(u.companyId, companyId)),
     });
+
+    if (!user && row.email) {
+      user = await this.db.query.users.findFirst({
+        where: (u: any, { eq, and }: any) =>
+          and(eq(u.email, row.email), eq(u.companyId, companyId)),
+      });
+      if (user && !user.employeeId) {
+        await this.db
+          .update(schema.users)
+          .set({ employeeId: id })
+          .where(eq(schema.users.id, user.id));
+      }
+    }
 
     let userRoles: any[] = [];
     if (user) {
       const ur = await this.db.query.userRoles.findMany({
         where: (r: any, { eq }: any) => eq(r.userId, user.id),
+        with: { role: true },
       });
-      userRoles = ur.map((x: any) => ({ id: x.roleId }));
+      userRoles = ur.map((x: any) => ({
+        id: x.roleId,
+        roleId: x.roleId,
+        name: x.role?.name,
+        slug: x.role?.slug,
+      }));
     }
+    const resolvedRoleId = userRoles[0]?.id || null;
 
     const address = await this.db.query.employeeAddresses.findFirst({
       where: (a: any, { eq }: any) => eq(a.employeeId, id),
@@ -124,7 +144,15 @@ export class EmployeesService {
       success: true,
       data: {
         ...row,
-        user: user ? { ...user, roles: userRoles } : null,
+        user: user
+          ? {
+              ...user,
+              roles: userRoles,
+              roleId: resolvedRoleId,
+              role: userRoles[0] || null,
+            }
+          : null,
+        roleId: resolvedRoleId,
         address: address?.addressLine1 || "",
         bankName: bankAccount?.bankName || "",
         accountNumber: bankAccount?.accountNumber || "",
@@ -295,26 +323,45 @@ export class EmployeesService {
       }
 
       if (dto.email && roleId) {
-        const hash = password
-          ? await bcrypt.hash(password, 10)
-          : await bcrypt.hash("PayMatrix@123", 10);
-        const [u] = await this.db
-          .insert(schema.users)
-          .values({
-            companyId,
-            employeeId: row.id,
-            email: dto.email,
-            passwordHash: hash,
-            isActive: true,
-          })
-          .returning();
-        await this.db
-          .insert(schema.userRoles)
-          .values({
-            userId: u.id,
-            roleId: roleId,
-          })
-          .catch(() => {});
+        let u = await this.db.query.users.findFirst({
+          where: (usr: any, { eq, and }: any) =>
+            and(eq(usr.email, dto.email), eq(usr.companyId, companyId)),
+        });
+
+        if (u) {
+          await this.db
+            .update(schema.users)
+            .set({ employeeId: row.id })
+            .where(eq(schema.users.id, u.id));
+        } else {
+          const hash = password
+            ? await bcrypt.hash(password, 10)
+            : await bcrypt.hash("PayMatrix@123", 10);
+          const [newU] = await this.db
+            .insert(schema.users)
+            .values({
+              companyId,
+              employeeId: row.id,
+              email: dto.email,
+              passwordHash: hash,
+              isActive: true,
+            })
+            .returning();
+          u = newU;
+        }
+
+        if (u) {
+          await this.db
+            .delete(schema.userRoles)
+            .where(eq(schema.userRoles.userId, u.id));
+          await this.db
+            .insert(schema.userRoles)
+            .values({
+              userId: u.id,
+              roleId: roleId,
+            })
+            .catch(() => {});
+        }
       }
 
       if (employeeGroupId) {
@@ -399,13 +446,11 @@ export class EmployeesService {
           .set({ addressLine1: address })
           .where(eq(schema.employeeAddresses.id, existingAddress.id));
       } else if (address) {
-        await this.db
-          .insert(schema.employeeAddresses)
-          .values({
-            employeeId: id,
-            addressType: "RESIDENTIAL",
-            addressLine1: address,
-          });
+        await this.db.insert(schema.employeeAddresses).values({
+          employeeId: id,
+          addressType: "RESIDENTIAL",
+          addressLine1: address,
+        });
       }
     }
 
@@ -447,26 +492,38 @@ export class EmployeesService {
 
     if (empFields.email !== undefined || password || roleId) {
       let u = await this.db.query.users.findFirst({
-        where: (u: any, { eq, and }: any) =>
-          and(eq(u.employeeId, id), eq(u.companyId, companyId)),
+        where: (usr: any, { eq, and }: any) =>
+          and(eq(usr.employeeId, id), eq(usr.companyId, companyId)),
       });
 
-      if (!u && empFields.email) {
-        // Create user if one doesn't exist and an email is provided
-        const hash = password
-          ? await bcrypt.hash(password, 10)
-          : await bcrypt.hash("PayMatrix@123", 10);
-        const [newU] = await this.db
-          .insert(schema.users)
-          .values({
-            companyId,
-            employeeId: row.id,
-            email: empFields.email,
-            passwordHash: hash,
-            isActive: true,
-          })
-          .returning();
-        u = newU;
+      const effectiveEmail = empFields.email || row.email;
+
+      if (!u && effectiveEmail) {
+        u = await this.db.query.users.findFirst({
+          where: (usr: any, { eq, and }: any) =>
+            and(eq(usr.email, effectiveEmail), eq(usr.companyId, companyId)),
+        });
+        if (u) {
+          await this.db
+            .update(schema.users)
+            .set({ employeeId: row.id })
+            .where(eq(schema.users.id, u.id));
+        } else {
+          const hash = password
+            ? await bcrypt.hash(password, 10)
+            : await bcrypt.hash("PayMatrix@123", 10);
+          const [newU] = await this.db
+            .insert(schema.users)
+            .values({
+              companyId,
+              employeeId: row.id,
+              email: effectiveEmail,
+              passwordHash: hash,
+              isActive: true,
+            })
+            .returning();
+          u = newU;
+        }
       } else if (u) {
         // Update existing user's email and/or password
         const userUpdates: any = {};

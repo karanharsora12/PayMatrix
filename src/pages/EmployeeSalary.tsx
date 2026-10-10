@@ -42,7 +42,8 @@ import { useAuth } from "@/context/AuthContext";
 export default function EmployeeSalary() {
   const { hasPermission } = useAuth();
   const canEdit = hasPermission("salary.edit") || hasPermission("payroll.edit");
-  const canDelete = hasPermission("salary.delete") || hasPermission("payroll.delete");
+  const canDelete =
+    hasPermission("salary.delete") || hasPermission("payroll.delete");
 
   const { data: employeesResp, isLoading: isEmpLoading } = useEmployees({
     pageSize: 100,
@@ -868,22 +869,21 @@ export default function EmployeeSalary() {
                 </div>
               </div>
             </div>
-
-            <DialogFooter className="pt-2">
-              <Button
-                type="button"
-                variant="outline"
-                onClick={() => setIsRevisionOpen(false)}
-              >
-                Cancel
-              </Button>
-              <Button type="submit" disabled={assignMutation.isPending}>
-                {assignMutation.isPending
-                  ? "Saving Revision..."
-                  : "Confirm & Save Revision"}
-              </Button>
-            </DialogFooter>
           </form>
+          <DialogFooter>
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => setIsRevisionOpen(false)}
+            >
+              Cancel
+            </Button>
+            <Button type="submit" disabled={assignMutation.isPending}>
+              {assignMutation.isPending
+                ? "Saving Revision..."
+                : "Confirm & Save Revision"}
+            </Button>
+          </DialogFooter>
         </DialogContent>
       </Dialog>
 
