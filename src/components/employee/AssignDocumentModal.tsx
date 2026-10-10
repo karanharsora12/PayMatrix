@@ -47,7 +47,7 @@ export function AssignDocumentModal({ employeeId }: { employeeId: string }) {
       });
       return;
     }
-    
+
     try {
       await assignMutation.mutateAsync({
         documentId,
@@ -81,7 +81,7 @@ export function AssignDocumentModal({ employeeId }: { employeeId: string }) {
         <DialogHeader>
           <DialogTitle>Assign Document to Employee</DialogTitle>
         </DialogHeader>
-        <form onSubmit={handleSubmit} className="space-y-4 pt-4">
+        <form onSubmit={handleSubmit} className="space-y-4">
           <div className="space-y-2">
             <Label>Select Document</Label>
             <Select value={documentId} onValueChange={setDocumentId}>
@@ -100,7 +100,10 @@ export function AssignDocumentModal({ employeeId }: { employeeId: string }) {
 
           <div className="space-y-2">
             <Label>Assignment Reason</Label>
-            <Select value={assignmentReason} onValueChange={setAssignmentReason}>
+            <Select
+              value={assignmentReason}
+              onValueChange={setAssignmentReason}
+            >
               <SelectTrigger>
                 <SelectValue />
               </SelectTrigger>
