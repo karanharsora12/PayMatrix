@@ -444,7 +444,7 @@ export default function Employees() {
             value={dept || "ALL"}
             onChange={handleDeptChange}
             placeholder="All Departments"
-            className="w-[180px] h-8 text-xs bg-white"
+            className="w-[180px] h-8 text-xs bg-background border-input"
           >
             <option value="ALL">All Departments</option>
             {departmentOptions.map((d) => (
@@ -461,7 +461,7 @@ export default function Employees() {
                 ? "No Designations"
                 : "All Designations"
             }
-            className="w-[180px] h-8 text-xs bg-white"
+            className="w-[180px] h-8 text-xs bg-background border-input"
             disabled={Boolean(
               dept && dept !== "ALL" && designationOptions.length === 0,
             )}

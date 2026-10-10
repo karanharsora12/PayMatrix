@@ -219,18 +219,18 @@ export function Sidebar({
   const content = (
     <div
       className={cn(
-        "flex flex-col h-full bg-sidebar border-r border-sidebar-border",
+        "flex flex-col h-full bg-sidebar text-sidebar-foreground border-r border-sidebar-border transition-colors",
         collapsed ? "w-[64px]" : "w-[260px]",
       )}
     >
-      <div className="h-[56px] flex items-center gap-3 px-4 border-b shrink-0">
-        <div className="h-8 w-8 rounded-lg bg-primary text-primary-foreground flex items-center justify-center font-bold text-sm shrink-0">
+      <div className="h-[56px] flex items-center gap-3 px-4 border-b border-sidebar-border shrink-0">
+        <div className="h-8 w-8 rounded-lg bg-primary text-primary-foreground flex items-center justify-center font-bold text-sm shrink-0 shadow-sm">
           PM
         </div>
         {!collapsed && (
           <div>
-            <div className="text-sm font-semibold leading-none">PayMatrix</div>
-            <div className="text-[11px] text-muted-foreground">
+            <div className="text-sm font-semibold leading-none text-sidebar-foreground">PayMatrix</div>
+            <div className="text-[11px] text-muted-foreground mt-0.5">
               Payroll & HRMS
             </div>
           </div>
@@ -245,10 +245,10 @@ export function Sidebar({
                 to={item.path}
                 className={({ isActive }) =>
                   cn(
-                    "flex items-center gap-3 px-2.5 py-2 rounded-md text-sm",
+                    "flex items-center gap-3 px-2.5 py-2 rounded-md text-sm transition-colors",
                     isActive
-                      ? "bg-primary/10 text-primary font-medium dark:bg-primary/20 dark:text-indigo-300"
-                      : "hover:bg-accent text-muted-foreground hover:text-foreground",
+                      ? "bg-primary/10 text-primary font-semibold dark:bg-primary/20"
+                      : "hover:bg-sidebar-accent text-sidebar-foreground/75 hover:text-sidebar-foreground",
                     collapsed && "justify-center",
                   )
                 }
@@ -263,7 +263,7 @@ export function Sidebar({
               {!collapsed ? (
                 <button
                   onClick={() => toggle(item.group)}
-                  className="flex w-full items-center justify-between px-2 py-1 text-[11px] font-semibold tracking-widest uppercase text-muted-foreground"
+                  className="flex w-full items-center justify-between px-2 py-1 text-[11px] font-semibold tracking-widest uppercase text-muted-foreground/80 hover:text-sidebar-foreground transition-colors"
                 >
                   {item.group}{" "}
                   <ChevronDown
@@ -271,7 +271,7 @@ export function Sidebar({
                   />
                 </button>
               ) : (
-                <div className="h-px bg-border my-2" />
+                <div className="h-px bg-sidebar-border my-2" />
               )}
               {(isOpen || collapsed) && (
                 <div className="space-y-0.5">
@@ -281,10 +281,10 @@ export function Sidebar({
                       to={it.path}
                       className={({ isActive }) =>
                         cn(
-                          "flex items-center gap-3 px-2.5 py-1.5 rounded-md text-[13px]",
+                          "flex items-center gap-3 px-2.5 py-1.5 rounded-md text-[13px] transition-colors",
                           isActive
-                            ? "bg-primary/10 text-primary font-medium dark:bg-primary/20 dark:text-indigo-300"
-                            : "hover:bg-accent text-zinc-600 dark:text-zinc-400 hover:text-foreground",
+                            ? "bg-primary/10 text-primary font-semibold dark:bg-primary/20"
+                            : "hover:bg-sidebar-accent text-sidebar-foreground/70 hover:text-sidebar-foreground",
                           collapsed && "justify-center",
                         )
                       }
@@ -314,10 +314,10 @@ export function Sidebar({
       {mobileOpen && (
         <div className="fixed inset-0 z-50 lg:hidden flex">
           <div
-            className="flex-1 bg-black/40"
+            className="flex-1 bg-black/60 backdrop-blur-xs"
             onClick={() => setMobileOpen(false)}
           />
-          <div className="w-[280px] bg-background h-full overflow-auto">
+          <div className="w-[280px] bg-sidebar text-sidebar-foreground h-full overflow-auto shadow-xl">
             {content}
           </div>
         </div>

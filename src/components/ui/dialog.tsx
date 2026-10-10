@@ -76,7 +76,7 @@ const DialogContent = React.forwardRef<
       <DialogPrimitive.Content
         ref={ref}
         className={cn(
-          "fixed left-[50%] top-[50%] z-50 flex flex-col w-full max-w-lg max-h-[90vh] translate-x-[-50%] translate-y-[-50%] border bg-background shadow-xl duration-200 data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 data-[state=closed]:zoom-out-95 data-[state=open]:zoom-in-95 data-[state=closed]:slide-out-to-left-1/2 data-[state=closed]:slide-out-to-top-[48%] data-[state=open]:slide-in-from-left-1/2 data-[state=open]:slide-in-from-top-[48%] sm:rounded-xl overflow-hidden !p-0",
+          "fixed left-[50%] top-[50%] z-50 flex flex-col w-full max-w-lg max-h-[90vh] translate-x-[-50%] translate-y-[-50%] border border-border bg-card text-card-foreground shadow-2xl duration-200 data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 data-[state=closed]:zoom-out-95 data-[state=open]:zoom-in-95 data-[state=closed]:slide-out-to-left-1/2 data-[state=closed]:slide-out-to-top-[48%] data-[state=open]:slide-in-from-left-1/2 data-[state=open]:slide-in-from-top-[48%] sm:rounded-xl overflow-hidden !p-0",
           className,
           "!p-0 overflow-hidden flex flex-col"
         )}
@@ -89,7 +89,7 @@ const DialogContent = React.forwardRef<
         {footer && footer}
         <DialogPrimitive.Close
           onClick={onClose}
-          className="absolute right-4 top-3.5 z-30 rounded-sm text-slate-800 opacity-70 transition-opacity hover:opacity-100 hover:bg-primary/10 focus:outline-none disabled:pointer-events-none data-[state=open]:bg-accent data-[state=open]:text-muted-foreground p-1"
+          className="absolute right-4 top-3.5 z-30 rounded-sm text-muted-foreground opacity-70 transition-opacity hover:opacity-100 hover:text-foreground hover:bg-muted focus:outline-none disabled:pointer-events-none p-1"
         >
           <X className="h-4 w-4" />
           <span className="sr-only">Close</span>
@@ -106,7 +106,7 @@ const DialogHeader = ({
 }: React.HTMLAttributes<HTMLDivElement>) => (
   <div
     className={cn(
-      "shrink-0 flex flex-col space-y-1.5 bg-background px-6 py-4 border-b border-border/60 text-left relative z-10",
+      "shrink-0 flex flex-col space-y-1.5 bg-card px-6 py-4 border-b border-border text-left relative z-10",
       className,
     )}
     {...props}
@@ -120,7 +120,7 @@ const DialogFooter = ({
 }: React.HTMLAttributes<HTMLDivElement>) => (
   <div
     className={cn(
-      "shrink-0 flex flex-col-reverse sm:flex-row sm:justify-end sm:space-x-2 bg-slate-50 dark:bg-slate-900 px-6 py-3.5 border-t border-border/60 mt-auto relative z-10",
+      "shrink-0 flex flex-col-reverse sm:flex-row sm:justify-end sm:space-x-2 bg-muted/40 px-6 py-3.5 border-t border-border mt-auto relative z-10",
       className,
     )}
     {...props}
@@ -135,7 +135,7 @@ const DialogTitle = React.forwardRef<
   <DialogPrimitive.Title
     ref={ref}
     className={cn(
-      "text-lg font-semibold leading-none tracking-tight text-slate-800",
+      "text-lg font-semibold leading-none tracking-tight text-foreground",
       className,
     )}
     {...props}

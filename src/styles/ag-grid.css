@@ -1,18 +1,30 @@
 /* ─── AG Grid Custom Overrides — PayMatrix Theme ─── */
 :root {
-  --primary-action: hsl(var(--primary, 221 83% 53%));
+  --primary-action: hsl(var(--primary));
 }
 .dark {
-  --primary-action: hsl(var(--primary, 217 91% 60%));
+  --primary-action: hsl(var(--primary));
 }
 
-/* Floating filter row: PayMatrix primary tint */
+/* Header cells and row */
+.ag-grid-custom .ag-header-row {
+  background-color: transparent !important;
+}
+
+.ag-grid-custom .ag-header-cell {
+  background-color: color-mix(in srgb, var(--primary-action) 14%, white) !important;
+}
+.dark .ag-grid-custom .ag-header-cell {
+  background-color: color-mix(in srgb, var(--primary-action) 32%, black) !important;
+}
+
+/* Floating filter row: PayMatrix primary 6% tint as before */
 .ag-grid-custom .ag-floating-filter {
   background-color: color-mix(
     in srgb,
     var(--primary-action) 6%,
     white
-  );
+  ) !important;
   padding: 0 !important;
 }
 .dark .ag-grid-custom .ag-floating-filter {
@@ -20,7 +32,7 @@
     in srgb,
     var(--primary-action) 16%,
     black
-  );
+  ) !important;
 }
 
 .ag-grid-custom .ag-floating-filter-body {
@@ -92,16 +104,12 @@
   color: color-mix(in srgb, var(--primary-action, #4a9bbd) 45%, white);
 }
 
-.ag-grid-custom .ag-header-cell {
-  border-right: 1px solid hsl(240 5.9% 88%) !important;
+.ag-grid-custom .ag-header-cell,
+.ag-grid-custom .ag-floating-filter {
+  border-right: 1px solid hsl(var(--border)) !important;
 }
-.ag-grid-custom .ag-header-cell:last-child {
-  border-right: none !important;
-}
-.dark .ag-grid-custom .ag-header-cell {
-  border-right: 1px solid hsl(240 3.7% 22%) !important;
-}
-.dark .ag-grid-custom .ag-header-cell:last-child {
+.ag-grid-custom .ag-header-cell:last-child,
+.ag-grid-custom .ag-floating-filter:last-child {
   border-right: none !important;
 }
 
@@ -299,17 +307,17 @@
   background-color: #f97316 !important;
 }
 
-/* Tooltip Popup matching user screenshot */
+/* Tooltip Popup matching centralized theme */
 .ag-grid-custom .ag-tooltip,
 .pm-cell-tooltip-popup {
-  background: #ffffff !important;
-  color: #0f172a !important;
-  border: 1px solid #cbd5e1 !important;
+  background: hsl(var(--popover)) !important;
+  color: hsl(var(--popover-foreground)) !important;
+  border: 1px solid hsl(var(--border)) !important;
   border-radius: 6px !important;
   padding: 6px 12px !important;
   font-size: 12px !important;
-  font-weight: 600 !important;
-  box-shadow: 0 8px 20px -4px rgba(0, 0, 0, 0.15), 0 2px 6px -1px rgba(0, 0, 0, 0.08) !important;
+  font-weight: 500 !important;
+  box-shadow: 0 8px 20px -4px rgba(0, 0, 0, 0.2), 0 2px 6px -1px rgba(0, 0, 0, 0.1) !important;
   pointer-events: none !important;
   z-index: 99999 !important;
   white-space: nowrap !important;
@@ -317,9 +325,9 @@
 
 .dark .ag-grid-custom .ag-tooltip,
 .dark .pm-cell-tooltip-popup {
-  background: #1e293b !important;
-  color: #f8fafc !important;
-  border-color: #334155 !important;
+  background: hsl(var(--popover)) !important;
+  color: hsl(var(--popover-foreground)) !important;
+  border-color: hsl(var(--border)) !important;
 }
 
 .dark .ag-grid-custom,

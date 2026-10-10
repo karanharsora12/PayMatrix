@@ -107,7 +107,11 @@ export default function Locations() {
   };
 
   const handleDelete = async (id: string) => {
-    if (await confirm({ message: "Are you sure you want to delete this location?" })) {
+    if (
+      await confirm({
+        message: "Are you sure you want to delete this location?",
+      })
+    ) {
       deleteMutation.mutate(id);
     }
   };
@@ -225,7 +229,7 @@ export default function Locations() {
           <DialogHeader>
             <DialogTitle>Location</DialogTitle>
           </DialogHeader>
-          <div className="space-y-3 mt-4">
+          <div className="space-y-3">
             <div className="grid grid-cols-2 gap-3">
               <div>
                 <label className="text-xs font-medium mb-1 block">
@@ -310,25 +314,24 @@ export default function Locations() {
                 />
               </div>
             </div>
-
-            <DialogFooter className="mt-4">
-              <Button
-                type="button"
-                variant="outline"
-                onClick={() => setOpen(false)}
-              >
-                Close
-              </Button>
-              <Button
-                onClick={handleSave}
-                disabled={createMutation.isPending || updateMutation.isPending}
-              >
-                {createMutation.isPending || updateMutation.isPending
-                  ? "Saving..."
-                  : "Save"}
-              </Button>
-            </DialogFooter>
           </div>
+          <DialogFooter>
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => setOpen(false)}
+            >
+              Close
+            </Button>
+            <Button
+              onClick={handleSave}
+              disabled={createMutation.isPending || updateMutation.isPending}
+            >
+              {createMutation.isPending || updateMutation.isPending
+                ? "Saving..."
+                : "Save"}
+            </Button>
+          </DialogFooter>
         </DialogContent>
       </Dialog>
     </div>

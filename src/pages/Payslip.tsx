@@ -425,7 +425,7 @@ export default function Payslip() {
         </div>
 
         {/* Printable Payslip Card */}
-        <Card className="overflow-hidden shadow-lg border-2 print:border-none print:shadow-none bg-card">
+        <Card className="overflow-hidden shadow-lg border border-border print:border-none print:shadow-none bg-card print:bg-white print:text-black">
           {/* Company & Period Header */}
           <div className="bg-primary text-primary-foreground p-6 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
             <div>
@@ -710,7 +710,7 @@ export default function Payslip() {
         <NativeSelect
           value={yearFilter}
           onChange={(val) => setYearFilter(val)}
-          className="w-32 h-8 text-xs bg-white dark:bg-slate-900"
+          className="w-32 h-8 text-xs bg-background border-input"
         >
           <option value="ALL">All Years</option>
           <option value="2027">2027</option>
@@ -722,7 +722,7 @@ export default function Payslip() {
         <NativeSelect
           value={monthFilter}
           onChange={(val) => setMonthFilter(val)}
-          className="w-36 h-8 text-xs bg-white dark:bg-slate-900"
+          className="w-36 h-8 text-xs bg-background border-input"
         >
           <option value="ALL">All Months</option>
           {MONTH_NAMES.map((m, idx) => (

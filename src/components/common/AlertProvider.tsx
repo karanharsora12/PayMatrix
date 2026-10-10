@@ -122,7 +122,7 @@ function AlertModal({
     >
       {/* Modal */}
       <div
-        className="relative w-full max-w-sm rounded-2xl bg-white dark:bg-zinc-900 shadow-2xl border border-border overflow-hidden animate-in fade-in zoom-in-95 duration-200"
+        className="relative w-full max-w-sm rounded-2xl bg-card text-card-foreground shadow-2xl border border-border overflow-hidden animate-in fade-in zoom-in-95 duration-200"
         onClick={(e) => e.stopPropagation()}
       >
         {/* Gradient Header Strip */}
@@ -130,7 +130,7 @@ function AlertModal({
           className={`bg-gradient-to-b ${config.headerClass} px-6 pt-6 pb-4 flex flex-col items-center gap-3`}
         >
           <div
-            className={`rounded-full p-3 bg-white dark:bg-zinc-800 shadow-sm`}
+            className={`rounded-full p-3 bg-card border border-border/40 shadow-sm`}
           >
             <Icon className={`h-7 w-7 ${config.iconClass}`} />
           </div>

@@ -267,7 +267,7 @@ export default function Holidays() {
               placeholder="All Months"
               value={filterMonth}
               onChange={(val) => setFilterMonth(val || "")}
-              className="bg-white h-9"
+              className="bg-background border-input h-9"
             >
               <option value="1">January</option>
               <option value="2">February</option>
@@ -288,7 +288,7 @@ export default function Holidays() {
               placeholder="All Holiday Types"
               value={filterType}
               onChange={(val) => setFilterType(val || "")}
-              className="bg-white h-9"
+              className="bg-background border-input h-9"
             >
               <option value="NATIONAL">National Holiday</option>
               <option value="FESTIVAL">Festival</option>

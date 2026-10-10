@@ -5,9 +5,51 @@
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>paymatrix</title>
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap"
+      rel="stylesheet"
+    />
+    <script>
+      (function () {
+        try {
+          var t = localStorage.getItem("paymatrix-theme") || "system";
+          var d =
+            t === "dark" ||
+            (t === "system" &&
+              window.matchMedia("(prefers-color-scheme: dark)").matches);
+          if (d) {
+            document.documentElement.classList.add("dark");
+            document.documentElement.style.colorScheme = "dark";
+          } else {
+            document.documentElement.classList.remove("dark");
+            document.documentElement.style.colorScheme = "light";
+          }
+          var presets = {
+            blue: { l: "221.2 83.2% 53.3%", d: "217.2 91.2% 59.8%" },
+            indigo: { l: "243 75.4% 58.6%", d: "243 75.4% 65%" },
+            violet: { l: "262.1 83.3% 57.8%", d: "263.4 70% 50.4%" },
+            emerald: { l: "160 84% 39%", d: "158 64% 52%" },
+            teal: { l: "174.7 83.9% 31.6%", d: "172.5 66% 50.4%" },
+            rose: { l: "346.8 77.2% 49.8%", d: "349.7 89.2% 60.2%" },
+            orange: { l: "20.5 90.2% 48.2%", d: "20.5 90.2% 54%" },
+            cyan: { l: "191.6 91.4% 36.5%", d: "188.7 94.5% 42.7%" },
+            red: { l: "0 72.2% 50.6%", d: "0 72.2% 58%" },
+            slate: { l: "215.4 19.3% 34.5%", d: "215 20.2% 65.1%" },
+          };
+
+          var c = localStorage.getItem("paymatrix-primary-color") || "indigo";
+          var p = presets[c];
+          if (p) {
+            var hsl = d ? p.d : p.l;
+            document.documentElement.style.setProperty("--primary", hsl);
+            document.documentElement.style.setProperty("--ring", hsl);
+            document.documentElement.style.setProperty("--chart-1", hsl);
+          }
+        } catch (e) {}
+      })();
+    </script>
   </head>
   <body>
     <div id="root"></div>

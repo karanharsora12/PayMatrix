@@ -57,11 +57,11 @@ export function ListingHeader({
   };
 
   return (
-    <div className="flex items-center justify-between pb-2 mb-3 border-b border-gray-300/30">
+    <div className="flex items-center justify-between pb-2 mb-3 border-b border-border">
       {/* Title or Tabs */}
       <div className="flex items-center gap-2">
         {tabs ? (
-          <div className="flex items-end gap-1 px-1 dark:border-slate-700/60">
+          <div className="flex items-end gap-1 px-1">
             {tabs.options.map((t) => {
               const isActive = tabs.value === t.value;
               return (
@@ -71,8 +71,8 @@ export function ListingHeader({
                   className={cn(
                     "relative px-3 py-1.5 text-sm font-medium tracking-wide border-b-2 transition-all duration-200 rounded",
                     isActive
-                      ? "text-primary bg-primary/10 border-primary"
-                      : "text-slate-400 hover:text-slate-600 dark:hover:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800/50 border-transparent",
+                      ? "text-primary bg-primary/10 border-primary font-semibold"
+                      : "text-muted-foreground hover:text-foreground hover:bg-muted/60 border-transparent",
                   )}
                 >
                   {t.label}
@@ -81,10 +81,10 @@ export function ListingHeader({
             })}
           </div>
         ) : (
-          <h1 className="text-lg font-semibold text-slate-800 dark:text-slate-100 tracking-tight flex items-center gap-1.5">
+          <h1 className="text-lg font-semibold text-foreground tracking-tight flex items-center gap-1.5">
             <span>{title}</span>
             {(subtitle || count !== undefined) && (
-              <span className="text-xs font-semibold text-cyan-600 dark:text-cyan-400">
+              <span className="text-xs font-semibold text-primary">
                 {subtitle ? `(${subtitle})` : `(${count})`}
               </span>
             )}
@@ -101,7 +101,7 @@ export function ListingHeader({
               placeholder="Search here..."
               value={searchValue || ""}
               onChange={(e) => onSearchChange(e.target.value)}
-              className="pl-8 pr-3 h-[30px] w-48 md:w-64 text-sm rounded-sm bg-white"
+              className="pl-8 pr-3 h-[30px] w-48 md:w-64 text-sm rounded-sm bg-background border-input"
             />
           </div>
         )}
@@ -111,7 +111,7 @@ export function ListingHeader({
             <Button
               onClick={onAddNew}
               size="icon"
-              className="h-7 w-7 rounded-sm bg-[#1d7c8a] hover:bg-[#16606a] text-white shadow-sm transition-transform active:scale-95"
+              className="h-7 w-7 rounded-sm bg-primary hover:bg-primary/90 text-primary-foreground shadow-sm transition-transform active:scale-95"
               title={addButtonText}
             >
               <Plus className="h-4 w-4" />

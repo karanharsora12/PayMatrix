@@ -1,10 +1,13 @@
-import { Menu, Search, Bell, HelpCircle, Moon, Sun } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Dropdown, DropdownItem } from "@/components/ui/dropdown";
-import { useEffect, useState } from "react";
-import { useAuth } from "@/context/AuthContext";
 import { getImageUrl } from "@/config/env";
+import { useAuth } from "@/context/AuthContext";
+import { useTheme } from "@/context/ThemeContext";
+import { cn } from "@/lib/utils";
+import { Check, Laptop, Menu, Moon, Search, Sun } from "lucide-react";
+import { useState } from "react";
 import { useNavigate } from "react-router-dom";
+import { PrimaryColorPicker } from "./PrimaryColorPicker";
 
 export function Header({
   onToggleSidebar,
@@ -17,12 +20,8 @@ export function Header({
 }) {
   const { user, logout } = useAuth();
   const nav = useNavigate();
-  const [dark, setDark] = useState(false);
+  const { theme, resolvedTheme, setTheme } = useTheme();
   const [imgError, setImgError] = useState(false);
-
-  useEffect(() => {
-    document.documentElement.classList.toggle("dark", dark);
-  }, [dark]);
 
   const userPhoto = user?.employee?.profilePhotoUrl || user?.profilePhotoUrl;
   const displayName = user?.employee
@@ -36,7 +35,7 @@ export function Header({
   ).toUpperCase();
 
   return (
-    <header className="h-[56px] border-b bg-background flex items-center gap-3 px-4 sticky top-0 z-20">
+    <header className="h-[56px] border-b border-border bg-background/95 backdrop-blur-sm text-foreground flex items-center gap-3 px-4 sticky top-0 z-20 transition-colors">
       <Button
         variant="ghost"
         size="icon"
@@ -56,28 +55,78 @@ export function Header({
       <div className="flex-1 flex justify-center">
         <button
           onClick={onOpenCommand}
-          className="hidden md:flex items-center gap-2 text-sm border rounded-md px-3 py-1.5 w-[360px] text-muted-foreground hover:bg-accent"
+          className="hidden md:flex items-center gap-2 text-sm border border-input rounded-md px-3 py-1.5 w-[360px] text-muted-foreground hover:bg-accent hover:text-foreground transition-colors"
         >
           <Search className="h-4 w-4" /> Search PayMatrix...{" "}
-          <span className="ml-auto text-xs border rounded px-1.5 py-0.5">
+          <span className="ml-auto text-xs border border-border rounded px-1.5 py-0.5 bg-muted/50">
             Ctrl K
           </span>
         </button>
       </div>
       <div className="flex items-center gap-1">
-        <Button variant="ghost" size="icon" onClick={onOpenCommand}>
-          <Search className="h-4 w-4" />
-        </Button>
-        <Button variant="ghost" size="icon">
-          <Bell className="h-4 w-4" />
-          <span className="absolute top-1.5 right-1.5 h-2 w-2 bg-red-500 rounded-full" />
-        </Button>
-        <Button variant="ghost" size="icon">
-          <HelpCircle className="h-4 w-4" />
-        </Button>
-        <Button variant="ghost" size="icon" onClick={() => setDark(!dark)}>
-          {dark ? <Sun className="h-4 w-4" /> : <Moon className="h-4 w-4" />}
-        </Button>
+        {/* Primary Color Palette Picker */}
+        <PrimaryColorPicker />
+
+        <Dropdown
+          trigger={
+            <Button
+              variant="ghost"
+              size="icon"
+              title={`Theme: ${theme} (active: ${resolvedTheme})`}
+              className="relative"
+            >
+              {resolvedTheme === "dark" ? (
+                <Sun className="h-4 w-4" />
+              ) : (
+                <Moon className="h-4 w-4" />
+              )}
+            </Button>
+          }
+        >
+          <div className="px-2 py-1.5 text-xs font-semibold text-muted-foreground border-b border-border mb-1">
+            Appearance
+          </div>
+          <DropdownItem
+            onClick={() => setTheme("light")}
+            className={cn(
+              "flex items-center justify-between gap-2",
+              theme === "light" && "bg-accent/80 text-primary font-medium",
+            )}
+          >
+            <div className="flex items-center gap-2">
+              <Sun className="h-4 w-4 text-amber-500" />
+              <span>Light</span>
+            </div>
+            {theme === "light" && <Check className="h-3.5 w-3.5" />}
+          </DropdownItem>
+          <DropdownItem
+            onClick={() => setTheme("dark")}
+            className={cn(
+              "flex items-center justify-between gap-2",
+              theme === "dark" && "bg-accent/80 text-primary font-medium",
+            )}
+          >
+            <div className="flex items-center gap-2">
+              <Moon className="h-4 w-4 text-indigo-400" />
+              <span>Dark</span>
+            </div>
+            {theme === "dark" && <Check className="h-3.5 w-3.5" />}
+          </DropdownItem>
+          <DropdownItem
+            onClick={() => setTheme("system")}
+            className={cn(
+              "flex items-center justify-between gap-2",
+              theme === "system" && "bg-accent/80 text-primary font-medium",
+            )}
+          >
+            <div className="flex items-center gap-2">
+              <Laptop className="h-4 w-4 text-muted-foreground" />
+              <span>System</span>
+            </div>
+            {theme === "system" && <Check className="h-3.5 w-3.5" />}
+          </DropdownItem>
+        </Dropdown>
+
         <Dropdown
           trigger={
             <button className="flex items-center gap-2 ml-2">
@@ -85,7 +134,7 @@ export function Header({
                 <img
                   src={getImageUrl(userPhoto)}
                   alt={displayName}
-                  className="h-8 w-8 rounded-full object-cover border border-slate-200 dark:border-slate-700 shadow-sm"
+                  className="h-8 w-8 rounded-full object-cover border border-border shadow-sm"
                   onError={() => setImgError(true)}
                 />
               ) : (

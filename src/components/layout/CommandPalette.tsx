@@ -334,7 +334,7 @@ export function CommandPalette({ open, onOpenChange }: CommandPaletteProps) {
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-lg p-0 gap-0 overflow-hidden">
         {/* Search Input */}
-        <div className="flex items-center gap-2.5 px-4 py-3 border-b">
+        <div className="flex items-center gap-2.5 px-4 py-3 border-b border-border bg-card">
           <Search className="h-4 w-4 text-muted-foreground shrink-0" />
           <input
             ref={inputRef}
@@ -421,7 +421,7 @@ export function CommandPalette({ open, onOpenChange }: CommandPaletteProps) {
         </div>
 
         {/* Footer hint */}
-        <div className="border-t px-4 py-2 flex items-center gap-3 text-[10px] text-muted-foreground/60">
+        <div className="border-t border-border bg-muted/20 px-4 py-2 flex items-center gap-3 text-[10px] text-muted-foreground">
           <span>
             <kbd className="font-mono">↑↓</kbd> navigate
           </span>

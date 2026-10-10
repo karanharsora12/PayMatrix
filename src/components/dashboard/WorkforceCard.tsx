@@ -16,9 +16,9 @@ export function WorkforceCard({ employees }: { employees: DashboardEmployees }) 
       </CardHeader>
       <CardContent>
         <div className="mb-4 grid grid-cols-3 gap-3">
-          <StatTile label="Total" value={employees.total} accent="text-blue-600" />
-          <StatTile label="Active" value={employees.active} accent="text-emerald-600" />
-          <StatTile label="Inactive" value={employees.inactive} accent="text-zinc-600" />
+          <StatTile label="Total" value={employees.total} accent="text-blue-600 dark:text-blue-400" />
+          <StatTile label="Active" value={employees.active} accent="text-emerald-600 dark:text-emerald-400" />
+          <StatTile label="Inactive" value={employees.inactive} accent="text-muted-foreground" />
         </div>
 
         {departments.length === 0 ? (
@@ -32,9 +32,23 @@ export function WorkforceCard({ employees }: { employees: DashboardEmployees }) 
             <ResponsiveContainer width="100%" height="100%">
               <BarChart data={departments} layout="vertical" margin={{ left: 8 }}>
                 <XAxis type="number" hide />
-                <YAxis type="category" dataKey="name" width={110} fontSize={12} />
-                <Tooltip />
-                <Bar dataKey="count" fill="#6366f1" radius={[0, 6, 6, 0]} />
+                <YAxis
+                  type="category"
+                  dataKey="name"
+                  width={110}
+                  fontSize={12}
+                  stroke="hsl(var(--muted-foreground))"
+                  tick={{ fill: "hsl(var(--muted-foreground))" }}
+                />
+                <Tooltip
+                  contentStyle={{
+                    backgroundColor: "hsl(var(--popover))",
+                    borderColor: "hsl(var(--border))",
+                    borderRadius: "8px",
+                    color: "hsl(var(--popover-foreground))",
+                  }}
+                />
+                <Bar dataKey="count" fill="hsl(var(--primary))" radius={[0, 6, 6, 0]} />
               </BarChart>
             </ResponsiveContainer>
           </div>

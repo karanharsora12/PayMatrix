@@ -269,8 +269,8 @@ export default function UsersRoles() {
                       onClick={() => setActiveRoleId(role.id)}
                       className={`w-full text-left rounded-md border px-3 py-3 transition-all ${
                         isActive
-                          ? "border-primary bg-primary/5 shadow-sm"
-                          : "border-gray-100 bg-white hover:border-gray-200 hover:bg-gray-50"
+                          ? "border-primary bg-primary/5 shadow-xs"
+                          : "border-border bg-card hover:border-border/80 hover:bg-muted/40"
                       }`}
                     >
                       <div className="flex items-center justify-between gap-2">
@@ -306,7 +306,7 @@ export default function UsersRoles() {
             {canManage && (
               <button
                 onClick={openCreateRole}
-                className="w-full text-left rounded-md border border-dashed border-gray-300 px-3 py-2.5 text-sm text-muted-foreground hover:border-primary hover:text-primary flex items-center gap-2 transition-colors"
+                className="w-full text-left rounded-md border border-dashed border-border px-3 py-2.5 text-sm text-muted-foreground hover:border-primary hover:text-primary flex items-center gap-2 transition-colors"
               >
                 <Plus className="h-4 w-4" /> New Custom Role
               </button>
@@ -316,13 +316,13 @@ export default function UsersRoles() {
           {/* Permissions matrix */}
           <div className="lg:col-span-9">
             {!activeRole ? (
-              <div className="flex items-center justify-center h-64 border border-dashed rounded-md text-muted-foreground text-sm">
+              <div className="flex items-center justify-center h-64 border border-dashed border-border rounded-md text-muted-foreground text-sm">
                 Select a role to manage its permissions
               </div>
             ) : (
-              <div className="rounded-md border border-gray-100 bg-white shadow-xs overflow-hidden">
+              <div className="rounded-md border border-border bg-card shadow-xs overflow-hidden">
                 {/* Header */}
-                <div className="flex items-center justify-between px-4 py-3 border-b bg-gray-50/70">
+                <div className="flex items-center justify-between px-4 py-3 border-b border-border bg-muted/40">
                   <div>
                     <div className="flex items-center gap-2">
                       <Key className="h-4 w-4 text-primary" />
@@ -338,7 +338,7 @@ export default function UsersRoles() {
                         </Badge>
                       )}
                       {isDirty && (
-                        <Badge className="text-[10px] bg-amber-100 text-amber-700 border-amber-300 py-0 h-5">
+                        <Badge variant="warning" className="text-[10px] py-0 h-5">
                           Unsaved Changes
                         </Badge>
                       )}
@@ -374,7 +374,7 @@ export default function UsersRoles() {
                 {/* Table */}
                 <div className="overflow-x-auto max-h-[600px] overflow-y-auto">
                   <table className="w-full text-sm">
-                    <thead className="sticky top-0 bg-gray-50 z-10 shadow-sm">
+                    <thead className="sticky top-0 bg-muted/90 backdrop-blur-xs z-10 border-b border-border">
                       <tr>
                         <th className="text-left text-[11px] font-semibold text-muted-foreground uppercase tracking-wider px-4 py-2.5 w-[240px]">
                           Module
@@ -384,7 +384,7 @@ export default function UsersRoles() {
                         </th>
                       </tr>
                     </thead>
-                    <tbody className="divide-y divide-gray-50">
+                    <tbody className="divide-y divide-border/60">
                       {Object.entries(permsByModule).map(
                         ([moduleName, perms]) => {
                           const meta = MODULE_ENHANCEMENTS[moduleName] || {
@@ -401,10 +401,10 @@ export default function UsersRoles() {
                           return (
                             <tr
                               key={moduleName}
-                              className={`hover:bg-gray-50/60 transition-colors ${!hasAny && !activeRole.isSystemRole ? "bg-gray-50/30 opacity-75" : ""}`}
+                              className={`hover:bg-muted/40 transition-colors ${!hasAny && !activeRole.isSystemRole ? "bg-muted/10 opacity-75" : ""}`}
                             >
                               {/* Module name */}
-                              <td className="px-4 py-3 align-top border-r border-gray-50 w-[240px]">
+                              <td className="px-4 py-3 align-top border-r border-border/60 w-[240px]">
                                 <div className="font-semibold text-[13px] text-foreground leading-snug">
                                   {meta.label}
                                 </div>
@@ -416,21 +416,17 @@ export default function UsersRoles() {
                                 {/* Access summary badge */}
                                 <div className="mt-1.5">
                                   {activeRole.isSystemRole ? (
-                                    <span className="inline-flex items-center gap-1 text-[10px] font-medium text-emerald-700 bg-emerald-50 border border-emerald-200 rounded-full px-1.5 py-0.5">
-                                      <CheckCircle2 className="h-2.5 w-2.5" />{" "}
-                                      Full Access
-                                    </span>
+                                    <Badge variant="success" className="text-[10px] gap-1 py-0 h-5">
+                                      <CheckCircle2 className="h-2.5 w-2.5" /> Full Access
+                                    </Badge>
                                   ) : grantedInModule.length > 0 ? (
-                                    <span className="inline-flex items-center gap-1 text-[10px] font-medium text-emerald-700 bg-emerald-50 border border-emerald-200 rounded-full px-1.5 py-0.5">
-                                      <CheckCircle2 className="h-2.5 w-2.5" />{" "}
-                                      {grantedInModule.length}/{perms.length}{" "}
-                                      Granted
-                                    </span>
+                                    <Badge variant="success" className="text-[10px] gap-1 py-0 h-5">
+                                      <CheckCircle2 className="h-2.5 w-2.5" /> {grantedInModule.length}/{perms.length} Granted
+                                    </Badge>
                                   ) : (
-                                    <span className="inline-flex items-center gap-1 text-[10px] font-medium text-slate-500 bg-slate-50 border border-slate-200 rounded-full px-1.5 py-0.5">
-                                      <XCircle className="h-2.5 w-2.5" /> No
-                                      Access
-                                    </span>
+                                    <Badge variant="outline" className="text-[10px] gap-1 py-0 h-5 text-muted-foreground">
+                                      <XCircle className="h-2.5 w-2.5" /> No Access
+                                    </Badge>
                                   )}
                                 </div>
                               </td>
@@ -449,7 +445,7 @@ export default function UsersRoles() {
                                         className={`flex items-center gap-2 text-[11px] rounded-md border px-2.5 py-1.5 cursor-pointer select-none transition-all ${
                                           isGranted
                                             ? "bg-primary/5 border-primary/30 text-primary font-medium"
-                                            : "bg-white border-gray-200 text-muted-foreground"
+                                            : "bg-card border-border text-muted-foreground"
                                         } ${activeRole.isSystemRole || !canManage ? "cursor-not-allowed opacity-75" : "hover:border-primary/50"}`}
                                       >
                                         <Switch

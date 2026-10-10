@@ -56,8 +56,8 @@ export function FormFooter({
     <div
       className={cn(
         "sticky bottom-0 z-30 mt-auto",
-        "bg-white/95 dark:bg-slate-950/95 backdrop-blur-sm",
-        "border-t border-slate-200 dark:border-slate-800",
+        "bg-background/95 backdrop-blur-sm",
+        "border-t border-border",
         "shadow-[0_-2px_12px_rgba(0,0,0,0.06)]",
         className,
       )}

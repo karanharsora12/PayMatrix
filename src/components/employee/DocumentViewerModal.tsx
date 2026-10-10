@@ -175,17 +175,19 @@ export function DocumentViewerModal({
           </DialogDescription>
         </DialogHeader>
 
-        {/* Preview Canvas Container matching EmailTemplates modal aesthetic */}
+        {/* Preview Canvas Container matching application theme */}
         <div className="space-y-3 py-1">
-          <div className="border rounded-lg bg-slate-50/70 dark:bg-slate-900/40 p-4 overflow-y-auto max-h-[60vh] shadow-inner">
+          <div className="border border-border rounded-lg bg-muted/40 p-4 md:p-6 overflow-y-auto max-h-[60vh] shadow-inner">
             {content ? (
               <div
-                className="bg-white dark:bg-card text-foreground rounded-md shadow-sm border border-slate-200/80 dark:border-slate-800 p-8 md:p-12 mx-auto max-w-3xl"
+                className="bg-white text-slate-900 rounded-md shadow-md border border-slate-300 p-8 md:p-12 mx-auto max-w-3xl"
                 style={{
                   fontFamily:
                     "system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif",
                   fontSize: "13px",
                   lineHeight: "1.75",
+                  backgroundColor: "#ffffff",
+                  color: "#0f172a",
                 }}
                 dangerouslySetInnerHTML={{ __html: content }}
               />

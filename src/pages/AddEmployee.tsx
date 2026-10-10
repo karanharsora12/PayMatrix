@@ -426,7 +426,7 @@ export default function AddEmployee() {
             {/* LEFT: Profile + Code + Access */}
             <div className="space-y-5">
               {/* Profile Card */}
-              <div className="bg-white dark:bg-slate-900/50 border border-slate-200 dark:border-slate-800 rounded-xl p-5 shadow-sm">
+              <div className="bg-card text-card-foreground border border-border rounded-xl p-5 shadow-sm transition-colors">
                 <SectionHeader
                   icon={User}
                   title="Profile"
@@ -520,7 +520,7 @@ export default function AddEmployee() {
               </div>
 
               {/* System Access */}
-              <div className="bg-white dark:bg-slate-900/50 border border-slate-200 dark:border-slate-800 rounded-xl p-5 shadow-sm">
+              <div className="bg-card text-card-foreground border border-border rounded-xl p-5 shadow-sm transition-colors">
                 <SectionHeader
                   icon={Shield}
                   title="System Access"
@@ -600,7 +600,7 @@ export default function AddEmployee() {
             {/* RIGHT: All Details */}
             <div className="space-y-5">
               {/* Personal Information */}
-              <div className="bg-white dark:bg-slate-900/50 border border-slate-200 dark:border-slate-800 rounded-xl p-5 shadow-sm">
+              <div className="bg-card text-card-foreground border border-border rounded-xl p-5 shadow-sm transition-colors">
                 <SectionHeader
                   icon={User}
                   title="Personal Information"
@@ -650,7 +650,7 @@ export default function AddEmployee() {
               </div>
 
               {/* Employment Details */}
-              <div className="bg-white dark:bg-slate-900/50 border border-slate-200 dark:border-slate-800 rounded-xl p-5 shadow-sm">
+              <div className="bg-card text-card-foreground border border-border rounded-xl p-5 shadow-sm transition-colors">
                 <SectionHeader
                   icon={Briefcase}
                   title="Employment Details"
@@ -751,7 +751,7 @@ export default function AddEmployee() {
               </div>
 
               {/* Contact Information */}
-              <div className="bg-white dark:bg-slate-900/50 border border-slate-200 dark:border-slate-800 rounded-xl p-5 shadow-sm">
+              <div className="bg-card text-card-foreground border border-border rounded-xl p-5 shadow-sm transition-colors">
                 <SectionHeader
                   icon={Phone}
                   title="Contact Information"
@@ -791,7 +791,7 @@ export default function AddEmployee() {
               </div>
 
               {/* Bank Account */}
-              <div className="bg-white dark:bg-slate-900/50 border border-slate-200 dark:border-slate-800 rounded-xl p-5 shadow-sm">
+              <div className="bg-card text-card-foreground border border-border rounded-xl p-5 shadow-sm transition-colors">
                 <SectionHeader
                   icon={Banknote}
                   title="Bank Account"
@@ -836,7 +836,7 @@ export default function AddEmployee() {
               </div>
 
               {/* Statutory & Compliance */}
-              <div className="bg-white dark:bg-slate-900/50 border border-slate-200 dark:border-slate-800 rounded-xl p-5 shadow-sm">
+              <div className="bg-card text-card-foreground border border-border rounded-xl p-5 shadow-sm transition-colors">
                 <SectionHeader
                   icon={CreditCard}
                   title="Statutory & Compliance"

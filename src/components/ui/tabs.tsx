@@ -48,8 +48,7 @@ const TabsList = React.forwardRef<HTMLDivElement, React.HTMLAttributes<HTMLDivEl
       ref={ref}
       role="tablist"
       className={cn(
-        // Reference design: rounded pill container, subtle muted bg, compact padding
-        "inline-flex items-center gap-0.5 rounded-lg bg-slate-100 dark:bg-slate-800 px-1 py-1",
+        "inline-flex items-center gap-0.5 rounded-lg bg-muted text-muted-foreground p-1 border border-border/40 transition-colors",
         className,
       )}
       {...props}
@@ -78,13 +77,11 @@ const TabsTrigger = React.forwardRef<HTMLButtonElement, TabsTriggerProps>(
         onClick={() => !disabled && ctx.onValueChange(value)}
         className={cn(
           "inline-flex items-center justify-center whitespace-nowrap rounded-md px-3 py-1 text-sm font-medium transition-all duration-150",
-          "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/60 focus-visible:ring-offset-1",
+          "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-1",
           "disabled:pointer-events-none disabled:opacity-50",
           active
-            // Active: white pill, primary text, subtle shadow — mirrors the reference screenshot
-            ? "bg-white dark:bg-slate-900 text-primary shadow-sm font-semibold"
-            // Inactive: muted text, no bg, hover darkens text
-            : "text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-200",
+            ? "bg-card text-foreground shadow-xs font-semibold"
+            : "text-muted-foreground hover:text-foreground hover:bg-background/40",
           className,
         )}
         {...props}

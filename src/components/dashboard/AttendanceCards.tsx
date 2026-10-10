@@ -1,9 +1,9 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, Legend } from "recharts";
+import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, Legend, CartesianGrid } from "recharts";
 import { CalendarCheck, Users } from "lucide-react";
 import type { DashboardAttendance, DashboardPeriod } from "@/api/dashboard";
-import { EmptyState, StatusBadge } from "./helpers";
+import { EmptyState, StatusBadge, chartTooltipProps, chartAxisProps } from "./helpers";
 import { formatTime } from "./format";
 
 const COLORS = {
@@ -38,14 +38,15 @@ export function AttendanceTrendCard({
         ) : (
           <ResponsiveContainer width="100%" height="100%">
             <BarChart data={attendance.series}>
-              <XAxis dataKey="date" fontSize={11} tickFormatter={(v: string) => v.slice(5)} />
-              <YAxis fontSize={11} allowDecimals={false} />
-              <Tooltip />
-              <Legend wrapperStyle={{ fontSize: 12 }} />
-              <Bar dataKey="presentTotal" stackId="a" name="Present" fill={COLORS.present} />
+              <CartesianGrid stroke="hsl(var(--border))" strokeDasharray="3 3" opacity={0.5} vertical={false} />
+              <XAxis dataKey="date" fontSize={11} tickFormatter={(v: string) => v.slice(5)} stroke="hsl(var(--muted-foreground))" tick={{ fill: "hsl(var(--muted-foreground))" }} />
+              <YAxis fontSize={11} allowDecimals={false} stroke="hsl(var(--muted-foreground))" tick={{ fill: "hsl(var(--muted-foreground))" }} />
+              <Tooltip {...chartTooltipProps} />
+              <Legend wrapperStyle={{ fontSize: 12, paddingTop: 8 }} />
+              <Bar dataKey="presentTotal" stackId="a" name="Present" fill={COLORS.present} radius={[0, 0, 0, 0]} />
               <Bar dataKey="onLeave" stackId="a" name="On Leave" fill={COLORS.onLeave} />
               <Bar dataKey="absent" stackId="a" name="Absent" fill={COLORS.absent} />
-              <Bar dataKey="weekOff" stackId="a" name="Week Off" fill={COLORS.weekOff} />
+              <Bar dataKey="weekOff" stackId="a" name="Week Off" fill={COLORS.weekOff} radius={[4, 4, 0, 0]} />
             </BarChart>
           </ResponsiveContainer>
         )}
@@ -65,21 +66,21 @@ export function TodayAttendanceCard({ attendance }: { attendance: DashboardAtten
       </CardHeader>
       <CardContent>
         <div className="mb-4 grid grid-cols-2 gap-3 sm:grid-cols-4">
-          <div className="rounded-lg bg-emerald-50 p-3">
-            <div className="text-lg font-semibold text-emerald-700">{today.present}</div>
-            <div className="text-xs text-emerald-700/80">Present</div>
+          <div className="rounded-lg bg-emerald-500/10 dark:bg-emerald-500/15 border border-emerald-500/20 p-3">
+            <div className="text-lg font-semibold text-emerald-700 dark:text-emerald-300">{today.present}</div>
+            <div className="text-xs text-emerald-700/80 dark:text-emerald-300/80">Present</div>
           </div>
-          <div className="rounded-lg bg-red-50 p-3">
-            <div className="text-lg font-semibold text-red-700">{today.absent}</div>
-            <div className="text-xs text-red-700/80">Absent</div>
+          <div className="rounded-lg bg-destructive/10 dark:bg-destructive/15 border border-destructive/20 p-3">
+            <div className="text-lg font-semibold text-destructive dark:text-red-300">{today.absent}</div>
+            <div className="text-xs text-destructive/80 dark:text-red-300/80">Absent</div>
           </div>
-          <div className="rounded-lg bg-blue-50 p-3">
-            <div className="text-lg font-semibold text-blue-700">{today.onLeave}</div>
-            <div className="text-xs text-blue-700/80">On Leave</div>
+          <div className="rounded-lg bg-blue-500/10 dark:bg-blue-500/15 border border-blue-500/20 p-3">
+            <div className="text-lg font-semibold text-blue-700 dark:text-blue-300">{today.onLeave}</div>
+            <div className="text-xs text-blue-700/80 dark:text-blue-300/80">On Leave</div>
           </div>
-          <div className="rounded-lg bg-orange-50 p-3">
-            <div className="text-lg font-semibold text-orange-700">{today.late + today.halfDay}</div>
-            <div className="text-xs text-orange-700/80">Late / Half Day</div>
+          <div className="rounded-lg bg-amber-500/10 dark:bg-amber-500/15 border border-amber-500/20 p-3">
+            <div className="text-lg font-semibold text-amber-700 dark:text-amber-300">{today.late + today.halfDay}</div>
+            <div className="text-xs text-amber-700/80 dark:text-amber-300/80">Late / Half Day</div>
           </div>
         </div>
 
@@ -93,7 +94,7 @@ export function TodayAttendanceCard({ attendance }: { attendance: DashboardAtten
           <div className="overflow-x-auto">
             <table className="w-full text-left text-sm">
               <thead>
-                <tr className="border-b text-xs text-muted-foreground">
+                <tr className="border-b border-border text-xs text-muted-foreground">
                   <th className="py-2 pr-3 font-medium">Employee</th>
                   <th className="py-2 pr-3 font-medium">Department</th>
                   <th className="py-2 pr-3 font-medium">Shift</th>
@@ -104,7 +105,7 @@ export function TodayAttendanceCard({ attendance }: { attendance: DashboardAtten
               </thead>
               <tbody>
                 {todayRows.map((row) => (
-                  <tr key={row.id} className="border-b last:border-0">
+                  <tr key={row.id} className="border-b border-border/60 hover:bg-muted/40 transition-colors last:border-0">
                     <td className="py-2 pr-3">
                       <div className="font-medium">{row.employeeName}</div>
                       <div className="text-xs text-muted-foreground">{row.employeeCode}</div>

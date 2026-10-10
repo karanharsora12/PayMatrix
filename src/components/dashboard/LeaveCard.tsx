@@ -29,23 +29,23 @@ export function LeaveCard({ leave, rangeLabel }: { leave: DashboardLeave; rangeL
                 label="Approved"
                 value={leave.period.approved}
                 hint={`${leave.period.approvedDays} days`}
-                accent="text-emerald-600"
+                accent="text-emerald-600 dark:text-emerald-400"
               />
               <StatTile
                 label="On Leave Today"
                 value={leave.onLeaveToday}
-                accent="text-blue-600"
+                accent="text-blue-600 dark:text-blue-400"
               />
               <StatTile
                 label="Pending"
                 value={leave.period.pending}
                 hint={`${leave.period.pendingDays} days`}
-                accent="text-amber-600"
+                accent="text-amber-600 dark:text-amber-400"
               />
               <StatTile
                 label="Rejected"
                 value={leave.period.rejected}
-                accent="text-red-600"
+                accent="text-destructive dark:text-red-400"
               />
             </div>
 
@@ -56,7 +56,7 @@ export function LeaveCard({ leave, rangeLabel }: { leave: DashboardLeave; rangeL
                   {leave.byType.map((t) => (
                     <div
                       key={t.leaveTypeId}
-                      className="flex items-center justify-between rounded-lg border px-3 py-2 text-sm"
+                      className="flex items-center justify-between rounded-lg border border-border bg-card px-3 py-2 text-sm"
                     >
                       <span>{t.name}</span>
                       <Badge variant="secondary">{t.count}</Badge>

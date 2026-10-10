@@ -243,7 +243,7 @@ export default function Login() {
       {/* ============================================================ */}
       {/* RIGHT SECTION: 50% Width Login Form Card                   */}
       {/* ============================================================ */}
-      <div className="flex flex-col justify-between p-6 sm:p-10 lg:p-12 bg-white dark:bg-slate-950 h-full">
+      <div className="flex flex-col justify-between p-6 sm:p-10 lg:p-12 bg-background text-foreground h-full">
         {/* Mobile Header Branding */}
         <div className="lg:hidden flex items-center justify-between pb-4 border-b border-border">
           <div className="flex items-center gap-2.5">

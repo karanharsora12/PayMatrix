@@ -16,6 +16,7 @@ import type {
 import apiClient from "@/api/client";
 import "@/styles/ag-grid.css";
 import { SearchX } from "lucide-react";
+import { useTheme } from "@/context/ThemeContext";
 
 ModuleRegistry.registerModules([AllCommunityModule]);
 
@@ -27,23 +28,23 @@ const NoRowsOverlay = () => {
     >
       <div className="relative mb-6">
         <div
-          className="absolute inset-0 bg-primary-action/20 blur-xl rounded-full
+          className="absolute inset-0 bg-primary/20 blur-xl rounded-full
           transition-all duration-500
-          group-hover:bg-primary-action/30
-          group-focus-within:bg-primary-action/30"
+          group-hover:bg-primary/30
+          group-focus-within:bg-primary/30"
         />
         <div
           className="relative flex h-20 w-20 items-center justify-center rounded-2xl
-          bg-gradient-to-tr from-primary-action/10 to-primary-action/5
-          border border-primary-action/20
+          bg-gradient-to-tr from-primary/10 to-primary/5
+          border border-primary/20
           shadow-sm
           transition-all duration-500
-          group-hover:scale-105 group-hover:rotate-2 group-hover:border-primary-action/30
-          group-focus-within:scale-105 group-focus-within:rotate-2 group-focus-within:border-primary-action/30
+          group-hover:scale-105 group-hover:rotate-2 group-hover:border-primary/30
+          group-focus-within:scale-105 group-focus-within:rotate-2 group-focus-within:border-primary/30
           active:scale-95"
         >
           <SearchX
-            className="h-10 w-10 text-primary-action/80
+            className="h-10 w-10 text-primary
             transition-transform duration-500
             group-hover:scale-110
             group-focus-within:scale-110
@@ -56,8 +57,8 @@ const NoRowsOverlay = () => {
         <h3
           className="text-lg font-semibold tracking-tight text-foreground
           transition-colors
-          group-hover:text-primary-action
-          group-focus-within:text-primary-action"
+          group-hover:text-primary
+          group-focus-within:text-primary"
         >
           No records found
         </h3>
@@ -105,7 +106,8 @@ const getGridResponse = <TData,>(payload: unknown): GridApiResponse<TData> => {
   return { data: [] };
 };
 
-// Light theme — tuned to match the app's zinc-based palette
+// Light theme — tuned to match the app's clean design system
+// Light theme — tuned to match the app's primary branding with distinct tinted header & filter row
 const lightTheme = themeQuartz.withParams({
   backgroundColor: "hsl(0 0% 100%)",
   foregroundColor: "hsl(240 10% 3.9%)",
@@ -126,7 +128,7 @@ const lightTheme = themeQuartz.withParams({
   rangeSelectionBorderColor: "hsl(var(--primary))",
   oddRowBackgroundColor: "color-mix(in srgb, hsl(var(--primary)) 3%, white)",
   borderRadius: 6,
-  wrapperBorderRadius: 4,
+  wrapperBorderRadius: 6,
   cellHorizontalPadding: 12,
   headerCellHoverBackgroundColor:
     "color-mix(in srgb, hsl(var(--primary)) 22%, white)",
@@ -138,29 +140,29 @@ const lightTheme = themeQuartz.withParams({
   headerColumnBorderHeight: "100%",
 });
 
-// Dark theme — matches the app's dark zinc palette
+// Dark theme — matches the app's dark palette with clear card/surface separation
 const darkTheme = themeQuartz.withPart(colorSchemeDark).withParams({
-  backgroundColor: "hsl(240 10% 5.5%)",
-  foregroundColor: "hsl(0 0% 98%)",
+  backgroundColor: "hsl(222.2 47.4% 9.5%)",
+  foregroundColor: "hsl(210 40% 98%)",
   headerBackgroundColor: "color-mix(in srgb, hsl(var(--primary)) 32%, black)",
   headerTextColor: "color-mix(in srgb, hsl(var(--primary)) 45%, white)",
   headerFontWeight: 600,
   headerFontSize: 13,
   fontSize: 13,
-  borderColor: "hsl(240 3.7% 17%)",
+  borderColor: "hsl(217.2 32.6% 18.5%)",
   accentColor: "hsl(var(--primary))",
   rowBorder: true,
   columnBorder: true,
-  rowHoverColor: "color-mix(in srgb, hsl(var(--primary)) 15%, black)",
+  rowHoverColor: "color-mix(in srgb, hsl(var(--primary)) 15%, transparent)",
   selectedRowBackgroundColor:
-    "color-mix(in srgb, hsl(var(--primary)) 28%, black)",
+    "color-mix(in srgb, hsl(var(--primary)) 25%, transparent)",
   rangeSelectionBackgroundColor:
-    "color-mix(in srgb, hsl(var(--primary)) 22%, black)",
+    "color-mix(in srgb, hsl(var(--primary)) 20%, transparent)",
   rangeSelectionBorderColor: "hsl(var(--primary))",
   oddRowBackgroundColor:
-    "color-mix(in srgb, hsl(var(--primary)) 6%, hsl(240 10% 5.5%))",
+    "color-mix(in srgb, hsl(var(--primary)) 4%, transparent)",
   borderRadius: 6,
-  wrapperBorderRadius: 8,
+  wrapperBorderRadius: 6,
   cellHorizontalPadding: 12,
   headerCellHoverBackgroundColor:
     "color-mix(in srgb, hsl(var(--primary)) 40%, black)",
@@ -187,6 +189,7 @@ export const DataGrid = React.forwardRef<AgGridReact, DataGridProps>(
     },
     ref,
   ) => {
+    const { resolvedTheme, primaryColor } = useTheme();
     const gridApiRef = useRef<GridApi | null>(null);
     const [apiRowData, setApiRowData] = useState<any[]>([]);
     const [apiSummary, setApiSummary] = useState<any[] | undefined>();
@@ -209,10 +212,10 @@ export const DataGrid = React.forwardRef<AgGridReact, DataGridProps>(
       };
     }, []);
 
-    const isDark = document.documentElement.classList.contains("dark");
+    const isDark = resolvedTheme === "dark";
     const theme = useMemo(() => {
       return isDark ? darkTheme : lightTheme;
-    }, [isDark]);
+    }, [isDark, primaryColor]);
 
     const datasource = useMemo<IDatasource | undefined>(() => {
       if (!usesInfiniteScrollApi) return undefined;

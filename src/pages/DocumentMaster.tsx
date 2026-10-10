@@ -490,9 +490,9 @@ function TemplateEditor({
       )}
 
       {/* Editor */}
-      <div className="border rounded-xl overflow-hidden bg-white dark:bg-slate-950">
+      <div className="border border-border rounded-xl overflow-hidden bg-card text-card-foreground">
         {/* Toolbar */}
-        <div className="flex items-center gap-0.5 p-2 border-b bg-muted/30 flex-wrap">
+        <div className="flex items-center gap-0.5 p-2 border-b border-border bg-muted/40 flex-wrap">
           {toolbarBtns.map((btn, i) =>
             btn === null ? (
               <div key={i} className="w-px h-4 bg-border mx-1" />
@@ -546,15 +546,15 @@ function TemplatePreview({
     <div className="space-y-2">
       <p className="text-xs text-muted-foreground">
         Variables shown as{" "}
-        <span className="bg-blue-100 text-blue-700 px-1 rounded text-xs font-mono">
+        <span className="bg-primary/10 text-primary px-1 rounded text-xs font-mono">
           [VariableName]
         </span>
         . Actual values are filled in when assigned to an employee.
       </p>
-      {/* A4 Paper */}
-      <div className="bg-slate-100 dark:bg-slate-900 rounded-xl p-4 overflow-auto max-h-[480px]">
+      {/* A4 Paper Desk Container */}
+      <div className="bg-muted/40 border border-border/50 rounded-xl p-4 md:p-6 overflow-auto max-h-[480px]">
         <div
-          className="bg-white dark:bg-white shadow-lg mx-auto text-gray-900"
+          className="bg-white shadow-xl mx-auto text-gray-900 border border-slate-300"
           style={{
             width: "100%",
             maxWidth: "595px",
@@ -563,6 +563,8 @@ function TemplatePreview({
             fontFamily: "Georgia, 'Times New Roman', serif",
             fontSize: "13px",
             lineHeight: "1.8",
+            backgroundColor: "#ffffff",
+            color: "#111827",
           }}
         >
           {/* Header decoration */}

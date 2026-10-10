@@ -21,7 +21,7 @@ export function KpiGrid({ summary }: { summary: DashboardSummaryData }) {
       value: String(employees.total),
       change: `${employees.active} active`,
       icon: Users,
-      color: "text-blue-600 bg-blue-50",
+      color: "text-blue-600 dark:text-blue-400 bg-blue-500/10 dark:bg-blue-500/20 border border-blue-500/20",
     });
   }
 
@@ -31,14 +31,14 @@ export function KpiGrid({ summary }: { summary: DashboardSummaryData }) {
       value: String(attendance.today.present),
       change: `${attendance.today.attendanceRate}% attendance`,
       icon: UserCheck,
-      color: "text-emerald-600 bg-emerald-50",
+      color: "text-emerald-600 dark:text-emerald-400 bg-emerald-500/10 dark:bg-emerald-500/20 border border-emerald-500/20",
     });
     kpis.push({
       label: "Absent Today",
       value: String(attendance.today.absent),
       change: `${attendance.today.totalEmployees} strength`,
       icon: UserMinus,
-      color: "text-red-600 bg-red-50",
+      color: "text-destructive dark:text-red-400 bg-destructive/10 dark:bg-destructive/20 border border-destructive/20",
     });
   }
 
@@ -48,7 +48,7 @@ export function KpiGrid({ summary }: { summary: DashboardSummaryData }) {
       value: String(leave.onLeaveToday),
       change: `${leave.period.pending} pending`,
       icon: Palmtree,
-      color: "text-amber-600 bg-amber-50",
+      color: "text-amber-600 dark:text-amber-400 bg-amber-500/10 dark:bg-amber-500/20 border border-amber-500/20",
     });
   }
 
@@ -59,14 +59,14 @@ export function KpiGrid({ summary }: { summary: DashboardSummaryData }) {
       value: formatCurrency(net),
       change: payroll.current ? payroll.current.month ?? payroll.current.status : "No run yet",
       icon: Wallet,
-      color: "text-violet-600 bg-violet-50",
+      color: "text-violet-600 dark:text-violet-400 bg-violet-500/10 dark:bg-violet-500/20 border border-violet-500/20",
     });
     kpis.push({
       label: "Payslips Generated",
       value: String(payroll.payslips.total),
       change: `${payroll.payslips.currentPeriod} this period`,
       icon: FileText,
-      color: "text-orange-600 bg-orange-50",
+      color: "text-orange-600 dark:text-orange-400 bg-orange-500/10 dark:bg-orange-500/20 border border-orange-500/20",
     });
   }
 

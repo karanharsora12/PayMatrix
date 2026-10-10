@@ -7,7 +7,7 @@ interface ListingCardProps {
 export function ListingCard({ children }: ListingCardProps) {
   return (
     <div className="p-2 w-full max-w-[1600px] mx-auto">
-      <div className="bg-white rounded-sm border border-gray-100/80 shadow-xs p-2 space-y-3">
+      <div className="bg-card text-card-foreground rounded-lg border border-border shadow-xs p-3 space-y-3 transition-colors">
         {children}
       </div>
     </div>

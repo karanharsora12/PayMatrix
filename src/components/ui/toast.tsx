@@ -27,15 +27,15 @@ const toastVariants = cva(
     variants: {
       variant: {
         default:
-          "border-border bg-background text-foreground",
+          "border-border bg-card text-card-foreground",
         success:
-          "border-emerald-200/80 bg-white text-slate-900 dark:bg-slate-900 dark:border-emerald-800/60 dark:text-slate-100",
+          "border-emerald-500/40 bg-card text-card-foreground",
         destructive:
-          "border-red-200/80 bg-white text-slate-900 dark:bg-slate-900 dark:border-red-800/60 dark:text-slate-100",
+          "border-destructive/40 bg-card text-card-foreground",
         warning:
-          "border-amber-200/80 bg-white text-slate-900 dark:bg-slate-900 dark:border-amber-800/60 dark:text-slate-100",
+          "border-amber-500/40 bg-card text-card-foreground",
         info:
-          "border-blue-200/80 bg-white text-slate-900 dark:bg-slate-900 dark:border-blue-800/60 dark:text-slate-100",
+          "border-blue-500/40 bg-card text-card-foreground",
       },
     },
     defaultVariants: {
@@ -66,7 +66,7 @@ const ToastAction = React.forwardRef<
   <ToastPrimitives.Action
     ref={ref}
     className={cn(
-      "inline-flex h-8 shrink-0 items-center justify-center rounded-md border bg-transparent px-3 text-xs font-medium transition-colors hover:bg-secondary focus:outline-none focus:ring-1 focus:ring-ring disabled:pointer-events-none disabled:opacity-50",
+      "inline-flex h-8 shrink-0 items-center justify-center rounded-md border border-input bg-transparent px-3 text-xs font-medium transition-colors hover:bg-secondary focus:outline-none focus:ring-1 focus:ring-ring disabled:pointer-events-none disabled:opacity-50",
       className,
     )}
     {...props}
@@ -81,7 +81,7 @@ const ToastClose = React.forwardRef<
   <ToastPrimitives.Close
     ref={ref}
     className={cn(
-      "rounded-md p-1 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 transition-colors focus:opacity-100 focus:outline-none shrink-0 mt-0.5",
+      "rounded-md p-1 text-muted-foreground hover:text-foreground transition-colors focus:opacity-100 focus:outline-none shrink-0 mt-0.5",
       className,
     )}
     toast-close=""
@@ -98,7 +98,7 @@ const ToastTitle = React.forwardRef<
 >(({ className, ...props }, ref) => (
   <ToastPrimitives.Title
     ref={ref}
-    className={cn("text-xs sm:text-sm font-semibold text-slate-900 dark:text-slate-100 leading-snug", className)}
+    className={cn("text-xs sm:text-sm font-semibold text-card-foreground leading-snug", className)}
     {...props}
   />
 ));
@@ -110,7 +110,7 @@ const ToastDescription = React.forwardRef<
 >(({ className, ...props }, ref) => (
   <ToastPrimitives.Description
     ref={ref}
-    className={cn("text-xs text-slate-500 dark:text-slate-400 leading-normal mt-0.5", className)}
+    className={cn("text-xs text-muted-foreground leading-normal mt-0.5", className)}
     {...props}
   />
 ));

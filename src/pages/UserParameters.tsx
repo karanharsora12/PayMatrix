@@ -286,7 +286,7 @@ export default function UserParameters() {
                 placeholder="Search"
                 value={paramSearch}
                 onChange={(e) => setParamSearch(e.target.value)}
-                className="h-8 text-xs pl-2.5 bg-white dark:bg-slate-950 border-slate-300 dark:border-slate-700"
+                className="h-8 text-xs pl-2.5 bg-background border-input"
               />
             </div>
           </div>
@@ -324,7 +324,7 @@ export default function UserParameters() {
             <DialogTitle>{selectedParamName}</DialogTitle>
           </DialogHeader>
 
-          <div className="h-[430px] p-1 bg-white dark:bg-slate-950">
+          <div className="h-[430px] p-1 bg-card">
             <DataGrid
               rowData={modalRowData}
               columnDefs={employeeModalColDefs}

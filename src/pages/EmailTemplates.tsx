@@ -664,7 +664,7 @@ export default function EmailTemplates() {
                   value={statusFilter}
                   onValueChange={(val: any) => setStatusFilter(val)}
                 >
-                  <SelectTrigger className="h-7 w-28 text-xs bg-white">
+                  <SelectTrigger className="h-7 w-28 text-xs bg-background border-input">
                     <SelectValue placeholder="Status" />
                   </SelectTrigger>
                   <SelectContent>
@@ -680,7 +680,7 @@ export default function EmailTemplates() {
                   Default:
                 </span>
                 <Select value={defaultFilter} onValueChange={setDefaultFilter}>
-                  <SelectTrigger className="h-7 w-28 text-xs bg-white">
+                  <SelectTrigger className="h-7 w-28 text-xs bg-background border-input">
                     <SelectValue placeholder="Default" />
                   </SelectTrigger>
                   <SelectContent>
@@ -693,7 +693,7 @@ export default function EmailTemplates() {
           </div>
 
           {/* AG-Grid Data Table */}
-          <div className="h-[520px] w-full border rounded-sm overflow-hidden bg-white">
+          <div className="h-[520px] w-full border border-border rounded-sm overflow-hidden bg-card">
             <DataGrid
               ref={gridRef}
               rowData={templates}
@@ -709,7 +709,7 @@ export default function EmailTemplates() {
       ) : (
         /* Logs Tab */
         <div className="space-y-3">
-          <div className="h-[520px] w-full border rounded-sm overflow-hidden bg-white">
+          <div className="h-[520px] w-full border border-border rounded-sm overflow-hidden bg-card">
             <DataGrid
               ref={logsGridRef}
               rowData={logs}
@@ -793,7 +793,7 @@ export default function EmailTemplates() {
                     setFormData((prev) => ({ ...prev, templateType: val }))
                   }
                 >
-                  <SelectTrigger className="h-8 text-xs mt-1 bg-white">
+                  <SelectTrigger className="h-8 text-xs mt-1 bg-background border-input">
                     <SelectValue placeholder="Select Type" />
                   </SelectTrigger>
                   <SelectContent>
@@ -844,10 +844,10 @@ export default function EmailTemplates() {
             </div>
 
             {/* Row 4: Variable Quick-Click Palette */}
-            <div className="bg-slate-50 border rounded p-2.5 space-y-1.5">
+            <div className="bg-muted/40 border border-border rounded-lg p-2.5 space-y-1.5">
               <div className="flex items-center justify-between">
-                <span className="text-xs font-semibold text-slate-700 flex items-center gap-1.5">
-                  <Sparkles className="h-3.5 w-3.5 text-[#1d7c8a]" />
+                <span className="text-xs font-semibold text-foreground flex items-center gap-1.5">
+                  <Sparkles className="h-3.5 w-3.5 text-primary" />
                   Supported Dynamic Variables for {formData.templateType} (Click
                   to insert in body):
                 </span>
@@ -860,7 +860,7 @@ export default function EmailTemplates() {
                   <Badge
                     key={v.variable}
                     variant="outline"
-                    className="cursor-pointer hover:bg-[#1d7c8a] hover:text-white transition-all text-[11px] py-0.5 px-2 bg-white flex items-center gap-1 border-slate-300"
+                    className="cursor-pointer hover:bg-primary hover:text-primary-foreground transition-all text-[11px] py-0.5 px-2 bg-card text-foreground flex items-center gap-1 border-border"
                     onClick={() => handleInsertVariable(v.variable)}
                     title={v.description}
                   >
@@ -880,8 +880,8 @@ export default function EmailTemplates() {
               </div>
 
               {/* Tiptap Toolbar & Editor Container */}
-              <div className="border rounded-md overflow-hidden bg-white shadow-xs">
-                <div className="flex items-center gap-1 p-1.5 border-b bg-slate-50 flex-wrap text-xs">
+              <div className="border border-border rounded-md overflow-hidden bg-card text-card-foreground shadow-xs">
+                <div className="flex items-center gap-1 p-1.5 border-b border-border bg-muted/40 flex-wrap text-xs">
                   <Button
                     type="button"
                     size="sm"

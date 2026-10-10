@@ -19,7 +19,7 @@ export function AppShell({ onOpenCommand }: { onOpenCommand: () => void }) {
   }, [onOpenCommand]);
   return (
     <AlertProvider>
-      <div className="flex h-screen overflow-hidden bg-[#f8fafc] dark:bg-zinc-950">
+      <div className="flex h-screen overflow-hidden bg-background text-foreground">
         <Sidebar
           collapsed={collapsed}
           onCollapse={setCollapsed}

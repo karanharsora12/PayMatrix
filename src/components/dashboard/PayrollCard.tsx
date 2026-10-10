@@ -43,17 +43,17 @@ export function PayrollCard({ payroll }: { payroll: DashboardPayroll }) {
               <StatTile
                 label="Gross"
                 value={formatCurrency(payroll.current?.gross ?? 0)}
-                accent="text-blue-600"
+                accent="text-blue-600 dark:text-blue-400"
               />
               <StatTile
                 label="Deductions"
                 value={formatCurrency(payroll.current?.deductions ?? 0)}
-                accent="text-amber-600"
+                accent="text-amber-600 dark:text-amber-400"
               />
               <StatTile
                 label="Net"
                 value={formatCurrency(payroll.current?.net ?? 0)}
-                accent="text-emerald-600"
+                accent="text-emerald-600 dark:text-emerald-400"
               />
               <StatTile
                 label={isSelf ? "Payslips" : "Employees"}
@@ -63,18 +63,26 @@ export function PayrollCard({ payroll }: { payroll: DashboardPayroll }) {
                     : String(payroll.current?.employeeCount ?? 0)
                 }
                 hint={payroll.current?.status ?? undefined}
-                accent="text-violet-600"
+                accent="text-violet-600 dark:text-violet-400"
               />
             </div>
 
             <div className="h-[240px]">
               <ResponsiveContainer width="100%" height="100%">
                 <BarChart data={payroll.monthly}>
-                  <XAxis dataKey="month" fontSize={12} />
-                  <YAxis fontSize={12} />
-                  <Tooltip formatter={(value) => formatCurrency(Number(value))} />
-                  <Legend wrapperStyle={{ fontSize: 12 }} />
-                  <Bar dataKey="gross" name="Gross" fill="#2563eb" radius={[4, 4, 0, 0]} />
+                  <XAxis dataKey="month" fontSize={12} stroke="hsl(var(--muted-foreground))" tick={{ fill: "hsl(var(--muted-foreground))" }} />
+                  <YAxis fontSize={12} stroke="hsl(var(--muted-foreground))" tick={{ fill: "hsl(var(--muted-foreground))" }} />
+                  <Tooltip
+                    contentStyle={{
+                      backgroundColor: "hsl(var(--popover))",
+                      borderColor: "hsl(var(--border))",
+                      borderRadius: "8px",
+                      color: "hsl(var(--popover-foreground))",
+                    }}
+                    formatter={(value) => formatCurrency(Number(value))}
+                  />
+                  <Legend wrapperStyle={{ fontSize: 12, paddingTop: 4 }} />
+                  <Bar dataKey="gross" name="Gross" fill="#3b82f6" radius={[4, 4, 0, 0]} />
                   <Bar dataKey="deductions" name="Deductions" fill="#f59e0b" radius={[4, 4, 0, 0]} />
                   <Bar dataKey="net" name="Net" fill="#10b981" radius={[4, 4, 0, 0]} />
                 </BarChart>
