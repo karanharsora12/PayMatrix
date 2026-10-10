@@ -150,7 +150,9 @@ export default function EmployeeSalary() {
         flex: 1,
         cellRenderer: (p: any) => (
           <div className="flex flex-col justify-center h-full">
-            <div className="font-medium text-sm leading-tight">{p.value}</div>
+            <div className="font-medium text-sm leading-tight mb-.5">
+              {p.value}
+            </div>
             <div className="text-xs font-mono text-muted-foreground leading-tight">
               {p.data.code}
             </div>
@@ -186,7 +188,9 @@ export default function EmployeeSalary() {
         flex: 1,
         cellRenderer: (p: any) => (
           <div className="flex flex-col justify-center h-full">
-            <div className="font-medium text-sm leading-tight">{p.value}</div>
+            <div className="font-medium text-sm leading-tight m-.5">
+              {p.value}
+            </div>
             <div className="text-xs font-mono text-muted-foreground leading-tight">
               {p.data.code}
             </div>
@@ -473,15 +477,15 @@ export default function EmployeeSalary() {
                     </CardContent>
                   </Card>
 
-                  <Card className="border shadow-xs bg-emerald-50/50 border-emerald-200">
+                  <Card className="border shadow-xs">
                     <CardContent className="p-4">
-                      <div className="text-xs text-emerald-700 font-medium">
+                      <div className="text-xs text-muted-foreground font-medium">
                         Net Take-Home
                       </div>
-                      <div className="text-2xl font-bold text-emerald-900 mt-1">
+                      <div className="text-2xl font-bold text-foreground mt-1">
                         {formatCurrency(currentSalary.totals.net)}
                       </div>
-                      <div className="text-[11px] text-emerald-600 mt-1">
+                      <div className="text-[11px] text-muted-foreground mt-1">
                         Estimated base net salary
                       </div>
                     </CardContent>
@@ -522,6 +526,9 @@ export default function EmployeeSalary() {
                         <DataGrid
                           rowData={currentSalary.earnings || []}
                           columnDefs={earningsColDefs}
+                          gridOptions={{
+                            rowHeight: 40,
+                          }}
                         />
                       </div>
                     </CardContent>
@@ -545,6 +552,9 @@ export default function EmployeeSalary() {
                         <DataGrid
                           rowData={combinedDeductions}
                           columnDefs={deductionsColDefs}
+                          gridOptions={{
+                            rowHeight: 40,
+                          }}
                         />
                       </div>
                     </CardContent>
@@ -776,7 +786,7 @@ export default function EmployeeSalary() {
             <DialogTitle>Revise Employee Salary</DialogTitle>
           </DialogHeader>
 
-          <form onSubmit={handleSaveRevision} className="space-y-5">
+          <div className="space-y-5">
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-1.5">
                 <Label>New Salary Structure *</Label>
@@ -869,7 +879,7 @@ export default function EmployeeSalary() {
                 </div>
               </div>
             </div>
-          </form>
+          </div>
           <DialogFooter>
             <Button
               type="button"
@@ -878,7 +888,11 @@ export default function EmployeeSalary() {
             >
               Cancel
             </Button>
-            <Button type="submit" disabled={assignMutation.isPending}>
+            <Button
+              type="button"
+              onClick={handleSaveRevision}
+              disabled={assignMutation.isPending}
+            >
               {assignMutation.isPending
                 ? "Saving Revision..."
                 : "Confirm & Save Revision"}

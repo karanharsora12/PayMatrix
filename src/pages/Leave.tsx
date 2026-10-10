@@ -1,5 +1,5 @@
 import type { LeaveType } from "@/api/leave";
-import { DatePicker, useAlert } from "@/components/common";
+import { DatePicker, GridDateFloatingFilter, useAlert } from "@/components/common";
 import { DataGrid } from "@/components/common/DataGrid";
 import { ListingCard } from "@/components/common/ListingCard";
 import { ListingHeader } from "@/components/common/ListingHeader";
@@ -382,10 +382,36 @@ export default function Leave() {
         ),
       },
       {
-        field: "period",
-        headerName: "Period",
-        width: 220,
-        valueGetter: (p) => `${p.data.fromDate} → ${p.data.toDate}`,
+        field: "fromDate",
+        headerName: "From Date",
+        width: 125,
+        cellClass: "font-mono text-sm",
+        valueFormatter: (p) => {
+          if (!p.value) return "";
+          if (p.value.includes("-")) {
+            const [year, month, day] = p.value.split("T")[0].split("-");
+            return `${day}/${month}/${year}`;
+          }
+          return p.value;
+        },
+        filter: "agTextColumnFilter",
+        floatingFilterComponent: GridDateFloatingFilter,
+      },
+      {
+        field: "toDate",
+        headerName: "To Date",
+        width: 125,
+        cellClass: "font-mono text-sm",
+        valueFormatter: (p) => {
+          if (!p.value) return "";
+          if (p.value.includes("-")) {
+            const [year, month, day] = p.value.split("T")[0].split("-");
+            return `${day}/${month}/${year}`;
+          }
+          return p.value;
+        },
+        filter: "agTextColumnFilter",
+        floatingFilterComponent: GridDateFloatingFilter,
       },
       {
         field: "totalDays",

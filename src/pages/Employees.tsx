@@ -1,6 +1,7 @@
 import { departmentApi } from "@/api/departments";
 import { designationApi } from "@/api/designations";
 import { DataGrid } from "@/components/common/DataGrid";
+import { GridDateFloatingFilter } from "@/components/common/GridDateFloatingFilter";
 import { ActionMenu } from "@/components/common/ActionMenu";
 import { ListingCard } from "@/components/common/ListingCard";
 import { ListingHeader } from "@/components/common/ListingHeader";
@@ -358,6 +359,22 @@ export default function Employees() {
         width: 120,
         valueGetter: (params) =>
           params.data?.branch?.name ?? params.data?.branch ?? "—",
+      },
+      {
+        field: "joiningDate",
+        headerName: "Joining Date",
+        width: 130,
+        cellClass: "font-mono text-sm",
+        valueFormatter: (params) => {
+          if (!params.value) return "—";
+          if (params.value.includes("-")) {
+            const [year, month, day] = params.value.split("T")[0].split("-");
+            return `${day}/${month}/${year}`;
+          }
+          return new Date(params.value).toLocaleDateString();
+        },
+        filter: "agTextColumnFilter",
+        floatingFilterComponent: GridDateFloatingFilter,
       },
       {
         field: "status",

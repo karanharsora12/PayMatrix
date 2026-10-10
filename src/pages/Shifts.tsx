@@ -1,5 +1,5 @@
 import type { Shift } from "@/api/shifts";
-import { DatePicker, GridDateFloatingFilter, GridDeleteCell } from "@/components/common";
+import { DatePicker, GridDateFloatingFilter, GridDeleteCell, TimePicker } from "@/components/common";
 import { DataGrid } from "@/components/common/DataGrid";
 import { ListingCard } from "@/components/common/ListingCard";
 import { ListingHeader } from "@/components/common/ListingHeader";
@@ -506,29 +506,25 @@ export default function Shifts() {
 
             <div className="grid grid-cols-2 gap-3">
               <div>
-                <label className="text-xs font-medium text-muted-foreground">
-                  Start Time (HH:mm)
+                <label className="text-xs font-medium text-muted-foreground block mb-1">
+                  Start Time
                 </label>
-                <Input
-                  type="time"
+                <TimePicker
                   value={form.startTime}
-                  onChange={(e) =>
-                    setForm({ ...form, startTime: e.target.value })
+                  onChange={(val) =>
+                    setForm({ ...form, startTime: val })
                   }
-                  required
                 />
               </div>
               <div>
-                <label className="text-xs font-medium text-muted-foreground">
-                  End Time (HH:mm)
+                <label className="text-xs font-medium text-muted-foreground block mb-1">
+                  End Time
                 </label>
-                <Input
-                  type="time"
+                <TimePicker
                   value={form.endTime}
-                  onChange={(e) =>
-                    setForm({ ...form, endTime: e.target.value })
+                  onChange={(val) =>
+                    setForm({ ...form, endTime: val })
                   }
-                  required
                 />
               </div>
             </div>

@@ -1,5 +1,5 @@
 import type { AttendanceRecord } from "@/api/attendance";
-import { DatePicker } from "@/components/common";
+import { DatePicker, GridDateFloatingFilter, TimePicker } from "@/components/common";
 import { DataGrid } from "@/components/common/DataGrid";
 import { ListingCard } from "@/components/common/ListingCard";
 import { ListingHeader } from "@/components/common/ListingHeader";
@@ -373,8 +373,18 @@ export default function Attendance() {
       {
         field: "attendanceDate",
         headerName: "Date",
-        width: 120,
+        width: 130,
         cellClass: "font-mono text-sm",
+        valueFormatter: (p) => {
+          if (!p.value) return "";
+          if (p.value.includes("-")) {
+            const [year, month, day] = p.value.split("T")[0].split("-");
+            return `${day}/${month}/${year}`;
+          }
+          return p.value;
+        },
+        filter: "agTextColumnFilter",
+        floatingFilterComponent: GridDateFloatingFilter,
       },
       {
         field: "shiftName",
@@ -467,8 +477,17 @@ export default function Attendance() {
         headerName: "Punch Time",
         width: 200,
         cellClass: "font-mono text-sm",
-        valueFormatter: (p) =>
-          p.value ? new Date(p.value).toLocaleString() : "—",
+        valueFormatter: (p) => {
+          if (!p.value) return "—";
+          const d = new Date(p.value);
+          const day = String(d.getDate()).padStart(2, "0");
+          const month = String(d.getMonth() + 1).padStart(2, "0");
+          const year = d.getFullYear();
+          const time = d.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
+          return `${day}/${month}/${year} ${time}`;
+        },
+        filter: "agTextColumnFilter",
+        floatingFilterComponent: GridDateFloatingFilter,
       },
       {
         field: "punchType",
@@ -802,31 +821,29 @@ export default function Attendance() {
 
             <div className="grid grid-cols-2 gap-3">
               <div>
-                <label className="text-xs font-medium text-muted-foreground">
+                <label className="text-xs font-medium text-muted-foreground block mb-1">
                   Check In Time
                 </label>
-                <Input
-                  type="time"
+                <TimePicker
                   value={manualForm.checkInTime}
-                  onChange={(e) =>
+                  onChange={(val) =>
                     setManualForm({
                       ...manualForm,
-                      checkInTime: e.target.value,
+                      checkInTime: val,
                     })
                   }
                 />
               </div>
               <div>
-                <label className="text-xs font-medium text-muted-foreground">
+                <label className="text-xs font-medium text-muted-foreground block mb-1">
                   Check Out Time
                 </label>
-                <Input
-                  type="time"
+                <TimePicker
                   value={manualForm.checkOutTime}
-                  onChange={(e) =>
+                  onChange={(val) =>
                     setManualForm({
                       ...manualForm,
-                      checkOutTime: e.target.value,
+                      checkOutTime: val,
                     })
                   }
                 />
@@ -969,18 +986,44 @@ export default function Attendance() {
               </Select>
             </div>
 
-            <div>
-              <label className="text-xs font-medium text-muted-foreground">
-                Punch Time
-              </label>
-              <Input
-                type="datetime-local"
-                value={punchForm.punchTime}
-                onChange={(e) =>
-                  setPunchForm({ ...punchForm, punchTime: e.target.value })
-                }
-                required
-              />
+            <div className="grid grid-cols-2 gap-3">
+              <div>
+                <label className="text-xs font-medium text-muted-foreground block mb-1">
+                  Punch Date
+                </label>
+                <DatePicker
+                  value={punchForm.punchTime.substring(0, 10)}
+                  onChange={(_, str) => {
+                    const timePart = punchForm.punchTime.includes("T")
+                      ? punchForm.punchTime.split("T")[1]
+                      : "09:30";
+                    setPunchForm({
+                      ...punchForm,
+                      punchTime: `${str || today}T${timePart}`,
+                    });
+                  }}
+                  clearable={false}
+                />
+              </div>
+              <div>
+                <label className="text-xs font-medium text-muted-foreground block mb-1">
+                  Punch Time
+                </label>
+                <TimePicker
+                  value={
+                    punchForm.punchTime.includes("T")
+                      ? punchForm.punchTime.split("T")[1].substring(0, 5)
+                      : "09:30"
+                  }
+                  onChange={(val) => {
+                    const datePart = punchForm.punchTime.split("T")[0] || today;
+                    setPunchForm({
+                      ...punchForm,
+                      punchTime: `${datePart}T${val || "09:30"}`,
+                    });
+                  }}
+                />
+              </div>
             </div>
 
             <div className="flex justify-end gap-2 pt-4">

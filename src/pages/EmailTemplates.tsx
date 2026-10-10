@@ -2,6 +2,7 @@ import type { EmailLog, EmailTemplate } from "@/api/emailTemplates";
 import { useAlert } from "@/components/common/AlertProvider";
 import { ActionMenu } from "@/components/common/ActionMenu";
 import { DataGrid } from "@/components/common/DataGrid";
+import { GridDateFloatingFilter } from "@/components/common/GridDateFloatingFilter";
 import { ListingCard } from "@/components/common/ListingCard";
 import { ListingHeader } from "@/components/common/ListingHeader";
 import { Badge } from "@/components/ui/badge";
@@ -599,8 +600,17 @@ export default function EmailTemplates() {
         headerName: "Sent / Created At",
         field: "createdAt",
         width: 180,
-        valueFormatter: (p: any) =>
-          p.value ? new Date(p.value).toLocaleString("en-IN") : "—",
+        valueFormatter: (p: any) => {
+          if (!p.value) return "—";
+          const d = new Date(p.value);
+          const day = String(d.getDate()).padStart(2, "0");
+          const month = String(d.getMonth() + 1).padStart(2, "0");
+          const year = d.getFullYear();
+          const time = d.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
+          return `${day}/${month}/${year} ${time}`;
+        },
+        filter: "agTextColumnFilter",
+        floatingFilterComponent: GridDateFloatingFilter,
       },
       {
         headerName: "Error / Details",

@@ -20,6 +20,7 @@ import {
   useAttendanceCalendar,
 } from "@/hooks/useAttendance";
 import { DataGrid } from "@/components/common/DataGrid";
+import { GridDateFloatingFilter } from "@/components/common/GridDateFloatingFilter";
 import type { ColDef } from "ag-grid-community";
 
 export default function MyAttendance() {
@@ -112,11 +113,16 @@ export default function MyAttendance() {
       field: "attendanceDate",
       headerName: "Date",
       width: 130,
-      cellRenderer: (p: any) => (
-        <span className="font-medium text-foreground">
-          {p.value ? new Date(p.value).toLocaleDateString() : ""}
-        </span>
-      ),
+      valueFormatter: (p) => {
+        if (!p.value) return "";
+        if (p.value.includes("-")) {
+          const [year, month, day] = p.value.split("T")[0].split("-");
+          return `${day}/${month}/${year}`;
+        }
+        return p.value;
+      },
+      filter: "agTextColumnFilter",
+      floatingFilterComponent: GridDateFloatingFilter,
     },
     {
       field: "checkIn",

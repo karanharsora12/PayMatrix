@@ -4,5 +4,7 @@ export { GridDeleteCell } from "./GridDeleteCell";
 export type { GridDeleteCellParams } from "./GridDeleteCell";
 export * from "./GridDateFloatingFilter";
 export * from "./DatePicker";
+export { TimePicker } from "@/components/ui/time-picker";
+export type { TimePickerProps } from "@/components/ui/time-picker";
 export { AlertProvider, useAlert } from "./AlertProvider";
 export type { AlertOptions, AlertVariant } from "./AlertProvider";
