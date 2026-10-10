@@ -377,7 +377,7 @@ export default function Payslip() {
     });
 
     return (
-      <div className="max-w-4xl mx-auto space-y-4 pb-12 print:max-w-none print:p-0 print:m-0">
+      <div className="max-w-4xl mx-auto space-y-4 pt-4 pb-12 print:max-w-none print:p-0 print:m-0">
         {/* Top Control Bar (hidden on print) */}
         <div className="flex items-center justify-between gap-2 print:hidden bg-card p-3 rounded-lg border shadow-sm">
           <Button
@@ -747,7 +747,7 @@ export default function Payslip() {
         )}
       </div>
 
-      <div className="h-[600px] w-full">
+      <div className="h-[500px] w-full">
         <DataGrid
           ref={gridRef}
           rowData={filteredList}
