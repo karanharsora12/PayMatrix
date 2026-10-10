@@ -64,6 +64,44 @@ export function useRecordPunch() {
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ['attendance', 'logs'] });
       qc.invalidateQueries({ queryKey: ['attendance'] });
+      qc.invalidateQueries({ queryKey: ['dashboard'] });
     },
+  });
+}
+
+export function useAttendanceMyStatus() {
+  return useQuery({
+    queryKey: ['attendance', 'my-status'],
+    queryFn: () => attendanceApi.getMyStatus(),
+    refetchInterval: 60 * 1000, // re-check every minute
+  });
+}
+
+export function usePunchIn() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: attendanceApi.punchIn,
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ['attendance'] });
+      qc.invalidateQueries({ queryKey: ['dashboard'] });
+    },
+  });
+}
+
+export function usePunchOut() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: attendanceApi.punchOut,
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ['attendance'] });
+      qc.invalidateQueries({ queryKey: ['dashboard'] });
+    },
+  });
+}
+
+export function useMyAttendanceHistory(params?: any) {
+  return useQuery({
+    queryKey: ['attendance', 'my-history', params],
+    queryFn: () => attendanceApi.getMyHistory(params),
   });
 }

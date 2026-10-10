@@ -1,4 +1,6 @@
 import React from "react";
+import { useSelector } from "react-redux";
+import type { RootState } from "@/store";
 import { useAuth } from "@/context/AuthContext";
 import AccessDenied from "@/pages/AccessDenied";
 
@@ -138,3 +140,43 @@ export function ProtectedRouteGuard({
     </PermissionGuard>
   );
 }
+
+/**
+ * Route-level guard specifically for Attendance Register (management view)
+ * Allows SUPER_ADMIN, users with attendance.manage/attendance.edit, or CanManageAttendance=true
+ */
+export function AttendanceManagerRouteGuard({
+  children,
+}: {
+  children: React.ReactNode;
+}) {
+  const { user } = useAuth();
+  // Read CanManageAttendance from Redux store via window or selector
+  const canManage =
+    user?.roles?.includes("SUPER_ADMIN") ||
+    checkPermission(user?.permissions, user?.roles, "attendance.manage") ||
+    checkPermission(user?.permissions, user?.roles, "attendance.edit");
+
+  if (canManage) {
+    return <>{children}</>;
+  }
+
+  return <AttendanceManagerReduxCheck>{children}</AttendanceManagerReduxCheck>;
+}
+
+function AttendanceManagerReduxCheck({
+  children,
+}: {
+  children: React.ReactNode;
+}) {
+  const canManageParam = useSelector(
+    (state: RootState) => state.userParameters.CanManageAttendance,
+  );
+
+  if (canManageParam) {
+    return <>{children}</>;
+  }
+
+  return <AccessDenied requiredPermission="attendance.manage" />;
+}
+

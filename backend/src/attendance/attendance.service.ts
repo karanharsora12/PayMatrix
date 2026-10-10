@@ -4,20 +4,31 @@ import {
   Inject,
   Injectable,
   NotFoundException,
-} from '@nestjs/common';
-import { and, asc, desc, eq, gte, inArray, isNull, lte, or, sql } from 'drizzle-orm';
-import { DRIZZLE } from '../database/database.module';
-import * as schema from '../db/schema';
-import { paginated } from '../common/dto/pagination.dto';
+} from "@nestjs/common";
+import {
+  and,
+  asc,
+  desc,
+  eq,
+  gte,
+  inArray,
+  isNull,
+  lte,
+  or,
+  sql,
+} from "drizzle-orm";
+import { DRIZZLE } from "../database/database.module";
+import * as schema from "../db/schema";
+import { paginated } from "../common/dto/pagination.dto";
 import {
   AttendanceFilterDto,
   AttendanceSummaryFilterDto,
   CreateAttendanceDto,
   CreateAttendancePunchDto,
   UpdateAttendanceDto,
-} from './dto/attendance.dto';
-import { AttendanceCalculationService } from './attendance-calculation.service';
-import { ShiftsService } from '../shifts/shifts.service';
+} from "./dto/attendance.dto";
+import { AttendanceCalculationService } from "./attendance-calculation.service";
+import { ShiftsService } from "../shifts/shifts.service";
 
 @Injectable()
 export class AttendanceService {
@@ -34,10 +45,14 @@ export class AttendanceService {
       conditions.push(eq(schema.attendance.employeeId, filter.employeeId));
     }
     if (filter.fromDate) {
-      conditions.push(gte(schema.attendance.attendanceDate, filter.fromDate as any));
+      conditions.push(
+        gte(schema.attendance.attendanceDate, filter.fromDate as any),
+      );
     }
     if (filter.toDate) {
-      conditions.push(lte(schema.attendance.attendanceDate, filter.toDate as any));
+      conditions.push(
+        lte(schema.attendance.attendanceDate, filter.toDate as any),
+      );
     }
     if (filter.status) {
       conditions.push(eq(schema.attendance.status, filter.status as any));
@@ -50,7 +65,9 @@ export class AttendanceService {
         empConditions.push(eq(schema.employees.branchId, filter.branchId));
       }
       if (filter.departmentId) {
-        empConditions.push(eq(schema.employees.departmentId, filter.departmentId));
+        empConditions.push(
+          eq(schema.employees.departmentId, filter.departmentId),
+        );
       }
 
       const matchingEmps = await this.db
@@ -60,7 +77,7 @@ export class AttendanceService {
 
       const empIds = matchingEmps.map((e: any) => e.id);
       if (empIds.length === 0) {
-        return paginated([], 0, filter, 'Attendance fetched');
+        return paginated([], 0, filter, "Attendance fetched");
       }
       conditions.push(inArray(schema.attendance.employeeId, empIds));
     }
@@ -99,15 +116,20 @@ export class AttendanceService {
           );
           return {
             ...r,
-            shiftName: shiftRes.data?.shift?.name || 'Not Assigned',
+            shiftName: shiftRes.data?.shift?.name || "Not Assigned",
           };
         } catch {
-          return { ...r, shiftName: 'Not Assigned' };
+          return { ...r, shiftName: "Not Assigned" };
         }
       }),
     );
 
-    return paginated(enrichedRows, total, filter, 'Attendance fetched successfully');
+    return paginated(
+      enrichedRows,
+      total,
+      filter,
+      "Attendance fetched successfully",
+    );
   }
 
   async get(companyId: string, id: string) {
@@ -126,8 +148,8 @@ export class AttendanceService {
     });
     if (!row) {
       throw new NotFoundException({
-        code: 'ATTENDANCE_NOT_FOUND',
-        message: 'Attendance record not found',
+        code: "ATTENDANCE_NOT_FOUND",
+        message: "Attendance record not found",
       });
     }
     return { success: true, data: row };
@@ -141,8 +163,8 @@ export class AttendanceService {
     });
     if (!emp) {
       throw new NotFoundException({
-        code: 'EMPLOYEE_NOT_FOUND',
-        message: 'Employee not found in company',
+        code: "EMPLOYEE_NOT_FOUND",
+        message: "Employee not found in company",
       });
     }
 
@@ -156,7 +178,7 @@ export class AttendanceService {
     });
     if (existing) {
       throw new ConflictException({
-        code: 'ATTENDANCE_ALREADY_EXISTS',
+        code: "ATTENDANCE_ALREADY_EXISTS",
         message: `Attendance already recorded for ${dto.attendanceDate}`,
       });
     }
@@ -171,7 +193,7 @@ export class AttendanceService {
     const shift = shiftResult.data?.shift ?? null;
     if (!shift) {
       throw new BadRequestException({
-        code: 'SHIFT_NOT_ASSIGNED',
+        code: "SHIFT_NOT_ASSIGNED",
         message: `No shift is assigned to this employee for ${dto.attendanceDate}. Cannot mark attendance.`,
       });
     }
@@ -182,7 +204,7 @@ export class AttendanceService {
         and(
           eq(r.employeeId, dto.employeeId),
           eq(r.companyId, companyId),
-          eq(r.status, 'APPROVED'),
+          eq(r.status, "APPROVED"),
           lte(r.fromDate, dto.attendanceDate as any),
           gte(r.toDate, dto.attendanceDate as any),
         ),
@@ -199,7 +221,7 @@ export class AttendanceService {
     });
 
     // 6. Check weekly off (default Sunday: day 0)
-    const dateObj = new Date(dto.attendanceDate + 'T00:00:00Z');
+    const dateObj = new Date(dto.attendanceDate + "T00:00:00Z");
     const isWeeklyOff = dateObj.getUTCDay() === 0;
 
     // 7. Run calculation
@@ -252,10 +274,10 @@ export class AttendanceService {
       .values({
         companyId,
         userId,
-        module: 'attendance',
-        entityType: 'attendance',
+        module: "attendance",
+        entityType: "attendance",
         entityId: row.id,
-        action: 'CREATE',
+        action: "CREATE",
         newValues: row as any,
       })
       .catch(() => {});
@@ -263,7 +285,7 @@ export class AttendanceService {
     return {
       success: true,
       data: row,
-      message: 'Attendance recorded successfully',
+      message: "Attendance recorded successfully",
     };
   }
 
@@ -279,8 +301,8 @@ export class AttendanceService {
     });
     if (!ex) {
       throw new NotFoundException({
-        code: 'ATTENDANCE_NOT_FOUND',
-        message: 'Attendance record not found',
+        code: "ATTENDANCE_NOT_FOUND",
+        message: "Attendance record not found",
       });
     }
 
@@ -291,6 +313,47 @@ export class AttendanceService {
     }
     if (dto.checkOut !== undefined) {
       payload.checkOut = dto.checkOut ? new Date(dto.checkOut) : null;
+    }
+
+    const effectiveCheckIn =
+      dto.checkIn !== undefined
+        ? dto.checkIn
+          ? new Date(dto.checkIn)
+          : null
+        : ex.checkIn
+          ? new Date(ex.checkIn)
+          : null;
+    const effectiveCheckOut =
+      dto.checkOut !== undefined
+        ? dto.checkOut
+          ? new Date(dto.checkOut)
+          : null
+        : ex.checkOut
+          ? new Date(ex.checkOut)
+          : null;
+
+    if (
+      effectiveCheckIn &&
+      effectiveCheckOut &&
+      dto.workingMinutes === undefined
+    ) {
+      const shiftRes = await this.shiftsService
+        .getCurrentShift(companyId, ex.employeeId, ex.attendanceDate)
+        .catch(() => null);
+      const shift = shiftRes?.data?.shift;
+      const calcResult = this.calc.calculate({
+        checkIn: effectiveCheckIn,
+        checkOut: effectiveCheckOut,
+        shift,
+      });
+      payload.workingMinutes = calcResult.workingMinutes;
+      if (dto.breakMinutes === undefined) {
+        payload.breakMinutes = calcResult.breakMinutes;
+      }
+      payload.overtimeMinutes = calcResult.overtimeMinutes;
+      if (dto.status === undefined) {
+        payload.status = calcResult.status;
+      }
     }
 
     const [row] = await this.db
@@ -309,10 +372,10 @@ export class AttendanceService {
       .values({
         companyId,
         userId,
-        module: 'attendance',
-        entityType: 'attendance',
+        module: "attendance",
+        entityType: "attendance",
         entityId: id,
-        action: 'UPDATE',
+        action: "UPDATE",
         oldValues: ex as any,
         newValues: row as any,
       })
@@ -321,7 +384,7 @@ export class AttendanceService {
     return {
       success: true,
       data: row,
-      message: 'Attendance updated successfully',
+      message: "Attendance updated successfully",
     };
   }
 
@@ -329,16 +392,23 @@ export class AttendanceService {
     let conditions = [eq(schema.attendance.companyId, companyId)];
 
     const dateVal =
-      filter.date ?? (filter.fromDate && filter.toDate ? null : new Date().toISOString().split('T')[0]);
+      filter.date ??
+      (filter.fromDate && filter.toDate
+        ? null
+        : new Date().toISOString().split("T")[0]);
 
     if (dateVal) {
       conditions.push(eq(schema.attendance.attendanceDate, dateVal as any));
     } else {
       if (filter.fromDate) {
-        conditions.push(gte(schema.attendance.attendanceDate, filter.fromDate as any));
+        conditions.push(
+          gte(schema.attendance.attendanceDate, filter.fromDate as any),
+        );
       }
       if (filter.toDate) {
-        conditions.push(lte(schema.attendance.attendanceDate, filter.toDate as any));
+        conditions.push(
+          lte(schema.attendance.attendanceDate, filter.toDate as any),
+        );
       }
     }
 
@@ -348,8 +418,12 @@ export class AttendanceService {
 
     if (filter.branchId || filter.departmentId) {
       const empConditions = [eq(schema.employees.companyId, companyId)];
-      if (filter.branchId) empConditions.push(eq(schema.employees.branchId, filter.branchId));
-      if (filter.departmentId) empConditions.push(eq(schema.employees.departmentId, filter.departmentId));
+      if (filter.branchId)
+        empConditions.push(eq(schema.employees.branchId, filter.branchId));
+      if (filter.departmentId)
+        empConditions.push(
+          eq(schema.employees.departmentId, filter.departmentId),
+        );
 
       const emps = await this.db
         .select({ id: schema.employees.id })
@@ -385,8 +459,12 @@ export class AttendanceService {
     if (filter.employeeId) {
       empCountWhere.push(eq(schema.employees.id, filter.employeeId));
     } else {
-      if (filter.branchId) empCountWhere.push(eq(schema.employees.branchId, filter.branchId));
-      if (filter.departmentId) empCountWhere.push(eq(schema.employees.departmentId, filter.departmentId));
+      if (filter.branchId)
+        empCountWhere.push(eq(schema.employees.branchId, filter.branchId));
+      if (filter.departmentId)
+        empCountWhere.push(
+          eq(schema.employees.departmentId, filter.departmentId),
+        );
       if (dateVal) {
         empCountWhere.push(lte(schema.employees.joiningDate, dateVal as any));
         empCountWhere.push(
@@ -422,16 +500,20 @@ export class AttendanceService {
       totalOvertimeMinutes += Number(r.totalOvertime);
     }
 
-    const present = map['PRESENT'] ?? 0;
-    const late = map['LATE'] ?? 0;
-    const halfDay = map['HALF_DAY'] ?? 0;
-    const onLeave = map['ON_LEAVE'] ?? 0;
-    const holiday = map['HOLIDAY'] ?? 0;
-    const recordedAbsent = map['ABSENT'] ?? 0;
+    const present = map["PRESENT"] ?? 0;
+    const late = map["LATE"] ?? 0;
+    const halfDay = map["HALF_DAY"] ?? 0;
+    const onLeave = map["ON_LEAVE"] ?? 0;
+    const holiday = map["HOLIDAY"] ?? 0;
+    const recordedAbsent = map["ABSENT"] ?? 0;
 
     // Derived absent: employees without attendance records
-    const recordedTotal = present + late + halfDay + onLeave + holiday + recordedAbsent;
-    const absent = Math.max(recordedAbsent, totalEmployees - (recordedTotal - recordedAbsent));
+    const recordedTotal =
+      present + late + halfDay + onLeave + holiday + recordedAbsent;
+    const absent = Math.max(
+      recordedAbsent,
+      totalEmployees - (recordedTotal - recordedAbsent),
+    );
 
     return {
       success: true,
@@ -515,8 +597,8 @@ export class AttendanceService {
     });
     if (!emp) {
       throw new NotFoundException({
-        code: 'EMPLOYEE_NOT_FOUND',
-        message: 'Employee not found',
+        code: "EMPLOYEE_NOT_FOUND",
+        message: "Employee not found",
       });
     }
 
@@ -525,10 +607,14 @@ export class AttendanceService {
       eq(schema.attendance.employeeId, employeeId),
     ];
     if (filter.fromDate) {
-      conditions.push(gte(schema.attendance.attendanceDate, filter.fromDate as any));
+      conditions.push(
+        gte(schema.attendance.attendanceDate, filter.fromDate as any),
+      );
     }
     if (filter.toDate) {
-      conditions.push(lte(schema.attendance.attendanceDate, filter.toDate as any));
+      conditions.push(
+        lte(schema.attendance.attendanceDate, filter.toDate as any),
+      );
     }
     if (filter.status) {
       conditions.push(eq(schema.attendance.status, filter.status as any));
@@ -549,8 +635,8 @@ export class AttendanceService {
     });
     if (!emp) {
       throw new NotFoundException({
-        code: 'EMPLOYEE_NOT_FOUND',
-        message: 'Employee not found',
+        code: "EMPLOYEE_NOT_FOUND",
+        message: "Employee not found",
       });
     }
 
@@ -561,7 +647,7 @@ export class AttendanceService {
         employeeId: dto.employeeId,
         punchTime: new Date(dto.punchTime) as any,
         punchType: dto.punchType,
-        source: dto.source ?? 'WEB',
+        source: dto.source ?? "WEB",
         deviceId: dto.deviceId ?? null,
       })
       .returning();
@@ -569,7 +655,7 @@ export class AttendanceService {
     return {
       success: true,
       data: punch,
-      message: 'Punch logged successfully',
+      message: "Punch logged successfully",
     };
   }
 
@@ -590,7 +676,7 @@ export class AttendanceService {
       conditions.push(
         lte(
           schema.attendanceLogs.punchTime,
-          new Date(filter.toDate + 'T23:59:59Z') as any,
+          new Date(filter.toDate + "T23:59:59Z") as any,
         ),
       );
     }
@@ -603,5 +689,344 @@ export class AttendanceService {
     });
 
     return { success: true, data: rows };
+  }
+
+  async getMyStatus(companyId: string, employeeId: string) {
+    const emp = await this.db.query.employees.findFirst({
+      where: (e: any, { eq, and }: any) =>
+        and(eq(e.id, employeeId), eq(e.companyId, companyId)),
+      with: {
+        department: true,
+        designation: true,
+        branch: true,
+      },
+    });
+    if (!emp) {
+      throw new NotFoundException({
+        code: "EMPLOYEE_NOT_FOUND",
+        message: "Employee record not found",
+      });
+    }
+
+    const todayDate = new Date().toISOString().substring(0, 10);
+
+    const shiftRes = await this.shiftsService
+      .getCurrentShift(companyId, employeeId, todayDate)
+      .catch(() => null);
+    const shift = shiftRes?.data?.shift ?? null;
+
+    const todayAttendance = await this.db.query.attendance.findFirst({
+      where: (a: any, { eq, and }: any) =>
+        and(
+          eq(a.employeeId, employeeId),
+          eq(a.attendanceDate, todayDate),
+          eq(a.companyId, companyId),
+        ),
+    });
+
+    const recentPunches = await this.db.query.attendanceLogs.findMany({
+      where: (l: any, { eq, and, gte }: any) =>
+        and(
+          eq(l.employeeId, employeeId),
+          eq(l.companyId, companyId),
+          gte(l.punchTime, new Date(todayDate) as any),
+        ),
+      orderBy: (l: any, { desc }: any) => desc(l.punchTime),
+      limit: 10,
+    });
+
+    const hasCheckedIn = Boolean(todayAttendance?.checkIn);
+    const hasCheckedOut = Boolean(todayAttendance?.checkOut);
+
+    return {
+      success: true,
+      data: {
+        employee: {
+          id: emp.id,
+          firstName: emp.firstName,
+          lastName: emp.lastName,
+          employeeCode: emp.employeeCode,
+          department: emp.department?.name,
+          designation: emp.designation?.name,
+          branch: emp.branch?.name,
+        },
+        todayDate,
+        shift: shift
+          ? {
+              id: shift.id,
+              name: shift.name,
+              code: shift.code,
+              startTime: shift.startTime,
+              endTime: shift.endTime,
+              workingHours: shift.workingHours,
+              breakMinutes: shift.breakMinutes,
+              graceMinutes: shift.graceMinutes,
+              isNightShift: shift.isNightShift,
+            }
+          : null,
+        attendance: todayAttendance ?? null,
+        recentPunches: recentPunches ?? [],
+        canPunchIn: !hasCheckedIn,
+        canPunchOut: hasCheckedIn && !hasCheckedOut,
+        isCompleted: hasCheckedIn && hasCheckedOut,
+      },
+    };
+  }
+
+  async punchIn(companyId: string, employeeId: string, userId: string) {
+    const emp = await this.db.query.employees.findFirst({
+      where: (e: any, { eq, and }: any) =>
+        and(eq(e.id, employeeId), eq(e.companyId, companyId)),
+    });
+    if (!emp) {
+      throw new NotFoundException({
+        code: "EMPLOYEE_NOT_FOUND",
+        message: "Employee record not found",
+      });
+    }
+
+    const todayDate = new Date().toISOString().substring(0, 10);
+    const now = new Date();
+
+    const existing = await this.db.query.attendance.findFirst({
+      where: (a: any, { eq, and }: any) =>
+        and(
+          eq(a.employeeId, employeeId),
+          eq(a.attendanceDate, todayDate),
+          eq(a.companyId, companyId),
+        ),
+    });
+
+    if (existing?.checkIn) {
+      if (existing.checkOut) {
+        throw new ConflictException({
+          code: "ALREADY_COMPLETED",
+          message:
+            "You have already completed attendance (punched out) for today.",
+        });
+      }
+      throw new ConflictException({
+        code: "ALREADY_PUNCHED_IN",
+        message: `Already punched in for today at ${new Date(existing.checkIn).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}.`,
+      });
+    }
+
+    const shiftRes = await this.shiftsService
+      .getCurrentShift(companyId, employeeId, todayDate)
+      .catch(() => null);
+    const shift = shiftRes?.data?.shift;
+
+    let status: any = "PRESENT";
+    if (shift?.startTime) {
+      const [sh, sm] = shift.startTime.split(":").map(Number);
+      const shiftStartMins = sh * 60 + sm;
+      const grace = shift.graceMinutes ?? 15;
+      const nowH = now.getHours();
+      const nowM = now.getMinutes();
+      const nowMins = nowH * 60 + nowM;
+      if (nowMins > shiftStartMins + grace) {
+        status = "LATE";
+      }
+    }
+
+    let record: any;
+    if (existing) {
+      const [updated] = await this.db
+        .update(schema.attendance)
+        .set({
+          checkIn: now,
+          status,
+          remarks: existing.remarks
+            ? `${existing.remarks} | Web Punch In`
+            : "Web Punch In",
+          updatedAt: now,
+        })
+        .where(eq(schema.attendance.id, existing.id))
+        .returning();
+      record = updated;
+    } else {
+      const [inserted] = await this.db
+        .insert(schema.attendance)
+        .values({
+          companyId,
+          employeeId,
+          attendanceDate: todayDate as any,
+          checkIn: now,
+          status,
+          remarks: "Web Punch In",
+        })
+        .returning();
+      record = inserted;
+    }
+
+    await this.db
+      .insert(schema.attendanceLogs)
+      .values({
+        companyId,
+        employeeId,
+        punchTime: now,
+        punchType: "IN",
+        source: "WEB",
+      })
+      .catch(() => {});
+
+    await this.db
+      .insert(schema.auditLogs)
+      .values({
+        companyId,
+        userId,
+        module: "attendance",
+        entityType: "attendance",
+        entityId: record.id,
+        action: "CREATE",
+        newValues: { action: "PUNCH_IN", punchTime: now, employeeId } as any,
+      })
+      .catch(() => {});
+
+    return {
+      success: true,
+      data: record,
+      message: "Punched in successfully",
+    };
+  }
+
+  async punchOut(companyId: string, employeeId: string, userId: string) {
+    const emp = await this.db.query.employees.findFirst({
+      where: (e: any, { eq, and }: any) =>
+        and(eq(e.id, employeeId), eq(e.companyId, companyId)),
+    });
+    if (!emp) {
+      throw new NotFoundException({
+        code: "EMPLOYEE_NOT_FOUND",
+        message: "Employee record not found",
+      });
+    }
+
+    const todayDate = new Date().toISOString().substring(0, 10);
+    const now = new Date();
+
+    const existing = await this.db.query.attendance.findFirst({
+      where: (a: any, { eq, and }: any) =>
+        and(
+          eq(a.employeeId, employeeId),
+          eq(a.attendanceDate, todayDate),
+          eq(a.companyId, companyId),
+        ),
+    });
+
+    if (!existing || !existing.checkIn) {
+      throw new BadRequestException({
+        code: "NO_PUNCH_IN",
+        message:
+          "No active punch-in found for today. You must punch in before punching out.",
+      });
+    }
+
+    if (existing.checkOut) {
+      throw new ConflictException({
+        code: "ALREADY_PUNCHED_OUT",
+        message: `Already punched out for today at ${new Date(existing.checkOut).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}.`,
+      });
+    }
+
+    const shiftRes = await this.shiftsService
+      .getCurrentShift(companyId, employeeId, existing.attendanceDate)
+      .catch(() => null);
+    const shift = shiftRes?.data?.shift;
+
+    const calcResult = this.calc.calculate({
+      checkIn: new Date(existing.checkIn),
+      checkOut: now,
+      shift,
+    });
+
+    const [updated] = await this.db
+      .update(schema.attendance)
+      .set({
+        checkOut: now,
+        workingMinutes: calcResult.workingMinutes,
+        breakMinutes: calcResult.breakMinutes,
+        overtimeMinutes: calcResult.overtimeMinutes,
+        status: calcResult.status,
+        remarks: existing.remarks
+          ? `${existing.remarks} | Web Punch Out`
+          : "Web Punch Out",
+        updatedAt: now,
+      })
+      .where(eq(schema.attendance.id, existing.id))
+      .returning();
+
+    // Insert punch log
+    await this.db
+      .insert(schema.attendanceLogs)
+      .values({
+        companyId,
+        employeeId,
+        punchTime: now,
+        punchType: "OUT",
+        source: "WEB",
+      })
+      .catch(() => {});
+
+    // Audit log
+    await this.db
+      .insert(schema.auditLogs)
+      .values({
+        companyId,
+        userId,
+        module: "attendance",
+        entityType: "attendance",
+        entityId: updated.id,
+        action: "UPDATE",
+        newValues: { action: "PUNCH_OUT", punchTime: now, employeeId } as any,
+      })
+      .catch(() => {});
+
+    return {
+      success: true,
+      data: updated,
+      message: "Punched out successfully",
+    };
+  }
+
+  async getMyHistory(
+    companyId: string,
+    employeeId: string,
+    filter: AttendanceFilterDto,
+  ) {
+    let conditions = [
+      eq(schema.attendance.companyId, companyId),
+      eq(schema.attendance.employeeId, employeeId),
+    ];
+
+    if (filter.fromDate) {
+      conditions.push(
+        gte(schema.attendance.attendanceDate, filter.fromDate as any),
+      );
+    }
+    if (filter.toDate) {
+      conditions.push(
+        lte(schema.attendance.attendanceDate, filter.toDate as any),
+      );
+    }
+    if (filter.status) {
+      conditions.push(eq(schema.attendance.status, filter.status as any));
+    }
+
+    const where = and(...conditions);
+    const total = await this.db
+      .select({ count: sql`count(*)` })
+      .from(schema.attendance)
+      .where(where)
+      .then((r: any) => Number(r[0].count));
+
+    const rows = await this.db.query.attendance.findMany({
+      where,
+      limit: filter.limit ?? 50,
+      offset: filter.offset ?? 0,
+      orderBy: (a: any, { desc }: any) => desc(a.attendanceDate),
+    });
+
+    return paginated(rows, total, filter, "My attendance history fetched");
   }
 }

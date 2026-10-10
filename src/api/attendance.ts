@@ -52,6 +52,35 @@ export interface AttendancePunchLog {
   };
 }
 
+export interface AttendanceMyStatus {
+  employee: {
+    id: string;
+    firstName: string;
+    lastName: string;
+    employeeCode: string;
+    department?: string;
+    designation?: string;
+    branch?: string;
+  };
+  todayDate: string;
+  shift: {
+    id: string;
+    name: string;
+    code: string;
+    startTime: string;
+    endTime: string;
+    workingHours?: number | string;
+    breakMinutes?: number;
+    graceMinutes?: number;
+    isNightShift?: boolean;
+  } | null;
+  attendance: AttendanceRecord | null;
+  recentPunches: AttendancePunchLog[];
+  canPunchIn: boolean;
+  canPunchOut: boolean;
+  isCompleted: boolean;
+}
+
 export const attendanceApi = {
   list: async (params?: any) => {
     const res = await api.get('/attendance', { params });
@@ -72,4 +101,14 @@ export const attendanceApi = {
     unwrap(await api.get('/attendance/logs', { params })).data as AttendancePunchLog[],
   recordPunch: async (payload: { employeeId: string; punchTime: string; punchType: string; source?: string; deviceId?: string }) =>
     unwrap(await api.post('/attendance/logs', payload)).data as AttendancePunchLog,
+  getMyStatus: async () =>
+    unwrap<AttendanceMyStatus>(await api.get('/attendance/my-status')).data,
+  punchIn: async () =>
+    unwrap<AttendanceRecord>(await api.post('/attendance/punch-in')).data,
+  punchOut: async () =>
+    unwrap<AttendanceRecord>(await api.post('/attendance/punch-out')).data,
+  getMyHistory: async (params?: any) => {
+    const res = await api.get('/attendance/my-history', { params });
+    return { data: (res.data as any).data as AttendanceRecord[], meta: (res.data as any).meta };
+  },
 };

@@ -158,7 +158,6 @@ export default function Payslip() {
   const [targetPolicy, setTargetPolicy] = useState<string>("CALENDAR_DAYS");
   const [previewData, setPreviewData] = useState<any>(null);
   const [previewTab, setPreviewTab] = useState<"salary" | "timeline">("salary");
-  const [showVoucherTimeline, setShowVoucherTimeline] = useState(false);
 
   // Queries & Mutations
   const queryParams: any = { page: 1, limit: 100 };

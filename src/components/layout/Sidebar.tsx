@@ -35,6 +35,8 @@ import {
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useState } from "react";
+import { useSelector } from "react-redux";
+import type { RootState } from "@/store";
 import { useAuth } from "@/context/AuthContext";
 
 const nav = [
@@ -101,16 +103,22 @@ const nav = [
     group: "Attendance",
     items: [
       {
+        label: "My Attendance",
+        icon: Clock,
+        path: "/my-attendance",
+        perm: "attendance.view",
+      },
+      {
         label: "Attendance Register",
         icon: ClipboardList,
         path: "/attendance-register",
-        perm: "attendance.view",
+        perm: "attendance.manage",
       },
       {
         label: "Shifts",
         icon: Timer,
         path: "/shifts",
-        perm: "attendance.view",
+        perm: "attendance.manage",
       },
       {
         label: "Holidays",
@@ -196,7 +204,10 @@ export function Sidebar({
   mobileOpen: boolean;
   setMobileOpen: (v: boolean) => void;
 }) {
-  const { hasPermission } = useAuth();
+  const { hasPermission, user } = useAuth();
+  const canManageAttendanceParam = useSelector(
+    (state: RootState) => state.userParameters.CanManageAttendance,
+  );
   const loc = useLocation();
   const [openGroups, setOpenGroups] = useState<Record<string, boolean>>({
     Organization: true,
@@ -205,12 +216,22 @@ export function Sidebar({
   });
   const toggle = (g: string) => setOpenGroups((s) => ({ ...s, [g]: !s[g] }));
 
+  const checkItemPerm = (item: any) => {
+    if (!item.perm) return true;
+    if (item.path === "/attendance-register" || item.path === "/shifts") {
+      if (canManageAttendanceParam) return true;
+      if (user?.roles?.includes("SUPER_ADMIN")) return true;
+      return hasPermission("attendance.manage") || hasPermission("attendance.edit");
+    }
+    return hasPermission(item.perm);
+  };
+
   const filteredNav = nav
     .map((g) => {
       if (g.items) {
         return {
           ...g,
-          items: g.items.filter((i) => !i.perm || hasPermission(i.perm)),
+          items: g.items.filter(checkItemPerm),
         };
       }
       return g;

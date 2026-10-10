@@ -18,6 +18,7 @@ import Locations from "@/pages/Locations";
 import EmployeeGroups from "@/pages/EmployeeGroups";
 import DocumentMaster from "@/pages/DocumentMaster";
 import Attendance from "@/pages/Attendance";
+import MyAttendance from "@/pages/MyAttendance";
 import Shifts from "@/pages/Shifts";
 import Holidays from "@/pages/Holidays";
 import Leave from "@/pages/Leave";
@@ -36,7 +37,10 @@ import { useState } from "react";
 import { CommandPalette } from "@/components/layout/CommandPalette";
 import { Toaster } from "@/components/ui/toaster";
 import { useAuth } from "@/context/AuthContext";
-import { ProtectedRouteGuard } from "@/components/common/PermissionGuard";
+import {
+  ProtectedRouteGuard,
+  AttendanceManagerRouteGuard,
+} from "@/components/common/PermissionGuard";
 
 function Protected() {
   const { user, loading } = useAuth();
@@ -147,11 +151,19 @@ export default function App() {
 
             {/* Attendance & Shifts */}
             <Route
-              path="/attendance-register"
+              path="/my-attendance"
               element={
                 <ProtectedRouteGuard perm="attendance.view">
-                  <Attendance />
+                  <MyAttendance />
                 </ProtectedRouteGuard>
+              }
+            />
+            <Route
+              path="/attendance-register"
+              element={
+                <AttendanceManagerRouteGuard>
+                  <Attendance />
+                </AttendanceManagerRouteGuard>
               }
             />
             <Route
