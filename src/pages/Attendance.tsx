@@ -1,5 +1,9 @@
 import type { AttendanceRecord } from "@/api/attendance";
-import { DatePicker, GridDateFloatingFilter, TimePicker } from "@/components/common";
+import {
+  DatePicker,
+  GridDateFloatingFilter,
+  TimePicker,
+} from "@/components/common";
 import { DataGrid } from "@/components/common/DataGrid";
 import { ListingCard } from "@/components/common/ListingCard";
 import { ListingHeader } from "@/components/common/ListingHeader";
@@ -24,7 +28,6 @@ import { toast } from "@/components/ui/use-toast";
 import { useAuth } from "@/context/AuthContext";
 import {
   useAttendance,
-  useAttendanceLogs,
   useAttendanceSummary,
   useCreateAttendance,
   useRecordPunch,
@@ -39,7 +42,6 @@ import {
   CheckCircle2,
   Clock,
   Fingerprint,
-  Plus,
   RefreshCw,
   User,
   XCircle,
@@ -85,12 +87,6 @@ export default function Attendance() {
     date: fromDate === toDate ? fromDate : undefined,
     fromDate: fromDate !== toDate ? fromDate : undefined,
     toDate: fromDate !== toDate ? toDate : undefined,
-  });
-
-  const { data: punchLogs } = useAttendanceLogs({
-    fromDate: fromDate || undefined,
-    toDate: toDate || undefined,
-    employeeId: effectiveFilterEmployeeId || undefined,
   });
 
   const { data: employeesData } = useEmployees({ pageSize: 100 });
@@ -168,7 +164,6 @@ export default function Attendance() {
     null,
   );
   const [punchOpen, setPunchOpen] = useState(false);
-  const [activeTab, setActiveTab] = useState("register");
 
   // Manual Form
   const [manualForm, setManualForm] = useState({
@@ -453,111 +448,16 @@ export default function Attendance() {
     [],
   );
 
-  const punchLogsColDefs = useMemo<ColDef[]>(
-    () => [
-      {
-        field: "employee",
-        headerName: "Employee",
-        flex: 1,
-        valueGetter: (p) =>
-          p.data?.employee?.firstName
-            ? `${p.data.employee.firstName} ${p.data.employee.lastName}`
-            : "—",
-        cellRenderer: (p: any) => (
-          <div className="flex flex-col justify-center h-full">
-            <div className="font-medium text-sm leading-tight">{p.value}</div>
-            <div className="text-xs text-muted-foreground leading-tight">
-              {p.data?.employee?.employeeCode}
-            </div>
-          </div>
-        ),
-      },
-      {
-        field: "punchTime",
-        headerName: "Punch Time",
-        width: 200,
-        cellClass: "font-mono text-sm",
-        valueFormatter: (p) => {
-          if (!p.value) return "—";
-          const d = new Date(p.value);
-          const day = String(d.getDate()).padStart(2, "0");
-          const month = String(d.getMonth() + 1).padStart(2, "0");
-          const year = d.getFullYear();
-          const time = d.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
-          return `${day}/${month}/${year} ${time}`;
-        },
-        filter: "agTextColumnFilter",
-        floatingFilterComponent: GridDateFloatingFilter,
-      },
-      {
-        field: "punchType",
-        headerName: "Type",
-        width: 120,
-        cellRenderer: (p: any) => (
-          <Badge variant={p.value === "IN" ? "success" : "secondary"}>
-            {p.value}
-          </Badge>
-        ),
-      },
-      {
-        field: "source",
-        headerName: "Source",
-        width: 120,
-        cellClass: "font-mono text-xs",
-      },
-      {
-        field: "deviceId",
-        headerName: "Device ID",
-        flex: 1,
-        cellClass: "text-xs text-muted-foreground",
-        valueFormatter: (p) => p.value || "WEB-PORTAL",
-      },
-    ],
-    [],
-  );
-
   return (
     <div className="space-y-4">
       <ListingCard>
         <ListingHeader
-          title="Attendance & Timesheets"
-          subtitle="Real-time tracking, shift calculations, and leave resolution"
+          title="Attendance"
           onRefresh={refetch}
-          tabs={{
-            value: activeTab,
-            onChange: setActiveTab,
-            options: [
-              { label: "Attendance Register", value: "register" },
-              { label: "Raw Punch Logs", value: "punches" },
-            ],
-          }}
+          onAddNew={handleOpenManualCreate}
+          addButtonText="Record Attendance"
         />
 
-        <div className="flex justify-between items-center mb-4">
-          <div className="flex gap-2">
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => {
-                setPunchForm({
-                  employeeId: canManageAttendance
-                    ? employees[0]?.id || ""
-                    : currentEmployeeId,
-                  punchType: "IN",
-                  punchTime: new Date().toISOString().substring(0, 16),
-                });
-                setPunchOpen(true);
-              }}
-            >
-              <Fingerprint className="h-3.5 w-3.5 mr-1.5" />
-              Quick Punch
-            </Button>
-            <Button size="sm" onClick={handleOpenManualCreate}>
-              <Plus className="h-3.5 w-3.5 mr-1.5" />
-              Record Attendance
-            </Button>
-          </div>
-        </div>
         {/* KPI Summary Cards */}
         <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3 mb-6">
           <Card>
@@ -628,136 +528,124 @@ export default function Attendance() {
           </Card>
         </div>
 
-        {/* Tab 1: Attendance Register */}
-        {activeTab === "register" && (
-          <div className="space-y-4">
-            {/* Server-side Filter Bar */}
-            <div className="p-3 flex flex-wrap items-center gap-3 rounded-lg border border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-900/50">
-              <div className="flex-1 min-w-[200px]">
-                {canManageAttendance ? (
-                  <Select
-                    value={filterEmployeeId || "ALL"}
-                    onValueChange={(val) =>
-                      setFilterEmployeeId(val === "ALL" ? "" : val)
-                    }
-                  >
-                    <SelectTrigger>
-                      <SelectValue placeholder="All Employees" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="ALL">All Employees</SelectItem>
-                      {employeeOptions.map((opt) => (
-                        <SelectItem key={opt.value} value={opt.value}>
-                          {opt.label}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                ) : (
-                  <div className="flex items-center gap-2 h-9 px-3 rounded-md border bg-muted/60 text-xs font-medium text-foreground">
-                    <User className="h-3.5 w-3.5 text-primary shrink-0" />
-                    <span className="truncate">
-                      {employeeOptions[0]?.label || "Self Attendance"}
-                    </span>
-                  </div>
-                )}
-              </div>
-              <div className="flex items-center gap-2">
-                <span className="text-xs text-muted-foreground font-medium">
-                  From:
-                </span>
-                <DatePicker
-                  className="w-36 h-9 text-xs"
-                  value={fromDate}
-                  onChange={(_, str) => setFromDate(str)}
-                  placeholder="From date"
-                />
-                <span className="text-xs text-muted-foreground font-medium">
-                  To:
-                </span>
-                <DatePicker
-                  className="w-36 h-9 text-xs"
-                  value={toDate}
-                  onChange={(_, str) => setToDate(str)}
-                  placeholder="To date"
-                />
-              </div>
-              <div className="w-36">
+        {/* Attendance Register Content */}
+        <div className="space-y-4">
+          {/* Server-side Filter Bar */}
+          <div className="p-3 flex flex-wrap items-center gap-3 rounded-lg border border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-900/50">
+            <div className="flex-1 min-w-[200px]">
+              {canManageAttendance ? (
                 <Select
-                  value={filterStatus || "ALL"}
+                  value={filterEmployeeId || "ALL"}
                   onValueChange={(val) =>
-                    setFilterStatus(val === "ALL" ? "" : val)
+                    setFilterEmployeeId(val === "ALL" ? "" : val)
                   }
                 >
                   <SelectTrigger>
-                    <SelectValue placeholder="All Statuses" />
+                    <SelectValue placeholder="All Employees" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="ALL">All Statuses</SelectItem>
-                    {statusOptions.map((opt) => (
+                    <SelectItem value="ALL">All Employees</SelectItem>
+                    {employeeOptions.map((opt) => (
                       <SelectItem key={opt.value} value={opt.value}>
                         {opt.label}
                       </SelectItem>
                     ))}
                   </SelectContent>
                 </Select>
-              </div>
-              <Button
-                size="sm"
-                variant="ghost"
-                onClick={() => {
-                  setFromDate(today);
-                  setToDate(today);
-                  setFilterEmployeeId("");
-                  setFilterStatus("");
-                }}
-              >
-                Reset
-              </Button>
-              <Button size="sm" variant="outline" onClick={() => refetch()}>
-                <RefreshCw className="h-3.5 w-3.5 mr-1" /> Refresh
-              </Button>
+              ) : (
+                <div className="flex items-center gap-2 h-9 px-3 rounded-md border bg-muted/60 text-xs font-medium text-foreground">
+                  <User className="h-3.5 w-3.5 text-primary shrink-0" />
+                  <span className="truncate">
+                    {employeeOptions[0]?.label || "Self Attendance"}
+                  </span>
+                </div>
+              )}
             </div>
-
-            {/* Table */}
-            <div className="h-[500px]">
-              <DataGrid
-                rowData={records}
-                columnDefs={recordsColDefs}
-                gridOptions={{
-                  onRowDoubleClicked: (e) => handleOpenEdit(e.data),
-                }}
+            <div className="flex items-center gap-2">
+              <span className="text-xs text-muted-foreground font-medium">
+                From:
+              </span>
+              <DatePicker
+                className="w-36 h-9 text-xs"
+                value={fromDate}
+                onChange={(_, str) => setFromDate(str)}
+                placeholder="From date"
+              />
+              <span className="text-xs text-muted-foreground font-medium">
+                To:
+              </span>
+              <DatePicker
+                className="w-36 h-9 text-xs"
+                value={toDate}
+                onChange={(_, str) => setToDate(str)}
+                placeholder="To date"
               />
             </div>
-          </div>
-        )}
-
-        {/* Tab 3: Raw Attendance Punches / Logs */}
-        {activeTab === "punches" && (
-          <div className="space-y-4">
-            <div className="rounded-lg border border-slate-200 dark:border-slate-800">
-              <div className="p-4 border-b flex justify-between items-center">
-                <div>
-                  <h3 className="font-semibold text-sm">
-                    Biometric & Web Punch Stream
-                  </h3>
-                  <p className="text-xs text-muted-foreground">
-                    Unprocessed timestamp punches from biometric and web devices
-                  </p>
-                </div>
-                <Button size="sm" onClick={() => setPunchOpen(true)}>
-                  <Fingerprint className="h-4 w-4 mr-1" /> Log Punch
-                </Button>
-              </div>
-              <div className="h-[400px]">
-                <DataGrid
-                  rowData={punchLogs || []}
-                  columnDefs={punchLogsColDefs}
-                />
-              </div>
+            <div className="w-36">
+              <Select
+                value={filterStatus || "ALL"}
+                onValueChange={(val) =>
+                  setFilterStatus(val === "ALL" ? "" : val)
+                }
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="All Statuses" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="ALL">All Statuses</SelectItem>
+                  {statusOptions.map((opt) => (
+                    <SelectItem key={opt.value} value={opt.value}>
+                      {opt.label}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
             </div>
+            <Button
+              size="sm"
+              variant="ghost"
+              onClick={() => {
+                setFromDate(today);
+                setToDate(today);
+                setFilterEmployeeId("");
+                setFilterStatus("");
+              }}
+            >
+              Reset
+            </Button>
+            <Button size="sm" variant="outline" onClick={() => refetch()}>
+              <RefreshCw className="h-3.5 w-3.5 mr-1" /> Refresh
+            </Button>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => {
+                setPunchForm({
+                  employeeId: canManageAttendance
+                    ? employees[0]?.id || ""
+                    : currentEmployeeId,
+                  punchType: "IN",
+                  punchTime: new Date().toISOString().substring(0, 16),
+                });
+                setPunchOpen(true);
+              }}
+            >
+              <Fingerprint className="h-3.5 w-3.5 mr-1.5" />
+              Quick Punch
+            </Button>
           </div>
-        )}
+
+          {/* Table */}
+          <div className="h-[350px]">
+            <DataGrid
+              rowData={records}
+              columnDefs={recordsColDefs}
+              gridOptions={{
+                onRowDoubleClicked: (e) => handleOpenEdit(e.data),
+              }}
+            />
+          </div>
+        </div>
       </ListingCard>
 
       {/* Manual Attendance Dialog */}

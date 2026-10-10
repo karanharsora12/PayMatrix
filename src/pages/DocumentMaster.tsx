@@ -414,7 +414,7 @@ function TemplateEditor({
     editorProps: {
       attributes: {
         class:
-          "prose prose-sm sm:prose-base focus:outline-none max-w-none min-h-[280px] p-4",
+          "prose prose-sm sm:prose-base dark:prose-invert focus:outline-none max-w-none min-h-[280px] p-4 text-foreground bg-transparent",
       },
     },
     onUpdate: ({ editor }) => onChange(editor.getHTML()),

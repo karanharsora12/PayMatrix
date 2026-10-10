@@ -75,9 +75,12 @@ import { useAuth } from "@/context/AuthContext";
 export default function EmailTemplates() {
   const { confirm } = useAlert();
   const { hasPermission } = useAuth();
-  const canAdd = hasPermission("settings.create") || hasPermission("email_templates.create");
-  const canEdit = hasPermission("settings.edit") || hasPermission("email_templates.edit");
-  const canDelete = hasPermission("settings.delete") || hasPermission("email_templates.delete");
+  const canAdd =
+    hasPermission("settings.create") || hasPermission("email_templates.create");
+  const canEdit =
+    hasPermission("settings.edit") || hasPermission("email_templates.edit");
+  const canDelete =
+    hasPermission("settings.delete") || hasPermission("email_templates.delete");
 
   const queryClient = useQueryClient();
   const gridRef = useRef<AgGridReact>(null);
@@ -173,7 +176,7 @@ export default function EmailTemplates() {
     editorProps: {
       attributes: {
         class:
-          "prose prose-sm max-w-none focus:outline-none min-h-[260px] p-4 text-slate-800",
+          "prose prose-sm dark:prose-invert max-w-none focus:outline-none min-h-[260px] p-4 text-foreground bg-transparent",
       },
     },
   });
@@ -606,7 +609,10 @@ export default function EmailTemplates() {
           const day = String(d.getDate()).padStart(2, "0");
           const month = String(d.getMonth() + 1).padStart(2, "0");
           const year = d.getFullYear();
-          const time = d.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
+          const time = d.toLocaleTimeString([], {
+            hour: "2-digit",
+            minute: "2-digit",
+          });
           return `${day}/${month}/${year} ${time}`;
         },
         filter: "agTextColumnFilter",
@@ -658,18 +664,15 @@ export default function EmailTemplates() {
           {/* Quick Filter Bar */}
           <div className="flex flex-wrap items-center justify-between gap-2 px-1 text-xs">
             <div className="flex flex-wrap items-center gap-2">
-              <span className="text-muted-foreground font-medium">
-                Filter Type:
-              </span>
               <div className="flex items-center gap-1 flex-wrap">
                 {TEMPLATE_TYPES.map((t) => (
                   <button
                     key={t.value}
                     onClick={() => setTypeFilter(t.value)}
-                    className={`px-2.5 py-1 rounded text-xs transition-colors border ${
+                    className={`px-3 py-1.5 rounded-md text-xs transition-colors border font-medium ${
                       typeFilter === t.value
-                        ? "bg-[#1d7c8a] text-white border-[#1d7c8a] font-semibold"
-                        : "bg-slate-50 text-slate-600 hover:bg-slate-100 border-slate-200"
+                        ? "bg-primary text-primary-foreground border-primary shadow-xs"
+                        : "bg-muted/40 text-muted-foreground hover:bg-muted hover:text-foreground border-border"
                     }`}
                   >
                     {t.label}
@@ -753,7 +756,7 @@ export default function EmailTemplates() {
         <DialogContent className="max-w-4xl">
           <DialogHeader>
             <DialogTitle className="text-lg font-bold flex items-center gap-2">
-              <Mail className="h-5 w-5 text-[#1d7c8a]" />
+              <Mail className="h-5 w-5 text-primary" />
               {editingTemplate
                 ? `Template: ${editingTemplate.templateName}`
                 : "Create New Email Template"}
@@ -910,7 +913,7 @@ export default function EmailTemplates() {
                     size="sm"
                     variant="ghost"
                     onClick={() => editor?.chain().focus().toggleBold().run()}
-                    className={`h-7 px-2 font-bold ${editor?.isActive("bold") ? "bg-slate-200" : ""}`}
+                    className={`h-7 px-2 font-bold ${editor?.isActive("bold") ? "bg-primary text-primary-foreground hover:bg-primary/90 hover:text-primary-foreground" : ""}`}
                   >
                     B
                   </Button>
@@ -919,7 +922,7 @@ export default function EmailTemplates() {
                     size="sm"
                     variant="ghost"
                     onClick={() => editor?.chain().focus().toggleItalic().run()}
-                    className={`h-7 px-2 italic ${editor?.isActive("italic") ? "bg-slate-200" : ""}`}
+                    className={`h-7 px-2 italic ${editor?.isActive("italic") ? "bg-primary text-primary-foreground hover:bg-primary/90 hover:text-primary-foreground" : ""}`}
                   >
                     I
                   </Button>
@@ -928,12 +931,12 @@ export default function EmailTemplates() {
                     size="sm"
                     variant="ghost"
                     onClick={() => editor?.chain().focus().toggleStrike().run()}
-                    className={`h-7 px-2 line-through ${editor?.isActive("strike") ? "bg-slate-200" : ""}`}
+                    className={`h-7 px-2 line-through ${editor?.isActive("strike") ? "bg-primary text-primary-foreground hover:bg-primary/90 hover:text-primary-foreground" : ""}`}
                   >
                     S
                   </Button>
 
-                  <div className="w-px h-4 bg-slate-300 mx-1" />
+                  <div className="w-px h-4 bg-border mx-1" />
 
                   <Button
                     type="button"
@@ -942,7 +945,7 @@ export default function EmailTemplates() {
                     onClick={() =>
                       editor?.chain().focus().toggleHeading({ level: 2 }).run()
                     }
-                    className={`h-7 px-2 font-semibold ${editor?.isActive("heading", { level: 2 }) ? "bg-slate-200" : ""}`}
+                    className={`h-7 px-2 font-semibold ${editor?.isActive("heading", { level: 2 }) ? "bg-primary text-primary-foreground hover:bg-primary/90 hover:text-primary-foreground" : ""}`}
                   >
                     H2
                   </Button>
@@ -953,7 +956,7 @@ export default function EmailTemplates() {
                     onClick={() =>
                       editor?.chain().focus().toggleHeading({ level: 3 }).run()
                     }
-                    className={`h-7 px-2 font-semibold ${editor?.isActive("heading", { level: 3 }) ? "bg-slate-200" : ""}`}
+                    className={`h-7 px-2 font-semibold ${editor?.isActive("heading", { level: 3 }) ? "bg-primary text-primary-foreground hover:bg-primary/90 hover:text-primary-foreground" : ""}`}
                   >
                     H3
                   </Button>
@@ -962,12 +965,12 @@ export default function EmailTemplates() {
                     size="sm"
                     variant="ghost"
                     onClick={() => editor?.chain().focus().setParagraph().run()}
-                    className={`h-7 px-2 ${editor?.isActive("paragraph") ? "bg-slate-200" : ""}`}
+                    className={`h-7 px-2 ${editor?.isActive("paragraph") ? "bg-primary text-primary-foreground hover:bg-primary/90 hover:text-primary-foreground" : ""}`}
                   >
                     P
                   </Button>
 
-                  <div className="w-px h-4 bg-slate-300 mx-1" />
+                  <div className="w-px h-4 bg-border mx-1" />
 
                   <Button
                     type="button"
@@ -976,7 +979,7 @@ export default function EmailTemplates() {
                     onClick={() =>
                       editor?.chain().focus().toggleBulletList().run()
                     }
-                    className={`h-7 px-2 ${editor?.isActive("bulletList") ? "bg-slate-200" : ""}`}
+                    className={`h-7 px-2 ${editor?.isActive("bulletList") ? "bg-primary text-primary-foreground hover:bg-primary/90 hover:text-primary-foreground" : ""}`}
                   >
                     • Bullet
                   </Button>
@@ -987,7 +990,7 @@ export default function EmailTemplates() {
                     onClick={() =>
                       editor?.chain().focus().toggleOrderedList().run()
                     }
-                    className={`h-7 px-2 ${editor?.isActive("orderedList") ? "bg-slate-200" : ""}`}
+                    className={`h-7 px-2 ${editor?.isActive("orderedList") ? "bg-primary text-primary-foreground hover:bg-primary/90 hover:text-primary-foreground" : ""}`}
                   >
                     1. Numbered
                   </Button>
@@ -998,7 +1001,7 @@ export default function EmailTemplates() {
                     onClick={() =>
                       editor?.chain().focus().toggleBlockquote().run()
                     }
-                    className={`h-7 px-2 ${editor?.isActive("blockquote") ? "bg-slate-200" : ""}`}
+                    className={`h-7 px-2 ${editor?.isActive("blockquote") ? "bg-primary text-primary-foreground hover:bg-primary/90 hover:text-primary-foreground" : ""}`}
                   >
                     Quote
                   </Button>
@@ -1020,7 +1023,7 @@ export default function EmailTemplates() {
             </div>
 
             {/* Row 6: Status & Default Switches */}
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 bg-slate-50 p-3 rounded border">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 bg-muted/30 p-3 rounded-md border border-border">
               <div className="flex items-center justify-between">
                 <div>
                   <Label className="text-xs font-semibold">Active Status</Label>
@@ -1085,7 +1088,7 @@ export default function EmailTemplates() {
                 type="button"
                 variant="outline"
                 size="sm"
-                className="h-8 text-xs gap-1.5 text-emerald-600 border-emerald-200 hover:bg-emerald-50"
+                className="h-8 text-xs gap-1.5 text-emerald-600 border-emerald-300 dark:border-emerald-800 hover:bg-emerald-50 dark:hover:bg-emerald-950/30"
                 onClick={() => handleTriggerTestEmail()}
               >
                 <Send className="h-3.5 w-3.5" />
@@ -1106,7 +1109,7 @@ export default function EmailTemplates() {
               <Button
                 type="button"
                 size="sm"
-                className="h-8 text-xs bg-[#1d7c8a] hover:bg-[#16606a] text-white"
+                className="h-8 text-xs"
                 onClick={handleSave}
                 disabled={createMutation.isPending || updateMutation.isPending}
               >

@@ -97,6 +97,23 @@
     font-feature-settings: "cv02", "cv03", "cv04", "cv11";
     font-family: "Inter", system-ui, sans-serif;
   }
+
+  /* Tiptap / ProseMirror editor styling */
+  .ProseMirror {
+    @apply text-foreground outline-none;
+  }
+  .ProseMirror p,
+  .ProseMirror h1,
+  .ProseMirror h2,
+  .ProseMirror h3,
+  .ProseMirror h4,
+  .ProseMirror li,
+  .ProseMirror blockquote {
+    color: inherit;
+  }
+  .dark .ProseMirror {
+    color: hsl(var(--foreground)) !important;
+  }
 }
 
 @media print {
