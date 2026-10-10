@@ -119,9 +119,7 @@ export default function Designations() {
   };
 
   const handleDelete = async (id: string) => {
-    if (await confirm({ message: "Are you sure you want to delete this designation?" })) {
-      deleteMutation.mutate(id);
-    }
+    deleteMutation.mutate(id);
   };
 
   const handleSave = () => {
