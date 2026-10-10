@@ -10,6 +10,7 @@ import {
   RefreshCw,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { useAuth } from "@/context/AuthContext";
 
 export interface ListingHeaderProps {
   title: string | React.ReactNode;
@@ -28,6 +29,12 @@ export interface ListingHeaderProps {
     value: string;
     onChange: (value: string) => void;
   };
+  /** Explicit permission control for Add action (defaults to checking module.create if module provided) */
+  canAdd?: boolean;
+  /** Explicit permission control for Export actions (defaults to checking module.export if module provided) */
+  canExport?: boolean;
+  /** Optional module name for automatic permission gating (e.g. "employees", "departments") */
+  module?: string;
 }
 
 export function ListingHeader({
@@ -43,8 +50,26 @@ export function ListingHeader({
   onPrint,
   addButtonText = "Add New",
   tabs,
+  canAdd,
+  canExport,
+  module,
 }: ListingHeaderProps) {
+  const { hasPermission } = useAuth();
   const [isRefreshing, setIsRefreshing] = useState(false);
+
+  const isAddAllowed =
+    canAdd !== undefined
+      ? canAdd
+      : module
+      ? hasPermission(`${module}.create`) || hasPermission(`${module}.add`)
+      : true;
+
+  const isExportAllowed =
+    canExport !== undefined
+      ? canExport
+      : module
+      ? hasPermission(`${module}.export`) || hasPermission(`${module}.view`)
+      : true;
 
   const handleRefresh = async () => {
     if (!onRefresh) return;
@@ -107,7 +132,7 @@ export function ListingHeader({
         )}
 
         <div className="flex items-center gap-1.5">
-          {onAddNew && (
+          {onAddNew && isAddAllowed && (
             <Button
               onClick={onAddNew}
               size="icon"
@@ -118,7 +143,7 @@ export function ListingHeader({
             </Button>
           )}
 
-          {onExportPdf && (
+          {onExportPdf && isExportAllowed && (
             <Button
               onClick={onExportPdf}
               size="icon"
@@ -129,7 +154,7 @@ export function ListingHeader({
             </Button>
           )}
 
-          {onExportExcel && (
+          {onExportExcel && isExportAllowed && (
             <Button
               onClick={onExportExcel}
               size="icon"
@@ -140,7 +165,7 @@ export function ListingHeader({
             </Button>
           )}
 
-          {onPrint && (
+          {onPrint && isExportAllowed && (
             <Button
               onClick={onPrint}
               size="icon"

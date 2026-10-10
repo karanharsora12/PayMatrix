@@ -29,9 +29,15 @@ import type { ColDef } from "ag-grid-community";
 import type { AgGridReact } from "ag-grid-react";
 import { useMemo, useRef, useState } from "react";
 import { toast } from "@/components/ui/use-toast";
+import { useAuth } from "@/context/AuthContext";
 
 export default function Designations() {
   const gridRef = useRef<AgGridReact>(null);
+  const { hasPermission } = useAuth();
+  const canAdd = hasPermission("designations.create") || hasPermission("designations.add");
+  const canEdit = hasPermission("designations.edit") || hasPermission("designations.update");
+  const canDelete = hasPermission("designations.delete") || hasPermission("designations.remove");
+  const canExport = hasPermission("designations.export") || hasPermission("designations.view");
   const { confirm } = useAlert();
   const [open, setOpen] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
@@ -205,18 +211,23 @@ export default function Designations() {
         filter: "agTextColumnFilter",
         floatingFilterComponent: GridDateFloatingFilter,
       },
-      {
-        headerName: "",
-        width: 60,
-        sortable: false,
-        filter: false,
-        cellRenderer: GridDeleteCell,
-        cellRendererParams: {
-          onDelete: handleDelete,
-        },
-      },
+      ...(canDelete
+        ? [
+            {
+              headerName: "",
+              width: 60,
+              sortable: false,
+              filter: false,
+              cellRenderer: GridDeleteCell,
+              cellRendererParams: {
+                onDelete: handleDelete,
+                module: "designations",
+              },
+            },
+          ]
+        : []),
     ],
-    [],
+    [canDelete],
   );
 
   const allDesignationsData = data?.data || [];
@@ -232,6 +243,9 @@ export default function Designations() {
       <ListingCard>
         <ListingHeader
           title="Designations"
+          module="designations"
+          canAdd={canAdd}
+          canExport={canExport}
           searchValue={searchQuery}
           onSearchChange={setSearchQuery}
           onAddNew={() => {
@@ -260,7 +274,9 @@ export default function Designations() {
             ref={gridRef}
             rowData={designationsData}
             columnDefs={columnDefs}
-            gridOptions={{ onRowDoubleClicked: (e) => handleEdit(e.data) }}
+            gridOptions={{
+              onRowDoubleClicked: canEdit ? (e) => handleEdit(e.data) : undefined,
+            }}
           />
         </div>
       </ListingCard>

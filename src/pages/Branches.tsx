@@ -19,9 +19,15 @@ import type { ColDef } from "ag-grid-community";
 import type { AgGridReact } from "ag-grid-react";
 import { Trash2 } from "lucide-react";
 import { useMemo, useRef, useState } from "react";
+import { useAuth } from "@/context/AuthContext";
 
 export default function Branches() {
   const gridRef = useRef<AgGridReact>(null);
+  const { hasPermission } = useAuth();
+  const canAdd = hasPermission("branches.create") || hasPermission("branches.add");
+  const canEdit = hasPermission("branches.edit") || hasPermission("branches.update");
+  const canDelete = hasPermission("branches.delete") || hasPermission("branches.remove");
+  const canExport = hasPermission("branches.export") || hasPermission("branches.view");
   const { confirm } = useAlert();
   const [open, setOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
@@ -141,29 +147,33 @@ export default function Branches() {
           </div>
         ),
       },
-      {
-        headerName: "",
-        width: 80,
-        sortable: false,
-        filter: false,
-        cellRenderer: (params: any) => (
-          <div className="flex gap-1 items-center justify-center h-full">
-            <Button
-              variant="ghost"
-              size="icon"
-              className="h-8 w-8 text-red-500 hover:text-red-600"
-              onClick={(e) => {
-                e.stopPropagation();
-                handleDelete(params.data.id);
-              }}
-            >
-              <Trash2 className="h-4 w-4" />
-            </Button>
-          </div>
-        ),
-      },
+      ...(canDelete
+        ? [
+            {
+              headerName: "",
+              width: 80,
+              sortable: false,
+              filter: false,
+              cellRenderer: (params: any) => (
+                <div className="flex gap-1 items-center justify-center h-full">
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    className="h-8 w-8 text-destructive hover:text-destructive hover:bg-destructive/10"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      handleDelete(params.data.id);
+                    }}
+                  >
+                    <Trash2 className="h-4 w-4" />
+                  </Button>
+                </div>
+              ),
+            },
+          ]
+        : []),
     ],
-    [],
+    [canDelete],
   );
 
   const allBranches = data?.data || [];
@@ -179,6 +189,9 @@ export default function Branches() {
       <ListingCard>
         <ListingHeader
           title="Branches"
+          module="branches"
+          canAdd={canAdd}
+          canExport={canExport}
           searchValue={searchQuery}
           onSearchChange={setSearchQuery}
           onAddNew={() => {
@@ -206,7 +219,9 @@ export default function Branches() {
             ref={gridRef}
             rowData={branches}
             columnDefs={columnDefs}
-            gridOptions={{ onRowDoubleClicked: (e) => handleEdit(e.data) }}
+            gridOptions={{
+              onRowDoubleClicked: canEdit ? (e) => handleEdit(e.data) : undefined,
+            }}
           />
         </div>
       </ListingCard>

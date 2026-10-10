@@ -25,8 +25,14 @@ import type { ColDef } from "ag-grid-community";
 import { Clock, History, Moon } from "lucide-react";
 import { useMemo, useState } from "react";
 import { toast } from "@/components/ui/use-toast";
+import { useAuth } from "@/context/AuthContext";
 
 export default function Shifts() {
+  const { hasPermission } = useAuth();
+  const canAdd = hasPermission("attendance.create") || hasPermission("shifts.create");
+  const canEdit = hasPermission("attendance.edit") || hasPermission("shifts.edit");
+  const canDelete = hasPermission("attendance.delete") || hasPermission("shifts.delete");
+
   const { data: shiftsData, isLoading } = useShifts({ pageSize: 50 });
   const shifts = shiftsData?.data ?? [];
 
@@ -270,21 +276,26 @@ export default function Shifts() {
           </div>
         ),
       },
-      {
-        headerName: "",
-        width: 60,
-        sortable: false,
-        filter: false,
-        cellRenderer: GridDeleteCell,
-        cellRendererParams: {
-          onDelete: (id: string) => {
-            const shift = shifts.find((s) => s.id === id);
-            if (shift) handleDeleteShift(id, shift.name);
-          },
-        },
-      },
+      ...(canDelete
+        ? [
+            {
+              headerName: "",
+              width: 60,
+              sortable: false,
+              filter: false,
+              cellRenderer: GridDeleteCell,
+              cellRendererParams: {
+                module: "attendance",
+                onDelete: (id: string) => {
+                  const shift = shifts.find((s) => s.id === id);
+                  if (shift) handleDeleteShift(id, shift.name);
+                },
+              },
+            },
+          ]
+        : []),
     ],
-    [],
+    [canDelete, shifts],
   );
 
   const historyColDefs = useMemo<ColDef[]>(
@@ -361,7 +372,7 @@ export default function Shifts() {
         <ListingHeader
           title="Shift Management"
           subtitle="Configure work schedules, overnight night shifts, and grace periods."
-          onAddNew={activeTab === "shifts" ? handleOpenCreate : undefined}
+          onAddNew={activeTab === "shifts" && canAdd ? handleOpenCreate : undefined}
           addButtonText="Add Shift"
           tabs={{
             value: activeTab,
@@ -381,17 +392,21 @@ export default function Shifts() {
                 rowData={shifts}
                 columnDefs={shiftsColDefs}
                 gridOptions={{
-                  onRowDoubleClicked: (e) => handleOpenEdit(e.data),
+                  onRowDoubleClicked: canEdit ? (e) => handleOpenEdit(e.data) : undefined,
                   getContextMenuItems: (params) => {
                     return [
-                      {
-                        name: "Assign Shift",
-                        action: () => {
-                          if (params.node?.data) {
-                            handleOpenAssign(params.node.data);
-                          }
-                        },
-                      },
+                      ...(canEdit
+                        ? [
+                            {
+                              name: "Assign Shift",
+                              action: () => {
+                                if (params.node?.data) {
+                                  handleOpenAssign(params.node.data);
+                                }
+                              },
+                            },
+                          ]
+                        : []),
                       "separator",
                       "copy",
                       "export",
@@ -428,11 +443,13 @@ export default function Shifts() {
                     </NativeSelect>
                   </div>
 
-                  <div className="ml-4">
-                    <Button size="sm" onClick={() => handleOpenAssign()}>
-                      Assign Shift
-                    </Button>
-                  </div>
+                  {canEdit && (
+                    <div className="ml-4">
+                      <Button size="sm" onClick={() => handleOpenAssign()}>
+                        Assign Shift
+                      </Button>
+                    </div>
+                  )}
                 </div>
               </div>
               <div className="p-0">

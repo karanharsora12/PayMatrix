@@ -42,9 +42,15 @@ import { toast } from "@/components/ui/use-toast";
 import { ListingCard } from "@/components/common/ListingCard";
 import { ListingHeader } from "@/components/common/ListingHeader";
 import { DatePicker } from "@/components/common";
+import { useAuth } from "@/context/AuthContext";
 
 export default function SalaryStructures() {
   const { confirm } = useAlert();
+  const { hasPermission } = useAuth();
+  const canAdd = hasPermission("salary.create") || hasPermission("payroll.create");
+  const canEdit = hasPermission("salary.edit") || hasPermission("payroll.edit");
+  const canDelete = hasPermission("salary.delete") || hasPermission("payroll.delete");
+
   const {
     data: structuresResp,
     isLoading,
@@ -275,7 +281,7 @@ export default function SalaryStructures() {
       <ListingCard>
         <ListingHeader
           title="Salary Structure Builder"
-          onAddNew={() => setIsCreateOpen(true)}
+          onAddNew={canAdd ? () => setIsCreateOpen(true) : undefined}
           addButtonText="Create Structure"
           onRefresh={refetch}
         />
@@ -381,23 +387,27 @@ export default function SalaryStructures() {
                     </div>
 
                     <div className="flex items-center gap-2">
-                      <Button
-                        variant="destructive"
-                        size="sm"
-                        onClick={() => setIsDeleteOpen(true)}
-                      >
-                        <Trash2 className="h-3.5 w-3.5 mr-1" /> Delete
-                      </Button>
-                      <Button
-                        size="sm"
-                        onClick={handleSaveStructure}
-                        disabled={!hasChanges || updateMutation.isPending}
-                      >
-                        <Save className="h-3.5 w-3.5 mr-1" />
-                        {updateMutation.isPending
-                          ? "Saving..."
-                          : "Save Changes"}
-                      </Button>
+                      {canDelete && (
+                        <Button
+                          variant="destructive"
+                          size="sm"
+                          onClick={() => setIsDeleteOpen(true)}
+                        >
+                          <Trash2 className="h-3.5 w-3.5 mr-1" /> Delete
+                        </Button>
+                      )}
+                      {canEdit && (
+                        <Button
+                          size="sm"
+                          onClick={handleSaveStructure}
+                          disabled={!hasChanges || updateMutation.isPending}
+                        >
+                          <Save className="h-3.5 w-3.5 mr-1" />
+                          {updateMutation.isPending
+                            ? "Saving..."
+                            : "Save Changes"}
+                        </Button>
+                      )}
                     </div>
                   </CardHeader>
 
@@ -408,13 +418,15 @@ export default function SalaryStructures() {
                         <Layers className="h-4 w-4 text-primary" /> Structure
                         Components
                       </h3>
-                      <Button
-                        size="sm"
-                        variant="outline"
-                        onClick={() => setIsAddComponentOpen(true)}
-                      >
-                        <Plus className="h-3.5 w-3.5 mr-1" /> Add Component
-                      </Button>
+                      {canEdit && (
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          onClick={() => setIsAddComponentOpen(true)}
+                        >
+                          <Plus className="h-3.5 w-3.5 mr-1" /> Add Component
+                        </Button>
+                      )}
                     </div>
 
                     {/* Components List / Builder Table */}

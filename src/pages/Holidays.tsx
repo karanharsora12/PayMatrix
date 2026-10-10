@@ -26,8 +26,15 @@ import type { AgGridReact } from "ag-grid-react";
 import { CalendarCheck, Flag, PartyPopper } from "lucide-react";
 import { useMemo, useRef, useState } from "react";
 import { toast } from "@/components/ui/use-toast";
+import { useAuth } from "@/context/AuthContext";
 
 export default function Holidays() {
+  const { hasPermission } = useAuth();
+  const canAdd = hasPermission("attendance.create") || hasPermission("holidays.create");
+  const canEdit = hasPermission("attendance.edit") || hasPermission("holidays.edit");
+  const canDelete = hasPermission("attendance.delete") || hasPermission("holidays.delete");
+  const canExport = hasPermission("attendance.export") || hasPermission("holidays.export");
+
   const gridRef = useRef<AgGridReact>(null);
   const currentYear = new Date().getFullYear();
 
@@ -212,18 +219,23 @@ export default function Holidays() {
         headerName: "Description",
         width: 150,
       },
-      {
-        headerName: "",
-        width: 60,
-        sortable: false,
-        filter: false,
-        cellRenderer: GridDeleteCell,
-        cellRendererParams: {
-          onDelete: handleDeleteHoliday,
-        },
-      },
+      ...(canDelete
+        ? [
+            {
+              headerName: "",
+              width: 60,
+              sortable: false,
+              filter: false,
+              cellRenderer: GridDeleteCell,
+              cellRendererParams: {
+                module: "attendance",
+                onDelete: handleDeleteHoliday,
+              },
+            },
+          ]
+        : []),
     ],
-    [],
+    [canDelete],
   );
 
   return (
@@ -231,19 +243,29 @@ export default function Holidays() {
       <ListingCard>
         <ListingHeader
           title="Holiday Calendar"
-          onAddNew={handleOpenCreate}
+          onAddNew={canAdd ? handleOpenCreate : undefined}
           addButtonText="Add Holiday"
           onRefresh={refetch}
-          onExportExcel={() =>
-            gridRef.current?.api &&
-            gridExportExcel(gridRef.current.api, "holidays.csv")
+          onExportExcel={
+            canExport
+              ? () =>
+                  gridRef.current?.api &&
+                  gridExportExcel(gridRef.current.api, "holidays.csv")
+              : undefined
           }
-          onExportPdf={() =>
-            gridRef.current?.api &&
-            gridExportPdf(gridRef.current.api, "Holidays")
+          onExportPdf={
+            canExport
+              ? () =>
+                  gridRef.current?.api &&
+                  gridExportPdf(gridRef.current.api, "Holidays")
+              : undefined
           }
-          onPrint={() =>
-            gridRef.current?.api && gridPrint(gridRef.current.api, "Holidays")
+          onPrint={
+            canExport
+              ? () =>
+                  gridRef.current?.api &&
+                  gridPrint(gridRef.current.api, "Holidays")
+              : undefined
           }
         />
 
@@ -315,7 +337,7 @@ export default function Holidays() {
             rowData={holidays}
             columnDefs={holidaysColDefs}
             gridOptions={{
-              onRowDoubleClicked: (e) => handleOpenEdit(e.data),
+              onRowDoubleClicked: canEdit ? (e) => handleOpenEdit(e.data) : undefined,
             }}
           />
         </div>

@@ -20,9 +20,15 @@ import { locationApi } from "@/api/locations";
 import { gridExportExcel, gridExportPdf, gridPrint } from "@/lib/gridExport";
 import type { ColDef } from "ag-grid-community";
 import type { AgGridReact } from "ag-grid-react";
+import { useAuth } from "@/context/AuthContext";
 
 export default function Locations() {
   const gridRef = useRef<AgGridReact>(null);
+  const { hasPermission } = useAuth();
+  const canAdd = hasPermission("locations.create") || hasPermission("locations.add") || hasPermission("settings.create");
+  const canEdit = hasPermission("locations.edit") || hasPermission("locations.update") || hasPermission("settings.edit");
+  const canDelete = hasPermission("locations.delete") || hasPermission("locations.remove") || hasPermission("settings.delete");
+  const canExport = hasPermission("locations.export") || hasPermission("locations.view") || hasPermission("settings.view");
   const { confirm } = useAlert();
   const [open, setOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
@@ -148,29 +154,33 @@ export default function Locations() {
           </div>
         ),
       },
-      {
-        headerName: "",
-        width: 80,
-        sortable: false,
-        filter: false,
-        cellRenderer: (params: any) => (
-          <div className="flex gap-1 items-center justify-center h-full">
-            <Button
-              variant="ghost"
-              size="icon"
-              className="h-8 w-8 text-red-500 hover:text-red-600"
-              onClick={(e) => {
-                e.stopPropagation();
-                handleDelete(params.data.id);
-              }}
-            >
-              <Trash2 className="h-4 w-4" />
-            </Button>
-          </div>
-        ),
-      },
+      ...(canDelete
+        ? [
+            {
+              headerName: "",
+              width: 80,
+              sortable: false,
+              filter: false,
+              cellRenderer: (params: any) => (
+                <div className="flex gap-1 items-center justify-center h-full">
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    className="h-8 w-8 text-destructive hover:text-destructive hover:bg-destructive/10"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      handleDelete(params.data.id);
+                    }}
+                  >
+                    <Trash2 className="h-4 w-4" />
+                  </Button>
+                </div>
+              ),
+            },
+          ]
+        : []),
     ],
-    [],
+    [canDelete],
   );
 
   const allLocations = data?.data || [];
@@ -186,6 +196,9 @@ export default function Locations() {
       <ListingCard>
         <ListingHeader
           title="Locations"
+          module="locations"
+          canAdd={canAdd}
+          canExport={canExport}
           searchValue={searchQuery}
           onSearchChange={setSearchQuery}
           onAddNew={() => {
@@ -213,7 +226,9 @@ export default function Locations() {
             ref={gridRef}
             rowData={locations}
             columnDefs={columnDefs}
-            gridOptions={{ onRowDoubleClicked: (e) => handleEdit(e.data) }}
+            gridOptions={{
+              onRowDoubleClicked: canEdit ? (e) => handleEdit(e.data) : undefined,
+            }}
           />
         </div>
       </ListingCard>

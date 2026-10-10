@@ -69,8 +69,15 @@ const TEMPLATE_TYPES = [
   { value: "General", label: "General Notification" },
 ];
 
+import { useAuth } from "@/context/AuthContext";
+
 export default function EmailTemplates() {
   const { confirm } = useAlert();
+  const { hasPermission } = useAuth();
+  const canAdd = hasPermission("settings.create") || hasPermission("email_templates.create");
+  const canEdit = hasPermission("settings.edit") || hasPermission("email_templates.edit");
+  const canDelete = hasPermission("settings.delete") || hasPermission("email_templates.delete");
+
   const queryClient = useQueryClient();
   const gridRef = useRef<AgGridReact>(null);
   const logsGridRef = useRef<AgGridReact>(null);
@@ -461,33 +468,39 @@ export default function EmailTemplates() {
                   label: "Edit Template",
                   icon: <Pencil className="h-3.5 w-3.5" />,
                   onClick: () => handleOpenEdit(tpl),
+                  hidden: !canEdit,
                 },
                 {
                   label: "Send Test Email",
                   icon: <Send className="h-3.5 w-3.5" />,
                   onClick: () => handleTriggerTestEmail(tpl),
+                  hidden: !canEdit,
                 },
                 {
                   label: "Duplicate",
                   icon: <Copy className="h-3.5 w-3.5" />,
                   onClick: () => handleOpenDuplicate(tpl),
+                  hidden: !canAdd,
                 },
                 {
                   label: tpl.isDefault ? "Default Template" : "Set as Default",
                   icon: <Star className="h-3.5 w-3.5" />,
                   onClick: () => setDefaultMutation.mutate(tpl.id),
                   disabled: tpl.isDefault,
+                  hidden: !canEdit,
                 },
                 {
                   label: tpl.status === "ACTIVE" ? "Deactivate" : "Activate",
                   icon: <Power className="h-3.5 w-3.5" />,
                   onClick: () => toggleStatusMutation.mutate(tpl.id),
+                  hidden: !canEdit,
                 },
                 {
                   label: "Delete",
                   icon: <Trash2 className="h-3.5 w-3.5" />,
                   destructive: true,
                   separator: true,
+                  hidden: !canDelete,
                   onClick: async () => {
                     if (
                       await confirm({
@@ -504,7 +517,7 @@ export default function EmailTemplates() {
         },
       },
     ],
-    [],
+    [canAdd, canEdit, canDelete],
   );
 
   // AG-Grid column definitions for Logs
@@ -614,7 +627,7 @@ export default function EmailTemplates() {
         subtitle={`${templates.length} templates`}
         searchValue={search}
         onSearchChange={setSearch}
-        onAddNew={handleOpenAdd}
+        onAddNew={canAdd ? handleOpenAdd : undefined}
         addButtonText="Create Template"
         onRefresh={() => {
           refetch();

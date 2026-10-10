@@ -38,8 +38,10 @@ import { toast } from "@/components/ui/use-toast";
 
 export default function Leave() {
   const { confirm } = useAlert();
-  const { user } = useAuth();
-  const canManageLeave = useCanManageLeave();
+  const { user, hasPermission } = useAuth();
+  const canManageLeave = useCanManageLeave() || hasPermission("leave.approve") || hasPermission("leave.edit");
+  const canCreateLeave = hasPermission("leave.create") || hasPermission("leave.view");
+  const canExport = hasPermission("leave.export");
   const currentEmployeeId = user?.employeeId || user?.employee?.id || "";
 
   const currentYear = new Date().getFullYear();
@@ -616,15 +618,26 @@ export default function Leave() {
             activeTab === "types" ? "Add Leave Type" : "Request Leave"
           }
           onRefresh={() => {}}
-          onExportExcel={() =>
-            gridRef.current?.api &&
-            gridExportExcel(gridRef.current.api, "leave.csv")
+          onExportExcel={
+            canExport
+              ? () =>
+                  gridRef.current?.api &&
+                  gridExportExcel(gridRef.current.api, "leave.csv")
+              : undefined
           }
-          onExportPdf={() =>
-            gridRef.current?.api && gridExportPdf(gridRef.current.api, "Leave")
+          onExportPdf={
+            canExport
+              ? () =>
+                  gridRef.current?.api &&
+                  gridExportPdf(gridRef.current.api, "Leave")
+              : undefined
           }
-          onPrint={() =>
-            gridRef.current?.api && gridPrint(gridRef.current.api, "Leave")
+          onPrint={
+            canExport
+              ? () =>
+                  gridRef.current?.api &&
+                  gridPrint(gridRef.current.api, "Leave")
+              : undefined
           }
           tabs={{
             options: [

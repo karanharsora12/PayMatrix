@@ -26,8 +26,15 @@ import type { AgGridReact } from "ag-grid-react";
 import { Calculator, Edit2, Plus, RefreshCw, Trash2 } from "lucide-react";
 import { useMemo, useRef, useState } from "react";
 import { toast } from "@/components/ui/use-toast";
+import { useAuth } from "@/context/AuthContext";
 
 export default function SalaryComponents() {
+  const { hasPermission } = useAuth();
+  const canAdd = hasPermission("salary.create") || hasPermission("payroll.create");
+  const canEdit = hasPermission("salary.edit") || hasPermission("payroll.edit");
+  const canDelete = hasPermission("salary.delete") || hasPermission("payroll.delete");
+  const canExport = hasPermission("salary.export") || hasPermission("payroll.export");
+
   const [activeTab, setActiveTab] = useState("ALL");
   const [search, setSearch] = useState("");
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -207,26 +214,30 @@ export default function SalaryComponents() {
         headerName: "Status",
         width: 100,
       },
-      {
-        headerName: "",
-        width: 60,
-        sortable: false,
-        filter: false,
-        cellRenderer: (p: any) => (
-          <div className="flex items-center justify-end gap-1 h-full">
-            <Button
-              variant="ghost"
-              size="icon"
-              className="h-8 w-8 text-destructive hover:text-destructive hover:bg-destructive/10"
-              onClick={() => setDeleteTarget(p.data)}
-            >
-              <Trash2 className="h-3.5 w-3.5" />
-            </Button>
-          </div>
-        ),
-      },
+      ...(canDelete
+        ? [
+            {
+              headerName: "",
+              width: 60,
+              sortable: false,
+              filter: false,
+              cellRenderer: (p: any) => (
+                <div className="flex items-center justify-end gap-1 h-full">
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    className="h-8 w-8 text-destructive hover:text-destructive hover:bg-destructive/10"
+                    onClick={() => setDeleteTarget(p.data)}
+                  >
+                    <Trash2 className="h-3.5 w-3.5" />
+                  </Button>
+                </div>
+              ),
+            },
+          ]
+        : []),
     ],
-    [],
+    [canDelete],
   );
 
   return (
@@ -238,20 +249,29 @@ export default function SalaryComponents() {
           count={components.length}
           searchValue={search}
           onSearchChange={setSearch}
-          onAddNew={handleOpenAdd}
+          onAddNew={canAdd ? handleOpenAdd : undefined}
           addButtonText="Add Component"
           onRefresh={refetch}
-          onExportExcel={() =>
-            gridRef.current?.api &&
-            gridExportExcel(gridRef.current.api, "salary_components.csv")
+          onExportExcel={
+            canExport
+              ? () =>
+                  gridRef.current?.api &&
+                  gridExportExcel(gridRef.current.api, "salary_components.csv")
+              : undefined
           }
-          onExportPdf={() =>
-            gridRef.current?.api &&
-            gridExportPdf(gridRef.current.api, "Salary Components")
+          onExportPdf={
+            canExport
+              ? () =>
+                  gridRef.current?.api &&
+                  gridExportPdf(gridRef.current.api, "Salary Components")
+              : undefined
           }
-          onPrint={() =>
-            gridRef.current?.api &&
-            gridPrint(gridRef.current.api, "Salary Components")
+          onPrint={
+            canExport
+              ? () =>
+                  gridRef.current?.api &&
+                  gridPrint(gridRef.current.api, "Salary Components")
+              : undefined
           }
           tabs={{
             options: [
@@ -275,7 +295,7 @@ export default function SalaryComponents() {
             rowData={components}
             columnDefs={componentsColDefs}
             gridOptions={{
-              onRowDoubleClicked: (params) => handleOpenEdit(params.data),
+              onRowDoubleClicked: canEdit ? (params) => handleOpenEdit(params.data) : undefined,
             }}
           />
         </div>

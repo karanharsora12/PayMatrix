@@ -19,9 +19,19 @@ import type { ColDef } from "ag-grid-community";
 import type { AgGridReact } from "ag-grid-react";
 import { useMemo, useRef, useState } from "react";
 import { toast } from "@/components/ui/use-toast";
+import { useAuth } from "@/context/AuthContext";
 
 export default function Departments() {
   const gridRef = useRef<AgGridReact>(null);
+  const { hasPermission } = useAuth();
+  const canAdd =
+    hasPermission("departments.create") || hasPermission("departments.add");
+  const canEdit =
+    hasPermission("departments.edit") || hasPermission("departments.update");
+  const canDelete =
+    hasPermission("departments.delete") || hasPermission("departments.remove");
+  const canExport =
+    hasPermission("departments.export") || hasPermission("departments.view");
   const { confirm } = useAlert();
   const [open, setOpen] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
@@ -138,18 +148,23 @@ export default function Departments() {
         filter: "agTextColumnFilter",
         floatingFilterComponent: GridDateFloatingFilter,
       },
-      {
-        headerName: "",
-        width: 60,
-        sortable: false,
-        filter: false,
-        cellRenderer: GridDeleteCell,
-        cellRendererParams: {
-          onDelete: handleDelete,
-        },
-      },
+      ...(canDelete
+        ? [
+            {
+              headerName: "",
+              width: 60,
+              sortable: false,
+              filter: false,
+              cellRenderer: GridDeleteCell,
+              cellRendererParams: {
+                onDelete: handleDelete,
+                module: "departments",
+              },
+            },
+          ]
+        : []),
     ],
-    [],
+    [canDelete],
   );
 
   const allDepartments = data?.data || [];
@@ -165,6 +180,9 @@ export default function Departments() {
       <ListingCard>
         <ListingHeader
           title="Departments"
+          module="departments"
+          canAdd={canAdd}
+          canExport={canExport}
           searchValue={searchQuery}
           onSearchChange={setSearchQuery}
           onAddNew={() => {
@@ -172,9 +190,9 @@ export default function Departments() {
             setOpen(true);
           }}
           addButtonText="Add Department"
-          onRefresh={() =>
-            queryClient.invalidateQueries({ queryKey: ["departments"] })
-          }
+          onRefresh={() => {
+            queryClient.invalidateQueries({ queryKey: ["departments"] });
+          }}
           onExportExcel={() =>
             gridRef.current?.api &&
             gridExportExcel(gridRef.current.api, "departments.csv")
@@ -193,7 +211,11 @@ export default function Departments() {
             ref={gridRef}
             rowData={departments}
             columnDefs={columnDefs}
-            gridOptions={{ onRowDoubleClicked: (e) => handleEdit(e.data) }}
+            gridOptions={{
+              onRowDoubleClicked: canEdit
+                ? (e) => handleEdit(e.data)
+                : undefined,
+            }}
           />
         </div>
       </ListingCard>

@@ -37,8 +37,13 @@ import {
   TrendingUp,
 } from "lucide-react";
 import { useMemo, useState } from "react";
+import { useAuth } from "@/context/AuthContext";
 
 export default function EmployeeSalary() {
+  const { hasPermission } = useAuth();
+  const canEdit = hasPermission("salary.edit") || hasPermission("payroll.edit");
+  const canDelete = hasPermission("salary.delete") || hasPermission("payroll.delete");
+
   const { data: employeesResp, isLoading: isEmpLoading } = useEmployees({
     pageSize: 100,
   });
@@ -304,29 +309,33 @@ export default function EmployeeSalary() {
           </Badge>
         ),
       },
-      {
-        headerName: "Actions",
-        width: 120,
-        sortable: false,
-        filter: false,
-        cellRenderer: (p: any) => {
-          if (p.data.status === "CANCELLED") return null;
-          return (
-            <div className="flex justify-end h-full items-center">
-              <Button
-                variant="ghost"
-                size="sm"
-                className="text-xs text-destructive hover:bg-destructive/10"
-                onClick={() => setCancelTargetId(p.data.id)}
-              >
-                Cancel
-              </Button>
-            </div>
-          );
-        },
-      },
+      ...(canDelete
+        ? [
+            {
+              headerName: "Actions",
+              width: 120,
+              sortable: false,
+              filter: false,
+              cellRenderer: (p: any) => {
+                if (p.data.status === "CANCELLED") return null;
+                return (
+                  <div className="flex justify-end h-full items-center">
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      className="text-xs text-destructive hover:bg-destructive/10"
+                      onClick={() => setCancelTargetId(p.data.id)}
+                    >
+                      Cancel
+                    </Button>
+                  </div>
+                );
+              },
+            },
+          ]
+        : []),
     ],
-    [],
+    [canDelete],
   );
 
   return (
@@ -383,11 +392,13 @@ export default function EmployeeSalary() {
                 </div>
               </div>
 
-              <div className="flex items-center gap-2">
-                <Button onClick={handleOpenRevision} className="shadow-xs">
-                  <TrendingUp className="h-4 w-4 mr-1.5" /> Revise Salary
-                </Button>
-              </div>
+              {canEdit && (
+                <div className="flex items-center gap-2">
+                  <Button onClick={handleOpenRevision} className="shadow-xs">
+                    <TrendingUp className="h-4 w-4 mr-1.5" /> Revise Salary
+                  </Button>
+                </div>
+              )}
             </CardContent>
           </Card>
         )}
@@ -422,9 +433,11 @@ export default function EmployeeSalary() {
                 <p className="text-sm mt-1">
                   This employee has not been assigned a salary structure yet.
                 </p>
-                <Button onClick={handleOpenRevision} className="mt-4">
-                  <Plus className="h-4 w-4 mr-1.5" /> Assign Salary Structure
-                </Button>
+                {canEdit && (
+                  <Button onClick={handleOpenRevision} className="mt-4">
+                    <Plus className="h-4 w-4 mr-1.5" /> Assign Salary Structure
+                  </Button>
+                )}
               </Card>
             ) : (
               <>

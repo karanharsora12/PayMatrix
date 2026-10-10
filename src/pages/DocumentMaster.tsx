@@ -28,6 +28,7 @@ import { Switch } from "@/components/ui/switch";
 import { Textarea } from "@/components/ui/textarea";
 import { toast } from "@/components/ui/use-toast";
 import { cn } from "@/lib/utils";
+import { useAuth } from "@/context/AuthContext";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { EditorContent, useEditor } from "@tiptap/react";
 import StarterKit from "@tiptap/starter-kit";
@@ -239,9 +240,13 @@ function DocTypeFormDialog({
 function DocumentTypesTab({
   search,
   onEdit,
+  canEdit = true,
+  canDelete = true,
 }: {
   search: string;
   onEdit: (t: any) => void;
+  canEdit?: boolean;
+  canDelete?: boolean;
 }) {
   const qc = useQueryClient();
   const { confirm } = useAlert();
@@ -335,23 +340,27 @@ function DocumentTypesTab({
                   label: "Edit",
                   icon: <Edit2 className="h-3.5 w-3.5" />,
                   onClick: () => onEdit(t),
+                  hidden: !canEdit,
                 },
                 t.isActive
                   ? {
                       label: "Deactivate",
                       icon: <PowerOff className="h-3.5 w-3.5" />,
                       onClick: () => deactivateMutation.mutate(t.id),
+                      hidden: !canEdit,
                     }
                   : {
                       label: "Activate",
                       icon: <Power className="h-3.5 w-3.5" />,
                       onClick: () => activateMutation.mutate(t.id),
+                      hidden: !canEdit,
                     },
                 {
                   separator: true,
                   label: "Delete",
                   icon: <Trash2 className="h-3.5 w-3.5 text-red-500" />,
                   destructive: true,
+                  hidden: !canDelete,
                   onClick: async () => {
                     const confirmed = await confirm({
                       title: "Delete Document Type",
@@ -369,7 +378,7 @@ function DocumentTypesTab({
         },
       },
     ],
-    [],
+    [canEdit, canDelete],
   );
 
   return (
@@ -1056,10 +1065,14 @@ function DocumentMasterList({
   search,
   onNew,
   onEdit,
+  canEdit = true,
+  canDelete = true,
 }: {
   search: string;
   onNew: () => void;
   onEdit: (doc: any) => void;
+  canEdit?: boolean;
+  canDelete?: boolean;
 }) {
   const qc = useQueryClient();
   const { confirm } = useAlert();
@@ -1180,20 +1193,20 @@ function DocumentMasterList({
                   label: "Edit",
                   icon: <Edit2 className="h-3.5 w-3.5" />,
                   onClick: () => onEdit(doc),
+                  hidden: !canEdit,
                 },
                 {
                   label: "Duplicate",
                   icon: <Copy className="h-3.5 w-3.5" />,
-                  onClick: () => {
-                    // Custom alert not working here because we don't have async cell renderer easily unless we do await confirm.
-                    // Wait, confirm is async but we can just fire it inside onClick
-                  },
+                  onClick: () => duplicateMutation.mutate(doc),
+                  hidden: !canEdit,
                 },
                 {
                   separator: true,
                   label: "Delete",
                   icon: <Trash2 className="h-3.5 w-3.5 text-red-500" />,
                   destructive: true,
+                  hidden: !canDelete,
                   onClick: async () => {
                     const confirmed = await confirm({
                       title: "Delete Document",
@@ -1211,7 +1224,7 @@ function DocumentMasterList({
         },
       },
     ],
-    [],
+    [canEdit, canDelete],
   );
 
   return (
@@ -1262,6 +1275,11 @@ function DocumentMasterList({
 
 // ─── Main Page ────────────────────────────────────────────────────────────────
 export default function DocumentMaster() {
+  const { hasPermission } = useAuth();
+  const canAdd = hasPermission("documents.create") || hasPermission("employees.create");
+  const canEdit = hasPermission("documents.edit") || hasPermission("employees.edit");
+  const canDelete = hasPermission("documents.delete") || hasPermission("employees.delete");
+
   const [activeTab, setActiveTab] = useState<"types" | "master">("types");
 
   // Master form state
@@ -1277,18 +1295,34 @@ export default function DocumentMaster() {
   const qc = useQueryClient();
 
   const handleNewDoc = () => {
+    if (!canAdd) {
+      toast.error("You do not have permission to create documents");
+      return;
+    }
     setEditingDoc(null);
     setIsFormOpen(true);
   };
   const handleEditDoc = (doc: any) => {
+    if (!canEdit) {
+      toast.error("You do not have permission to edit documents");
+      return;
+    }
     setEditingDoc(doc);
     setIsFormOpen(true);
   };
   const handleNewType = () => {
+    if (!canAdd) {
+      toast.error("You do not have permission to create document types");
+      return;
+    }
     setEditingType(null);
     setIsTypeFormOpen(true);
   };
   const handleEditType = (t: any) => {
+    if (!canEdit) {
+      toast.error("You do not have permission to edit document types");
+      return;
+    }
     setEditingType(t);
     setIsTypeFormOpen(true);
   };
@@ -1332,17 +1366,24 @@ export default function DocumentMaster() {
                 activeTab === "types" ? ["documentTypes"] : ["documentMaster"],
             })
           }
-          onAddNew={activeTab === "types" ? handleNewType : handleNewDoc}
+          onAddNew={canAdd ? (activeTab === "types" ? handleNewType : handleNewDoc) : undefined}
           addButtonText={activeTab === "types" ? "Add Type" : "Add Document"}
         />
 
         {activeTab === "types" ? (
-          <DocumentTypesTab search={search} onEdit={handleEditType} />
+          <DocumentTypesTab
+            search={search}
+            onEdit={handleEditType}
+            canEdit={canEdit}
+            canDelete={canDelete}
+          />
         ) : (
           <DocumentMasterList
             search={search}
             onNew={handleNewDoc}
             onEdit={handleEditDoc}
+            canEdit={canEdit}
+            canDelete={canDelete}
           />
         )}
       </ListingCard>

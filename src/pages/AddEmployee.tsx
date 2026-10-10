@@ -21,6 +21,7 @@ import {
   useUpdateEmployee,
 } from "@/hooks/useEmployees";
 import { useRoles } from "@/hooks/useUsersRoles";
+import { useAuth } from "@/context/AuthContext";
 import { cn } from "@/lib/utils";
 import { useQuery } from "@tanstack/react-query";
 import {
@@ -139,6 +140,10 @@ export default function AddEmployee() {
   const nav = useNavigate();
   const { id } = useParams<{ id: string }>();
   const isEdit = !!id;
+  const { hasPermission } = useAuth();
+  const canCreate = hasPermission("employees.create");
+  const canEdit = hasPermission("employees.edit");
+  const canSubmit = isEdit ? canEdit : canCreate;
 
   const createMut = useCreateEmployee();
   const updateMut = useUpdateEmployee(id || "");
@@ -334,6 +339,14 @@ export default function AddEmployee() {
 
   const onSubmit = async (e?: React.FormEvent) => {
     if (e) e.preventDefault();
+    if (!canSubmit) {
+      toast.error(
+        isEdit
+          ? "You do not have permission to edit employees"
+          : "You do not have permission to create employees",
+      );
+      return;
+    }
     const result = schema.safeParse(formData);
     if (!result.success) {
       const fieldErrors: any = {};
@@ -890,6 +903,7 @@ export default function AddEmployee() {
         formId="employee-form"
         isSaving={createMut.isPending || updateMut.isPending}
         saveLabel={isEdit ? "Update Employee" : "Save & Create Employee"}
+        hideSave={!canSubmit}
         onClear={() => {
           setFormData({
             employeeCode: "EMP-",
