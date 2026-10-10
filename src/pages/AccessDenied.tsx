@@ -31,14 +31,6 @@ export default function AccessDenied({
         <p className="text-sm text-muted-foreground leading-relaxed">
           {message}
         </p>
-
-        {requiredPermission && (
-          <div className="pt-2">
-            <span className="inline-flex items-center px-2.5 py-1 rounded-md text-xs font-mono font-medium bg-muted text-muted-foreground border border-border">
-              Required Right: {requiredPermission}
-            </span>
-          </div>
-        )}
       </div>
 
       <div className="flex items-center gap-3 mt-8">
@@ -49,13 +41,6 @@ export default function AccessDenied({
           className="gap-2"
         >
           <ArrowLeft className="h-4 w-4" /> Go Back
-        </Button>
-        <Button
-          size="sm"
-          onClick={() => navigate("/")}
-          className="gap-2"
-        >
-          <Home className="h-4 w-4" /> Dashboard
         </Button>
       </div>
     </div>
