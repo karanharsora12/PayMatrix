@@ -344,14 +344,6 @@ export function CommandPalette({ open, onOpenChange }: CommandPaletteProps) {
             placeholder="Search PayMatrix..."
             className="flex-1 bg-transparent outline-none text-sm placeholder:text-muted-foreground text-foreground"
           />
-          {q && (
-            <button
-              onClick={() => setQ("")}
-              className="text-xs text-muted-foreground hover:text-foreground px-1.5 py-0.5 rounded border border-border/50 transition-colors"
-            >
-              Clear
-            </button>
-          )}
         </div>
 
         {/* Results */}
@@ -407,33 +399,12 @@ export function CommandPalette({ open, onOpenChange }: CommandPaletteProps) {
                           {item.description}
                         </div>
                       </div>
-                      {isActive && (
-                        <kbd className="text-[10px] border border-primary/30 rounded px-1.5 py-0.5 font-mono text-primary/70 shrink-0">
-                          ↵
-                        </kbd>
-                      )}
                     </button>
                   );
                 })}
               </div>
             ))
           )}
-        </div>
-
-        {/* Footer hint */}
-        <div className="border-t border-border bg-muted/20 px-4 py-2 flex items-center gap-3 text-[10px] text-muted-foreground">
-          <span>
-            <kbd className="font-mono">↑↓</kbd> navigate
-          </span>
-          <span>
-            <kbd className="font-mono">↵</kbd> open
-          </span>
-          <span>
-            <kbd className="font-mono">ESC</kbd> close
-          </span>
-          <span className="ml-auto">
-            {results.length} result{results.length !== 1 ? "s" : ""}
-          </span>
         </div>
       </DialogContent>
     </Dialog>
