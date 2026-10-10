@@ -473,18 +473,6 @@ export default function Employees() {
               </option>
             ))}
           </NativeSelect>
-          <NativeSelect
-            value={status || "ALL"}
-            onChange={handleStatusChange}
-            placeholder="All Status"
-            className="w-[160px] h-8 text-xs bg-white"
-          >
-            <option value="ALL">All Status</option>
-            <option value="Active">Active</option>
-            <option value="On Leave">On Leave</option>
-            <option value="Probation">Probation</option>
-            <option value="Inactive">Inactive</option>
-          </NativeSelect>
         </div>
 
         <div className="w-full" style={{ height: "450px" }}>
