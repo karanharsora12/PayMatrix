@@ -101,18 +101,29 @@ export default function WorkPolicy() {
   const [previewMonth, setPreviewMonth] = useState(currentDate.getMonth() + 1);
 
   // Load policy for selected company
-  const { data: serverPolicy, isLoading: isPolicyLoading, isFetching: isPolicyFetching } = useQuery({
+  const {
+    data: serverPolicy,
+    isLoading: isPolicyLoading,
+    isFetching: isPolicyFetching,
+  } = useQuery({
     queryKey: ["companyWorkPolicy", selectedCompanyId],
     queryFn: async (): Promise<CompanyWorkPolicy> => {
       if (!selectedCompanyId) throw new Error("No company selected");
-      return (await companyApi.getWorkPolicy(selectedCompanyId)) as CompanyWorkPolicy;
+      return (await companyApi.getWorkPolicy(
+        selectedCompanyId,
+      )) as CompanyWorkPolicy;
     },
     enabled: !!selectedCompanyId,
   });
 
   // Load preview data
   const { data: previewData, isLoading: isPreviewLoading } = useQuery({
-    queryKey: ["companyCalendarPreview", selectedCompanyId, previewYear, previewMonth],
+    queryKey: [
+      "companyCalendarPreview",
+      selectedCompanyId,
+      previewYear,
+      previewMonth,
+    ],
     queryFn: async (): Promise<CalendarPreviewData> => {
       if (!selectedCompanyId) throw new Error("No company selected");
       return (await companyApi.previewCalendar(
@@ -140,8 +151,12 @@ export default function WorkPolicy() {
     mutationFn: (newPolicy: CompanyWorkPolicy) =>
       companyApi.updateWorkPolicy(selectedCompanyId, newPolicy),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["companyWorkPolicy", selectedCompanyId] });
-      queryClient.invalidateQueries({ queryKey: ["companyCalendarPreview", selectedCompanyId] });
+      queryClient.invalidateQueries({
+        queryKey: ["companyWorkPolicy", selectedCompanyId],
+      });
+      queryClient.invalidateQueries({
+        queryKey: ["companyCalendarPreview", selectedCompanyId],
+      });
       toast.success("Work schedule & weekly off policy saved successfully!");
     },
     onError: (err: any) => {
@@ -153,7 +168,8 @@ export default function WorkPolicy() {
     setPolicy((prev) => {
       const nextDays = prev.weeklyOffPolicy.map((d) => {
         if (d.dayOfWeek === dayOfWeek) {
-          const nextType = d.type === "WORKING" ? ("WEEK_OFF" as const) : ("WORKING" as const);
+          const nextType =
+            d.type === "WORKING" ? ("WEEK_OFF" as const) : ("WORKING" as const);
           return {
             ...d,
             type: nextType,
@@ -195,8 +211,18 @@ export default function WorkPolicy() {
   };
 
   const monthNames = [
-    "January", "February", "March", "April", "May", "June",
-    "July", "August", "September", "October", "November", "December",
+    "January",
+    "February",
+    "March",
+    "April",
+    "May",
+    "June",
+    "July",
+    "August",
+    "September",
+    "October",
+    "November",
+    "December",
   ];
 
   const handlePrevMonth = () => {
@@ -221,7 +247,7 @@ export default function WorkPolicy() {
     <div className="space-y-4">
       {/* Top Header Card */}
       <ListingCard>
-        <div className="p-4 sm:p-5 flex flex-col md:flex-row md:items-center justify-between gap-4 border-b">
+        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b pb-2">
           <div className="flex items-center gap-3">
             <Button
               type="button"
@@ -245,9 +271,6 @@ export default function WorkPolicy() {
                   </Badge>
                 )}
               </div>
-              <p className="text-xs text-muted-foreground mt-0.5">
-                Configure working days, paid/unpaid weekly offs, attendance sandwich rules, and salary divisors.
-              </p>
             </div>
           </div>
 
@@ -259,7 +282,9 @@ export default function WorkPolicy() {
                 value={selectedCompanyId}
                 onChange={(val: string) => {
                   setSelectedCompanyId(val);
-                  nav(`/organization/company/${val}/work-policy`, { replace: true });
+                  nav(`/organization/company/${val}/work-policy`, {
+                    replace: true,
+                  });
                 }}
                 disabled={isCompaniesLoading}
                 className="w-full text-xs"
@@ -278,13 +303,15 @@ export default function WorkPolicy() {
               className="h-8 px-3.5 text-xs flex items-center gap-1.5 font-semibold"
             >
               <Save className="h-3.5 w-3.5" />
-              <span>{saveMutation.isPending ? "Saving..." : "Save Policy"}</span>
+              <span>
+                {saveMutation.isPending ? "Saving..." : "Save Policy"}
+              </span>
             </Button>
           </div>
         </div>
 
         {/* Tab Navigation */}
-        <div className="px-4 sm:px-5 pt-3 border-b bg-muted/10 flex gap-2 text-xs overflow-x-auto">
+        <div className="pt-3 border-b bg-muted/10 flex gap-2 text-xs overflow-x-auto">
           <button
             type="button"
             onClick={() => setActiveTab("weekly")}
@@ -348,11 +375,13 @@ export default function WorkPolicy() {
         </div>
 
         {/* Tab Content */}
-        <div className="p-4 sm:p-6 text-xs">
+        <div className="p-2 text-xs">
           {isPolicyLoading ? (
             <div className="flex flex-col items-center justify-center py-20 text-muted-foreground gap-2">
               <RefreshCw className="h-6 w-6 animate-spin text-primary" />
-              <span>Loading policy for {activeCompany?.name || "company"}...</span>
+              <span>
+                Loading policy for {activeCompany?.name || "company"}...
+              </span>
             </div>
           ) : (
             <>
@@ -366,7 +395,10 @@ export default function WorkPolicy() {
                         Day-by-Day Working Week Specification
                       </p>
                       <p>
-                        Configure each day from Monday to Sunday as a Working Day or Weekly Off. For Saturday and Sunday, specific policies configured in the weekend tab will govern alternate patterns.
+                        Configure each day from Monday to Sunday as a Working
+                        Day or Weekly Off. For Saturday and Sunday, specific
+                        policies configured in the weekend tab will govern
+                        alternate patterns.
                       </p>
                     </div>
                   </div>
@@ -377,13 +409,18 @@ export default function WorkPolicy() {
                         <tr>
                           <th className="py-3 px-4 text-left">Day of Week</th>
                           <th className="py-3 px-4 text-center">Day Status</th>
-                          <th className="py-3 px-4 text-center">Paid Treatment</th>
-                          <th className="py-3 px-4 text-left">Current Rule Explanation</th>
+                          <th className="py-3 px-4 text-center">
+                            Paid Treatment
+                          </th>
+                          <th className="py-3 px-4 text-left">
+                            Current Rule Explanation
+                          </th>
                         </tr>
                       </thead>
                       <tbody className="divide-y divide-muted/40">
                         {policy.weeklyOffPolicy.map((day) => {
-                          const isWeekend = day.dayOfWeek === 0 || day.dayOfWeek === 6;
+                          const isWeekend =
+                            day.dayOfWeek === 0 || day.dayOfWeek === 6;
                           return (
                             <tr
                               key={day.dayOfWeek}
@@ -401,8 +438,14 @@ export default function WorkPolicy() {
                                 <Button
                                   type="button"
                                   size="sm"
-                                  variant={day.type === "WEEK_OFF" ? "secondary" : "outline"}
-                                  onClick={() => handleDayTypeToggle(day.dayOfWeek)}
+                                  variant={
+                                    day.type === "WEEK_OFF"
+                                      ? "secondary"
+                                      : "outline"
+                                  }
+                                  onClick={() =>
+                                    handleDayTypeToggle(day.dayOfWeek)
+                                  }
                                   className="h-7 px-3 text-[11px] font-medium"
                                 >
                                   {day.type === "WEEK_OFF"
@@ -464,7 +507,8 @@ export default function WorkPolicy() {
                           Saturday Working & Off Patterns
                         </h3>
                         <p className="text-muted-foreground text-xs">
-                          Configure alternate Saturdays, all Saturdays off, or specific calendar occurrence rules.
+                          Configure alternate Saturdays, all Saturdays off, or
+                          specific calendar occurrence rules.
                         </p>
                       </div>
                       <Badge variant="outline" className="font-mono text-xs">
@@ -503,7 +547,8 @@ export default function WorkPolicy() {
                             Alternate Saturdays Off (1st, 3rd, 5th)
                           </option>
                           <option value="CUSTOM">
-                            Custom Calendar Pattern (Configure occurrences below)
+                            Custom Calendar Pattern (Configure occurrences
+                            below)
                           </option>
                         </NativeSelect>
                       </div>
@@ -520,7 +565,10 @@ export default function WorkPolicy() {
                             <Switch
                               checked={policy.saturdayPaid}
                               onCheckedChange={(checked) =>
-                                setPolicy((p) => ({ ...p, saturdayPaid: checked }))
+                                setPolicy((p) => ({
+                                  ...p,
+                                  saturdayPaid: checked,
+                                }))
                               }
                             />
                             <span
@@ -530,7 +578,9 @@ export default function WorkPolicy() {
                                   : "text-amber-600 dark:text-amber-400"
                               }`}
                             >
-                              {policy.saturdayPaid ? "Paid Weekly Off" : "Unpaid Weekly Off"}
+                              {policy.saturdayPaid
+                                ? "Paid Weekly Off"
+                                : "Unpaid Weekly Off"}
                             </span>
                           </div>
                         </div>
@@ -551,7 +601,10 @@ export default function WorkPolicy() {
                               name="saturday5th"
                               checked={policy.saturday5thRule === "WORKING"}
                               onChange={() =>
-                                setPolicy((p) => ({ ...p, saturday5thRule: "WORKING" }))
+                                setPolicy((p) => ({
+                                  ...p,
+                                  saturday5thRule: "WORKING",
+                                }))
                               }
                             />
                             <span>Treat 5th Saturday as Working Day</span>
@@ -562,7 +615,10 @@ export default function WorkPolicy() {
                               name="saturday5th"
                               checked={policy.saturday5thRule === "OFF"}
                               onChange={() =>
-                                setPolicy((p) => ({ ...p, saturday5thRule: "OFF" }))
+                                setPolicy((p) => ({
+                                  ...p,
+                                  saturday5thRule: "OFF",
+                                }))
                               }
                             />
                             <span>Treat 5th Saturday as Weekly Off</span>
@@ -571,7 +627,9 @@ export default function WorkPolicy() {
                             <input
                               type="radio"
                               name="saturday5th"
-                              checked={policy.saturday5thRule === "FOLLOW_PATTERN"}
+                              checked={
+                                policy.saturday5thRule === "FOLLOW_PATTERN"
+                              }
                               onChange={() =>
                                 setPolicy((p) => ({
                                   ...p,
@@ -596,7 +654,11 @@ export default function WorkPolicy() {
                             const occData =
                               policy.saturdayCustomOccurrences?.find(
                                 (c) => c.occurrence === occ,
-                              ) || { occurrence: occ, isOff: false, isPaid: false };
+                              ) || {
+                                occurrence: occ,
+                                isOff: false,
+                                isPaid: false,
+                              };
                             return (
                               <div
                                 key={occ}
@@ -621,7 +683,9 @@ export default function WorkPolicy() {
                                   <Button
                                     type="button"
                                     size="sm"
-                                    variant={occData.isOff ? "default" : "outline"}
+                                    variant={
+                                      occData.isOff ? "default" : "outline"
+                                    }
                                     onClick={() =>
                                       handleCustomOccurrenceToggle(occ, "isOff")
                                     }
@@ -635,7 +699,10 @@ export default function WorkPolicy() {
                                     <Switch
                                       checked={occData.isPaid}
                                       onCheckedChange={() =>
-                                        handleCustomOccurrenceToggle(occ, "isPaid")
+                                        handleCustomOccurrenceToggle(
+                                          occ,
+                                          "isPaid",
+                                        )
                                       }
                                       className="scale-75"
                                     />
@@ -666,7 +733,8 @@ export default function WorkPolicy() {
                           Sunday Working & Off Policy
                         </h3>
                         <p className="text-muted-foreground text-xs">
-                          Configure whether Sunday is a paid off, unpaid off, or normal working day.
+                          Configure whether Sunday is a paid off, unpaid off, or
+                          normal working day.
                         </p>
                       </div>
                       <Badge variant="outline" className="font-mono text-xs">
@@ -689,7 +757,8 @@ export default function WorkPolicy() {
                           Paid Weekly Off
                         </div>
                         <p className="text-[11px] text-muted-foreground mt-1">
-                          Standard corporate model. Sunday counts towards paid days unless sandwich rule applies.
+                          Standard corporate model. Sunday counts towards paid
+                          days unless sandwich rule applies.
                         </p>
                       </div>
 
@@ -707,7 +776,8 @@ export default function WorkPolicy() {
                           Unpaid Weekly Off
                         </div>
                         <p className="text-[11px] text-muted-foreground mt-1">
-                          Non-working day, but not counted towards earned paid salary days.
+                          Non-working day, but not counted towards earned paid
+                          salary days.
                         </p>
                       </div>
 
@@ -725,7 +795,8 @@ export default function WorkPolicy() {
                           Normal Working Day
                         </div>
                         <p className="text-[11px] text-muted-foreground mt-1">
-                          Used in Middle East or 24/7 retail/operations shifts where Sunday is a regular work day.
+                          Used in Middle East or 24/7 retail/operations shifts
+                          where Sunday is a regular work day.
                         </p>
                       </div>
                     </div>
@@ -744,7 +815,8 @@ export default function WorkPolicy() {
                           Attendance Eligibility (Sandwich Rule)
                         </h3>
                         <p className="text-muted-foreground text-xs mt-0.5">
-                          Enforce attendance conditions on surrounding working days to earn paid weekly offs.
+                          Enforce attendance conditions on surrounding working
+                          days to earn paid weekly offs.
                         </p>
                       </div>
                       <div className="flex items-center gap-2">
@@ -770,7 +842,10 @@ export default function WorkPolicy() {
                           Why the Sandwich Rule is Crucial:
                         </p>
                         <p className="mt-0.5">
-                          Without this rule, employees who join mid-month and have 0 attendance, or employees on unauthorized absenteeism, would unconditionally receive free pay for all Saturdays, Sundays, and holidays!
+                          Without this rule, employees who join mid-month and
+                          have 0 attendance, or employees on unauthorized
+                          absenteeism, would unconditionally receive free pay
+                          for all Saturdays, Sundays, and holidays!
                         </p>
                       </div>
                     </div>
@@ -801,7 +876,9 @@ export default function WorkPolicy() {
                               </Badge>
                             </div>
                             <p className="text-[11px] text-muted-foreground mt-1">
-                              Employee must be present or on approved paid leave on BOTH the preceding working day (e.g. Friday) and succeeding working day (e.g. Monday).
+                              Employee must be present or on approved paid leave
+                              on BOTH the preceding working day (e.g. Friday)
+                              and succeeding working day (e.g. Monday).
                             </p>
                           </div>
 
@@ -825,7 +902,8 @@ export default function WorkPolicy() {
                               </Badge>
                             </div>
                             <p className="text-[11px] text-muted-foreground mt-1">
-                              Weekly off is paid if employee attends on EITHER the preceding day OR the succeeding working day.
+                              Weekly off is paid if employee attends on EITHER
+                              the preceding day OR the succeeding working day.
                             </p>
                           </div>
 
@@ -842,9 +920,13 @@ export default function WorkPolicy() {
                                 : "bg-muted/10 hover:bg-muted/30"
                             }`}
                           >
-                            <div className="font-bold">Preceding Working Day Only</div>
+                            <div className="font-bold">
+                              Preceding Working Day Only
+                            </div>
                             <p className="text-[11px] text-muted-foreground mt-1">
-                              Paid if employee was present or on approved leave on the working day immediately before the weekly off.
+                              Paid if employee was present or on approved leave
+                              on the working day immediately before the weekly
+                              off.
                             </p>
                           </div>
 
@@ -861,9 +943,13 @@ export default function WorkPolicy() {
                                 : "bg-muted/10 hover:bg-muted/30"
                             }`}
                           >
-                            <div className="font-bold">Succeeding Working Day Only</div>
+                            <div className="font-bold">
+                              Succeeding Working Day Only
+                            </div>
                             <p className="text-[11px] text-muted-foreground mt-1">
-                              Paid if employee is present or on approved leave on the working day immediately after the weekly off.
+                              Paid if employee is present or on approved leave
+                              on the working day immediately after the weekly
+                              off.
                             </p>
                           </div>
                         </div>
@@ -883,7 +969,8 @@ export default function WorkPolicy() {
                         Salary Divisor Policy & Daily Rate Formula
                       </h3>
                       <p className="text-muted-foreground text-xs mt-0.5">
-                        Define how daily wage rates and proration factors are determined.
+                        Define how daily wage rates and proration factors are
+                        determined.
                       </p>
                     </div>
 
@@ -906,12 +993,18 @@ export default function WorkPolicy() {
                             Calendar Days in Month (28, 29, 30, or 31)
                           </option>
                           <option value="WORKING_DAYS">
-                            Scheduled Working Days (excluding weekly offs & holidays)
+                            Scheduled Working Days (excluding weekly offs &
+                            holidays)
                           </option>
-                          <option value="FIXED_30">Fixed 30 Days Divisor</option>
-                          <option value="FIXED_26">Fixed 26 Days Divisor (Standard Industrial)</option>
+                          <option value="FIXED_30">
+                            Fixed 30 Days Divisor
+                          </option>
+                          <option value="FIXED_26">
+                            Fixed 26 Days Divisor (Standard Industrial)
+                          </option>
                           <option value="PAID_DAYS">
-                            Configured Paid Days (Working Days + Paid Offs + Holidays)
+                            Configured Paid Days (Working Days + Paid Offs +
+                            Holidays)
                           </option>
                           <option value="CUSTOM">Custom Divisor Number</option>
                         </NativeSelect>
@@ -930,7 +1023,8 @@ export default function WorkPolicy() {
                             onChange={(e) =>
                               setPolicy((p) => ({
                                 ...p,
-                                customDivisorValue: parseInt(e.target.value, 10) || 26,
+                                customDivisorValue:
+                                  parseInt(e.target.value, 10) || 26,
                               }))
                             }
                             className="text-xs"
@@ -944,7 +1038,10 @@ export default function WorkPolicy() {
                         Mathematical Formula:
                       </div>
                       <div className="font-mono text-primary">
-                        Daily Wage Rate = Base Monthly Salary / {policy.divisorPolicy === "CUSTOM" ? policy.customDivisorValue : policy.divisorPolicy}
+                        Daily Wage Rate = Base Monthly Salary /{" "}
+                        {policy.divisorPolicy === "CUSTOM"
+                          ? policy.customDivisorValue
+                          : policy.divisorPolicy}
                       </div>
                       <div className="font-mono text-emerald-600 dark:text-emerald-400">
                         Earned Gross = Daily Wage Rate × Total Earned Paid Days
@@ -961,7 +1058,8 @@ export default function WorkPolicy() {
                           onClick={() =>
                             setPolicy((p) => ({
                               ...p,
-                              unpaidWeekOffDeductionMode: "EXCLUDE_FROM_PAID_DAYS",
+                              unpaidWeekOffDeductionMode:
+                                "EXCLUDE_FROM_PAID_DAYS",
                             }))
                           }
                           className={`p-3.5 border rounded-lg cursor-pointer ${
@@ -975,7 +1073,8 @@ export default function WorkPolicy() {
                             Exclude from Paid Days (Recommended)
                           </div>
                           <p className="text-[11px] text-muted-foreground mt-0.5">
-                            Cleanly omitted from earned days. Prevents double deductions and accurately reflects working earnings.
+                            Cleanly omitted from earned days. Prevents double
+                            deductions and accurately reflects working earnings.
                           </p>
                         </div>
 
@@ -987,14 +1086,16 @@ export default function WorkPolicy() {
                             }))
                           }
                           className={`p-3.5 border rounded-lg cursor-pointer ${
-                            policy.unpaidWeekOffDeductionMode === "DEDUCT_AS_LOP"
+                            policy.unpaidWeekOffDeductionMode ===
+                            "DEDUCT_AS_LOP"
                               ? "border-primary bg-primary/10 shadow-sm"
                               : "bg-muted/10 hover:bg-muted/30"
                           }`}
                         >
                           <div className="font-bold">Deduct as LOP Penalty</div>
                           <p className="text-[11px] text-muted-foreground mt-0.5">
-                            Treats failed sandwich weekly offs as an explicit Loss of Pay deduction against full monthly gross.
+                            Treats failed sandwich weekly offs as an explicit
+                            Loss of Pay deduction against full monthly gross.
                           </p>
                         </div>
                       </div>
@@ -1036,33 +1137,44 @@ export default function WorkPolicy() {
                     {previewData && (
                       <div className="flex flex-wrap items-center gap-2 text-xs">
                         <div className="border px-2.5 py-1 rounded bg-muted/20">
-                          <span className="text-muted-foreground">Working: </span>
+                          <span className="text-muted-foreground">
+                            Working:{" "}
+                          </span>
                           <span className="font-bold text-foreground">
                             {previewData.workingDays}
                           </span>
                         </div>
                         <div className="border px-2.5 py-1 rounded bg-blue-50/50 dark:bg-blue-950/20 border-blue-200">
-                          <span className="text-blue-700 dark:text-blue-300">Paid Off: </span>
+                          <span className="text-blue-700 dark:text-blue-300">
+                            Paid Off:{" "}
+                          </span>
                           <span className="font-bold text-blue-700 dark:text-blue-300">
                             {previewData.paidWeeklyOffs}
                           </span>
                         </div>
                         <div className="border px-2.5 py-1 rounded bg-amber-50/50 dark:bg-amber-950/20 border-amber-200">
-                          <span className="text-amber-700 dark:text-amber-300">Unpaid Off: </span>
+                          <span className="text-amber-700 dark:text-amber-300">
+                            Unpaid Off:{" "}
+                          </span>
                           <span className="font-bold text-amber-700 dark:text-amber-300">
                             {previewData.unpaidWeeklyOffs}
                           </span>
                         </div>
                         <div className="border px-2.5 py-1 rounded bg-purple-50/50 dark:bg-purple-950/20 border-purple-200">
-                          <span className="text-purple-700 dark:text-purple-300">Holidays: </span>
+                          <span className="text-purple-700 dark:text-purple-300">
+                            Holidays:{" "}
+                          </span>
                           <span className="font-bold text-purple-700 dark:text-purple-300">
                             {previewData.paidHolidays}
                           </span>
                         </div>
                         <div className="border px-2.5 py-1 rounded bg-emerald-50 dark:bg-emerald-950/40 border-emerald-300">
-                          <span className="text-emerald-800 dark:text-emerald-300">Total Paid Days: </span>
+                          <span className="text-emerald-800 dark:text-emerald-300">
+                            Total Paid Days:{" "}
+                          </span>
                           <span className="font-bold text-emerald-600 font-mono">
-                            {previewData.totalPaidDays} / {previewData.totalCalendarDays}
+                            {previewData.totalPaidDays} /{" "}
+                            {previewData.totalCalendarDays}
                           </span>
                         </div>
                       </div>
@@ -1091,10 +1203,19 @@ export default function WorkPolicy() {
                       <div className="grid grid-cols-7 divide-x divide-y border-b text-xs">
                         {/* Leading empty cells for month offset */}
                         {(() => {
-                          const firstDayOfMonth = new Date(previewYear, previewMonth - 1, 1).getDay();
-                          return Array.from({ length: firstDayOfMonth }).map((_, i) => (
-                            <div key={`empty-${i}`} className="min-h-[85px] bg-muted/10 p-1" />
-                          ));
+                          const firstDayOfMonth = new Date(
+                            previewYear,
+                            previewMonth - 1,
+                            1,
+                          ).getDay();
+                          return Array.from({ length: firstDayOfMonth }).map(
+                            (_, i) => (
+                              <div
+                                key={`empty-${i}`}
+                                className="min-h-[85px] bg-muted/10 p-1"
+                              />
+                            ),
+                          );
                         })()}
 
                         {previewData.days.map((d: any) => {
@@ -1103,9 +1224,12 @@ export default function WorkPolicy() {
                           const isUnpaidOff = d.status === "UNPAID_WEEK_OFF";
 
                           let bgClass = "bg-card";
-                          if (isHoliday) bgClass = "bg-purple-50/50 dark:bg-purple-950/20";
-                          else if (isPaidOff) bgClass = "bg-blue-50/40 dark:bg-blue-950/20";
-                          else if (isUnpaidOff) bgClass = "bg-amber-50/40 dark:bg-amber-950/20";
+                          if (isHoliday)
+                            bgClass = "bg-purple-50/50 dark:bg-purple-950/20";
+                          else if (isPaidOff)
+                            bgClass = "bg-blue-50/40 dark:bg-blue-950/20";
+                          else if (isUnpaidOff)
+                            bgClass = "bg-amber-50/40 dark:bg-amber-950/20";
 
                           return (
                             <div
@@ -1129,13 +1253,19 @@ export default function WorkPolicy() {
                                     Unpaid Off
                                   </Badge>
                                 ) : (
-                                  <Badge variant="outline" className="text-[9px] py-0 px-1">
+                                  <Badge
+                                    variant="outline"
+                                    className="text-[9px] py-0 px-1"
+                                  >
                                     Work
                                   </Badge>
                                 )}
                               </div>
 
-                              <div className="text-[10px] text-muted-foreground truncate" title={d.reason}>
+                              <div
+                                className="text-[10px] text-muted-foreground truncate"
+                                title={d.reason}
+                              >
                                 {d.holidayName || d.reason}
                               </div>
                             </div>
