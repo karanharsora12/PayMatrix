@@ -670,15 +670,15 @@ export class PaidDaysCalculationService {
       }
       // 5. Scheduled Working Day with No Attendance Record
       else {
-        // If there were attendance records logged in the company/employee period and this date is missing
-        if (attendanceList.length > 0) {
+        const trackingMode = companyWorkPolicy.attendanceTrackingMode || 'STRICT';
+        if (trackingMode === 'STRICT') {
           finalStatus = 'ABSENT';
           isPayable = false;
           payableFraction = 0;
           reason = 'No attendance recorded (Absent)';
           absentDays += 1;
         } else {
-          // If no punches system-wide, assume standard working day
+          // EXCEPTION mode: Assume present if no punch exists
           finalStatus = 'PRESENT';
           isPayable = true;
           payableFraction = 1.0;

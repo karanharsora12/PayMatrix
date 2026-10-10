@@ -48,6 +48,7 @@ export interface CompanyWorkPolicy {
   divisorPolicy: DivisorPolicy;
   customDivisorValue?: number;
   unpaidWeekOffDeductionMode: 'EXCLUDE_FROM_PAID_DAYS' | 'DEDUCT_AS_LOP';
+  attendanceTrackingMode?: 'STRICT' | 'EXCEPTION';
 }
 
 export const DEFAULT_WORK_POLICY: CompanyWorkPolicy = {
@@ -76,6 +77,7 @@ export const DEFAULT_WORK_POLICY: CompanyWorkPolicy = {
   divisorPolicy: 'CALENDAR_DAYS',
   customDivisorValue: 30,
   unpaidWeekOffDeductionMode: 'EXCLUDE_FROM_PAID_DAYS',
+  attendanceTrackingMode: 'STRICT',
 };
 
 function getOrdinalSuffix(n: number): string {
