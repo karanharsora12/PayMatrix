@@ -11,6 +11,7 @@ import Employees from "@/pages/Employees";
 import EmployeeProfile from "@/pages/EmployeeProfile";
 import AddEmployee from "@/pages/AddEmployee";
 import Company from "@/pages/Company";
+import WorkPolicy from "@/pages/WorkPolicy";
 import Departments from "@/pages/Departments";
 import Designations from "@/pages/Designations";
 import Branches from "@/pages/Branches";
@@ -117,9 +118,19 @@ export default function App() {
               }
             />
             <Route
+              path="/organization/company/:id/work-policy"
+              element={
+                <ProtectedRouteGuard perm="settings.view">
+                  <WorkPolicy />
+                </ProtectedRouteGuard>
+              }
+            />
+            <Route
               path="/branches"
               element={
-                <ProtectedRouteGuard anyPerm={["branches.view", "settings.view"]}>
+                <ProtectedRouteGuard
+                  anyPerm={["branches.view", "settings.view"]}
+                >
                   <Branches />
                 </ProtectedRouteGuard>
               }
@@ -127,7 +138,9 @@ export default function App() {
             <Route
               path="/departments"
               element={
-                <ProtectedRouteGuard anyPerm={["departments.view", "settings.view"]}>
+                <ProtectedRouteGuard
+                  anyPerm={["departments.view", "settings.view"]}
+                >
                   <Departments />
                 </ProtectedRouteGuard>
               }
@@ -135,7 +148,9 @@ export default function App() {
             <Route
               path="/designations"
               element={
-                <ProtectedRouteGuard anyPerm={["designations.view", "settings.view"]}>
+                <ProtectedRouteGuard
+                  anyPerm={["designations.view", "settings.view"]}
+                >
                   <Designations />
                 </ProtectedRouteGuard>
               }
@@ -143,7 +158,9 @@ export default function App() {
             <Route
               path="/locations"
               element={
-                <ProtectedRouteGuard anyPerm={["locations.view", "settings.view"]}>
+                <ProtectedRouteGuard
+                  anyPerm={["locations.view", "settings.view"]}
+                >
                   <Locations />
                 </ProtectedRouteGuard>
               }
@@ -169,7 +186,9 @@ export default function App() {
             <Route
               path="/shifts"
               element={
-                <ProtectedRouteGuard anyPerm={["shift.view", "attendance.view"]}>
+                <ProtectedRouteGuard
+                  anyPerm={["shift.view", "attendance.view"]}
+                >
                   <Shifts />
                 </ProtectedRouteGuard>
               }
@@ -177,7 +196,9 @@ export default function App() {
             <Route
               path="/holidays"
               element={
-                <ProtectedRouteGuard anyPerm={["holiday.view", "attendance.view"]}>
+                <ProtectedRouteGuard
+                  anyPerm={["holiday.view", "attendance.view"]}
+                >
                   <Holidays />
                 </ProtectedRouteGuard>
               }
@@ -197,7 +218,9 @@ export default function App() {
             <Route
               path="/salary-components"
               element={
-                <ProtectedRouteGuard anyPerm={["salary.component.view", "salary.view"]}>
+                <ProtectedRouteGuard
+                  anyPerm={["salary.component.view", "salary.view"]}
+                >
                   <SalaryComponents />
                 </ProtectedRouteGuard>
               }
@@ -205,7 +228,9 @@ export default function App() {
             <Route
               path="/salary-structures"
               element={
-                <ProtectedRouteGuard anyPerm={["salary.structure.view", "salary.view"]}>
+                <ProtectedRouteGuard
+                  anyPerm={["salary.structure.view", "salary.view"]}
+                >
                   <SalaryStructures />
                 </ProtectedRouteGuard>
               }
@@ -213,7 +238,9 @@ export default function App() {
             <Route
               path="/employee-salary"
               element={
-                <ProtectedRouteGuard anyPerm={["salary.employee.view", "salary.view"]}>
+                <ProtectedRouteGuard
+                  anyPerm={["salary.employee.view", "salary.view"]}
+                >
                   <EmployeeSalary />
                 </ProtectedRouteGuard>
               }
@@ -247,7 +274,9 @@ export default function App() {
             <Route
               path="/documents"
               element={
-                <ProtectedRouteGuard anyPerm={["documents.view", "employees.view"]}>
+                <ProtectedRouteGuard
+                  anyPerm={["documents.view", "employees.view"]}
+                >
                   <DocumentMaster />
                 </ProtectedRouteGuard>
               }
@@ -257,7 +286,9 @@ export default function App() {
             <Route
               path="/roles"
               element={
-                <ProtectedRouteGuard anyPerm={["roles.view", "users.view", "settings.view"]}>
+                <ProtectedRouteGuard
+                  anyPerm={["roles.view", "users.view", "settings.view"]}
+                >
                   <UsersRoles />
                 </ProtectedRouteGuard>
               }
@@ -281,7 +312,9 @@ export default function App() {
             <Route
               path="/email-templates"
               element={
-                <ProtectedRouteGuard anyPerm={["email_templates.view", "settings.view"]}>
+                <ProtectedRouteGuard
+                  anyPerm={["email_templates.view", "settings.view"]}
+                >
                   <EmailTemplates />
                 </ProtectedRouteGuard>
               }

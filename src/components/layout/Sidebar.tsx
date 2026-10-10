@@ -221,7 +221,9 @@ export function Sidebar({
     if (item.path === "/attendance-register" || item.path === "/shifts") {
       if (canManageAttendanceParam) return true;
       if (user?.roles?.includes("SUPER_ADMIN")) return true;
-      return hasPermission("attendance.manage") || hasPermission("attendance.edit");
+      return (
+        hasPermission("attendance.manage") || hasPermission("attendance.edit")
+      );
     }
     return hasPermission(item.perm);
   };
@@ -250,7 +252,9 @@ export function Sidebar({
         </div>
         {!collapsed && (
           <div>
-            <div className="text-sm font-semibold leading-none text-sidebar-foreground">PayMatrix</div>
+            <div className="text-sm font-semibold leading-none text-sidebar-foreground">
+              PayMatrix
+            </div>
             <div className="text-[11px] text-muted-foreground mt-0.5">
               Payroll & HRMS
             </div>
