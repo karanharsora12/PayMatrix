@@ -277,9 +277,7 @@ export default function UserParameters() {
   return (
     <div className="space-y-3 font-sans">
       <ListingCard>
-        {/* Parameter Master Section with DataGrid */}
-        <div className="p-3.5 space-y-3">
-          {/* Search bar */}
+        <div className="space-y-3">
           <div className="flex items-center justify-between gap-3">
             <div className="relative w-64">
               <Input
