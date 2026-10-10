@@ -36,7 +36,6 @@ export default function Employees() {
   const dept = searchParams.get("department") ?? "";
   const desig = searchParams.get("designation") ?? "";
   const status = searchParams.get("status") ?? "";
-  const [showImport, setShowImport] = useState(false);
 
   const setParam = (key: string, value: string) => {
     const next = new URLSearchParams(searchParams);
@@ -123,7 +122,6 @@ export default function Employees() {
 
   const { data, refetch, isLoading } = useEmployees(filters);
 
-  // Available departments list (from API and fallback from employee data)
   const departmentOptions = useMemo(() => {
     const list: { id: string; name: string }[] = [];
     const seen = new Set<string>();
@@ -147,18 +145,6 @@ export default function Employees() {
           seen.add(name.toLowerCase());
           list.push({ id: id || name, name });
         }
-      });
-    }
-
-    if (list.length === 0) {
-      [
-        "Engineering",
-        "Finance",
-        "Marketing",
-        "Sales",
-        "Human Resources",
-      ].forEach((name) => {
-        list.push({ id: name, name });
       });
     }
 
@@ -454,14 +440,6 @@ export default function Employees() {
         />
 
         <div className="flex flex-wrap gap-2 mb-3">
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={() => setShowImport(true)}
-          >
-            <Upload className="h-3.5 w-3.5 mr-1.5" />
-            Import
-          </Button>
           <NativeSelect
             value={dept || "ALL"}
             onChange={handleDeptChange}
@@ -526,31 +504,6 @@ export default function Employees() {
           />
         </div>
       </ListingCard>
-
-      {/* Import Modal */}
-      <Dialog open={showImport} onOpenChange={setShowImport}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>Import Employees</DialogTitle>
-          </DialogHeader>
-          <div className="border-2 border-dashed rounded-lg p-8 text-center text-sm text-muted-foreground">
-            Drop Excel file here or click to browse
-          </div>
-          <div className="flex justify-end gap-2 mt-4">
-            <Button variant="outline" onClick={() => setShowImport(false)}>
-              Cancel
-            </Button>
-            <Button
-              onClick={() => {
-                toast.success("Imported 12 employees");
-                setShowImport(false);
-              }}
-            >
-              Import
-            </Button>
-          </div>
-        </DialogContent>
-      </Dialog>
     </div>
   );
 }
