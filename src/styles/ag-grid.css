@@ -293,18 +293,18 @@
 }
 
 .ag-grid-custom ::-webkit-scrollbar-thumb {
-  background-color: #f97316 !important; /* Screenshot orange indicator */
+  background-color: hsl(240 5% 65%) !important;
   border-radius: 9999px !important;
   border: 2px solid transparent !important;
   background-clip: content-box !important;
 }
 
 .ag-grid-custom ::-webkit-scrollbar-thumb:hover {
-  background-color: #ea580c !important;
+  background-color: hsl(240 5% 55%) !important;
 }
 
 .dark .ag-grid-custom ::-webkit-scrollbar-thumb {
-  background-color: #f97316 !important;
+  background-color: hsl(240 3.7% 35%) !important;
 }
 
 /* Tooltip Popup matching centralized theme */

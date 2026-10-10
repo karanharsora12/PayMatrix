@@ -81,12 +81,16 @@ export interface DataGridProps<TData = any> {
   apiInput?: Record<string, unknown>;
   infiniteScroll?: boolean;
   pageSize?: number;
+  apiMethod?: "GET" | "POST";
 }
 
 interface GridApiResponse<TData> {
   data?: TData[];
   summary?: any[];
   pagination?: {
+    total?: number;
+  };
+  meta?: {
     total?: number;
   };
 }
@@ -99,7 +103,7 @@ const getGridResponse = <TData,>(payload: unknown): GridApiResponse<TData> => {
     return {
       data: Array.isArray(response.data) ? response.data : [],
       summary: Array.isArray(response.summary) ? response.summary : undefined,
-      pagination: response.pagination,
+      pagination: response.pagination || (response.meta ? { total: response.meta.total } : undefined),
     };
   }
 
@@ -186,6 +190,7 @@ export const DataGrid = React.forwardRef<AgGridReact, DataGridProps>(
       apiInput,
       infiniteScroll,
       pageSize = 50,
+      apiMethod = "POST",
     },
     ref,
   ) => {
@@ -228,13 +233,17 @@ export const DataGrid = React.forwardRef<AgGridReact, DataGridProps>(
           const sort = params.sortModel[0];
 
           try {
-            const response = await apiClient.post(apiName!, {
+            const payload = {
               ...apiInput,
               page: Math.floor(params.startRow / requestedPageSize) + 1,
               limit: requestedPageSize,
               sortField: sort?.colId,
               sortDirection: sort?.sort,
-            });
+            };
+            const response = await (apiMethod === "GET"
+              ? apiClient.get(apiName!, { params: payload })
+              : apiClient.post(apiName!, payload));
+
             if (isDestroyed) return;
 
             const result = getGridResponse<any>(response.data);
@@ -258,8 +267,11 @@ export const DataGrid = React.forwardRef<AgGridReact, DataGridProps>(
       if (!usesApi || usesInfiniteScrollApi || !apiName) return;
 
       let isCurrent = true;
-      apiClient
-        .post(apiName, apiInput)
+      const promise = apiMethod === "GET"
+        ? apiClient.get(apiName, { params: apiInput })
+        : apiClient.post(apiName, apiInput);
+
+      promise
         .then((response) => {
           if (!isCurrent) return;
           const result = getGridResponse<any>(response.data);

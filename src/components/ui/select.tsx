@@ -114,7 +114,7 @@ const SelectGroup = React.forwardRef<
 const SelectValue = React.forwardRef<
   HTMLSpanElement,
   React.HTMLAttributes<HTMLSpanElement> & { placeholder?: string }
->(({ className, placeholder, ...props }, ref) => {
+>(({ className, placeholder, children, ...props }, ref) => {
   const { value, selectedValueNode } = React.useContext(SelectContext);
   return (
     <span
@@ -122,7 +122,7 @@ const SelectValue = React.forwardRef<
       className={cn("truncate block w-full", className)}
       {...props}
     >
-      {value ? selectedValueNode || value : placeholder || ""}
+      {children !== undefined ? children : (value ? selectedValueNode || value : placeholder || "")}
     </span>
   );
 });
@@ -349,10 +349,14 @@ export function NativeSelect({
     }
   });
 
+  const selectedOption = options.find((o) => o.value === value);
+
   return (
     <Select value={value} onValueChange={onChange} disabled={disabled}>
       <SelectTrigger className={className}>
-        <SelectValue placeholder={foundPlaceholder} />
+        <SelectValue placeholder={foundPlaceholder}>
+          {selectedOption ? selectedOption.label : undefined}
+        </SelectValue>
       </SelectTrigger>
       <SelectContent>
         {options.map((opt) => (

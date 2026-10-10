@@ -442,7 +442,10 @@ export default function Employees() {
               : undefined
           }
           addButtonText="Add Employee"
-          onRefresh={refetch}
+          onRefresh={() => {
+            refetch();
+            gridRef.current?.api?.refreshInfiniteCache();
+          }}
           onExportExcel={() =>
             gridRef.current?.api &&
             gridExportExcel(gridRef.current.api, "employees.csv")
@@ -495,9 +498,11 @@ export default function Employees() {
         <div className="w-full" style={{ height: "450px" }}>
           <DataGrid
             ref={gridRef}
-            rowData={employeeList}
+            apiName="/employees"
+            apiMethod="GET"
+            apiInput={filters}
             columnDefs={columnDefs}
-            pageSize={15}
+            pageSize={20}
             gridOptions={{
               onRowDoubleClicked: (e) => {
                 if (e.data?.id && hasPermission("employees.edit"))
