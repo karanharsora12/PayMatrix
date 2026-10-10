@@ -90,9 +90,7 @@ export default function Departments() {
   };
 
   const handleDelete = async (id: string) => {
-    if (await confirm({ message: "Are you sure you want to delete this department?" })) {
-      deleteMutation.mutate(id);
-    }
+    deleteMutation.mutate(id);
   };
 
   const handleSave = () => {
