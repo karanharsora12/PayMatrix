@@ -785,62 +785,63 @@ export default function SalaryStructures() {
             <DialogTitle>Salary Structure</DialogTitle>
           </DialogHeader>
 
-          <form onSubmit={handleCreateStructure} className="space-y-4">
-            <div className="space-y-1.5">
-              <Label htmlFor="sCode">Structure Code *</Label>
-              <Input
-                id="sCode"
-                placeholder="e.g. STAFF_2026, EXEC_01"
-                value={newCode}
-                onChange={(e) => setNewCode(e.target.value.toUpperCase())}
-                required
-              />
-            </div>
+          <div className="space-y-1.5">
+            <Label htmlFor="sCode">Structure Code *</Label>
+            <Input
+              id="sCode"
+              placeholder="e.g. STAFF_2026, EXEC_01"
+              value={newCode}
+              onChange={(e) => setNewCode(e.target.value.toUpperCase())}
+              required
+            />
+          </div>
 
-            <div className="space-y-1.5">
-              <Label htmlFor="sName">Structure Name *</Label>
-              <Input
-                id="sName"
-                placeholder="e.g. Standard Staff Structure"
-                value={newName}
-                onChange={(e) => setNewName(e.target.value)}
-                required
-              />
-            </div>
+          <div className="space-y-1.5">
+            <Label htmlFor="sName">Structure Name *</Label>
+            <Input
+              id="sName"
+              placeholder="e.g. Standard Staff Structure"
+              value={newName}
+              onChange={(e) => setNewName(e.target.value)}
+              required
+            />
+          </div>
 
-            <div className="space-y-1.5">
-              <Label htmlFor="sDesc">Description</Label>
-              <Input
-                id="sDesc"
-                placeholder="Optional description"
-                value={newDescription}
-                onChange={(e) => setNewDescription(e.target.value)}
-              />
-            </div>
+          <div className="space-y-1.5">
+            <Label htmlFor="sDesc">Description</Label>
+            <Input
+              id="sDesc"
+              placeholder="Optional description"
+              value={newDescription}
+              onChange={(e) => setNewDescription(e.target.value)}
+            />
+          </div>
 
-            <div className="space-y-1.5">
-              <Label htmlFor="sDate">Effective From *</Label>
-              <DatePicker
-                id="sDate"
-                value={newEffectiveFrom}
-                onChange={(_, str) => setNewEffectiveFrom(str)}
-                placeholder="Select effective date"
-              />
-            </div>
+          <div className="space-y-1.5">
+            <Label htmlFor="sDate">Effective From *</Label>
+            <DatePicker
+              id="sDate"
+              value={newEffectiveFrom}
+              onChange={(_, str) => setNewEffectiveFrom(str)}
+              placeholder="Select effective date"
+            />
+          </div>
 
-            <DialogFooter className="pt-3">
-              <Button
-                type="button"
-                variant="outline"
-                onClick={() => setIsCreateOpen(false)}
-              >
-                Cancel
-              </Button>
-              <Button type="submit" disabled={createMutation.isPending}>
-                {createMutation.isPending ? "Creating..." : "Create Structure"}
-              </Button>
-            </DialogFooter>
-          </form>
+          <DialogFooter className="pt-3">
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => setIsCreateOpen(false)}
+            >
+              Cancel
+            </Button>
+            <Button
+              onClick={handleCreateStructure}
+              disabled={createMutation.isPending}
+            >
+              {createMutation.isPending ? "Creating..." : "Create Structure"}
+            </Button>
+          </DialogFooter>
         </DialogContent>
       </Dialog>
 

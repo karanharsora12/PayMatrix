@@ -338,7 +338,10 @@ export default function UsersRoles() {
                         </Badge>
                       )}
                       {isDirty && (
-                        <Badge variant="warning" className="text-[10px] py-0 h-5">
+                        <Badge
+                          variant="warning"
+                          className="text-[10px] py-0 h-5"
+                        >
                           Unsaved Changes
                         </Badge>
                       )}
@@ -416,16 +419,29 @@ export default function UsersRoles() {
                                 {/* Access summary badge */}
                                 <div className="mt-1.5">
                                   {activeRole.isSystemRole ? (
-                                    <Badge variant="success" className="text-[10px] gap-1 py-0 h-5">
-                                      <CheckCircle2 className="h-2.5 w-2.5" /> Full Access
+                                    <Badge
+                                      variant="success"
+                                      className="text-[10px] gap-1 py-0 h-5"
+                                    >
+                                      <CheckCircle2 className="h-2.5 w-2.5" />{" "}
+                                      Full Access
                                     </Badge>
                                   ) : grantedInModule.length > 0 ? (
-                                    <Badge variant="success" className="text-[10px] gap-1 py-0 h-5">
-                                      <CheckCircle2 className="h-2.5 w-2.5" /> {grantedInModule.length}/{perms.length} Granted
+                                    <Badge
+                                      variant="success"
+                                      className="text-[10px] gap-1 py-0 h-5"
+                                    >
+                                      <CheckCircle2 className="h-2.5 w-2.5" />{" "}
+                                      {grantedInModule.length}/{perms.length}{" "}
+                                      Granted
                                     </Badge>
                                   ) : (
-                                    <Badge variant="outline" className="text-[10px] gap-1 py-0 h-5 text-muted-foreground">
-                                      <XCircle className="h-2.5 w-2.5" /> No Access
+                                    <Badge
+                                      variant="outline"
+                                      className="text-[10px] gap-1 py-0 h-5 text-muted-foreground"
+                                    >
+                                      <XCircle className="h-2.5 w-2.5" /> No
+                                      Access
                                     </Badge>
                                   )}
                                 </div>
@@ -514,11 +530,9 @@ export default function UsersRoles() {
       <Dialog open={roleDialogOpen} onOpenChange={setRoleDialogOpen}>
         <DialogContent className="sm:max-w-[425px]">
           <DialogHeader>
-            <DialogTitle>
-              {editingRole ? "Edit Role" : "Create New Role"}
-            </DialogTitle>
+            <DialogTitle>Role</DialogTitle>
           </DialogHeader>
-          <div className="grid gap-4 py-4">
+          <div className="grid gap-4">
             <div className="space-y-2">
               <Label htmlFor="roleName">Role Name</Label>
               <Input
