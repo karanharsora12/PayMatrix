@@ -22,6 +22,18 @@ const SelectContext = React.createContext<{
   registerItem: () => {},
 });
 
+export interface SelectProps {
+  value?: string;
+  defaultValue?: string;
+  onValueChange?: (value: string) => void;
+  open?: boolean;
+  defaultOpen?: boolean;
+  onOpenChange?: (open: boolean) => void;
+  disabled?: boolean;
+  name?: string;
+  children?: React.ReactNode;
+}
+
 const Select = ({
   value,
   onValueChange,
@@ -31,7 +43,7 @@ const Select = ({
   onOpenChange,
   open: controlledOpen,
   name,
-}: any) => {
+}: SelectProps) => {
   const [uncontrolledValue, setUncontrolledValue] = React.useState(
     defaultValue || "",
   );
