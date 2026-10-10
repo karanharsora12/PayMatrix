@@ -1,4 +1,4 @@
-import { Body, Controller, Delete, Get, Param, ParseUUIDPipe, Patch, Post, Query } from '@nestjs/common';
+import { Body, Controller, Delete, Get, Param, ParseUUIDPipe, Patch, Post, Put, Query } from '@nestjs/common';
 import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
 import { CompaniesService } from './companies.service';
 import { CreateCompanyDto, UpdateCompanyDto } from './dto/create-company.dto';
@@ -17,6 +17,42 @@ export class CompaniesController {
   @RequirePermission('companies.view')
   list(@Query() q: PaginationDto) {
     return this.svc.list(q);
+  }
+
+  @Get(':id/work-policy')
+  getWorkPolicy(@Param('id', ParseUUIDPipe) id: string) {
+    return this.svc.getWorkPolicy(id);
+  }
+
+  @Put(':id/work-policy')
+  @RequirePermission('settings.edit')
+  putWorkPolicy(
+    @Param('id', ParseUUIDPipe) id: string,
+    @Body() body: any,
+    @CurrentUser() user: any,
+  ) {
+    return this.svc.updateWorkPolicy(id, body, user?.sub);
+  }
+
+  @Patch(':id/work-policy')
+  @RequirePermission('settings.edit')
+  patchWorkPolicy(
+    @Param('id', ParseUUIDPipe) id: string,
+    @Body() body: any,
+    @CurrentUser() user: any,
+  ) {
+    return this.svc.updateWorkPolicy(id, body, user?.sub);
+  }
+
+  @Get(':id/calendar-preview')
+  previewCalendar(
+    @Param('id', ParseUUIDPipe) id: string,
+    @Query('year') year?: string,
+    @Query('month') month?: string,
+  ) {
+    const y = year ? parseInt(year, 10) : new Date().getFullYear();
+    const m = month ? parseInt(month, 10) : new Date().getMonth() + 1;
+    return this.svc.previewCalendar(id, y, m);
   }
 
   @Get(':id')
@@ -42,3 +78,4 @@ export class CompaniesController {
     return this.svc.remove(id);
   }
 }
+

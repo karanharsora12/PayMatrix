@@ -7,7 +7,7 @@ import { DataGrid } from "@/components/common/DataGrid";
 import { ListingHeader } from "@/components/common/ListingHeader";
 import { GridDeleteCell, GridDateFloatingFilter } from "@/components/common";
 import { ListingCard } from "@/components/common/ListingCard";
-import { Trash2 } from "lucide-react";
+import { Trash2, CalendarDays } from "lucide-react";
 import {
   Dialog,
   DialogContent,
@@ -21,6 +21,7 @@ import { companyApi } from "@/api/companies";
 import { gridExportExcel, gridExportPdf, gridPrint } from "@/lib/gridExport";
 import type { ColDef } from "ag-grid-community";
 import type { AgGridReact } from "ag-grid-react";
+import { WorkPolicyDialog } from "@/components/company/WorkPolicyDialog";
 
 export default function Company() {
   const gridRef = useRef<AgGridReact>(null);
@@ -28,6 +29,8 @@ export default function Company() {
   const [open, setOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
   const [editingId, setEditingId] = useState<string | null>(null);
+  const [workPolicyCompany, setWorkPolicyCompany] = useState<{ id: string; name: string; code: string } | null>(null);
+  const [workPolicyOpen, setWorkPolicyOpen] = useState(false);
   const [formData, setFormData] = useState({
     code: "",
     name: "",
@@ -146,6 +149,30 @@ export default function Company() {
         floatingFilterComponent: GridDateFloatingFilter,
       },
       {
+        headerName: "Work Policy",
+        width: 140,
+        sortable: false,
+        filter: false,
+        cellRenderer: (p: any) => (
+          <div className="flex items-center h-full">
+            <Button
+              type="button"
+              size="sm"
+              variant="outline"
+              className="h-7 px-2.5 text-xs flex items-center gap-1.5 border-primary/30 hover:bg-primary/10 text-primary"
+              onClick={(e) => {
+                e.stopPropagation();
+                setWorkPolicyCompany(p.data);
+                setWorkPolicyOpen(true);
+              }}
+            >
+              <CalendarDays className="h-3.5 w-3.5 text-primary" />
+              <span>Work Policy</span>
+            </Button>
+          </div>
+        ),
+      },
+      {
         headerName: "",
         width: 60,
         sortable: false,
@@ -158,6 +185,7 @@ export default function Company() {
     ],
     [],
   );
+
 
   const allCompanies = data?.data || [];
   const companies = allCompanies.filter(
@@ -262,6 +290,25 @@ export default function Company() {
                 }
               />
             </div>
+            {editingId && (
+              <div className="pt-2 border-t">
+                <Button
+                  type="button"
+                  variant="secondary"
+                  className="w-full text-xs flex items-center justify-center gap-1.5"
+                  onClick={() => {
+                    const comp = allCompanies.find((c: any) => c.id === editingId);
+                    if (comp) {
+                      setWorkPolicyCompany(comp);
+                      setWorkPolicyOpen(true);
+                    }
+                  }}
+                >
+                  <CalendarDays className="h-3.5 w-3.5 text-primary" />
+                  <span>Configure Work Schedule & Weekly Off Policy</span>
+                </Button>
+              </div>
+            )}
           </div>
           <DialogFooter>
             <Button
@@ -282,6 +329,13 @@ export default function Company() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      <WorkPolicyDialog
+        open={workPolicyOpen}
+        onOpenChange={setWorkPolicyOpen}
+        company={workPolicyCompany}
+      />
     </div>
   );
 }
+

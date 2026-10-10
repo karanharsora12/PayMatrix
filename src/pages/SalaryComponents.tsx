@@ -30,10 +30,13 @@ import { useAuth } from "@/context/AuthContext";
 
 export default function SalaryComponents() {
   const { hasPermission } = useAuth();
-  const canAdd = hasPermission("salary.create") || hasPermission("payroll.create");
+  const canAdd =
+    hasPermission("salary.create") || hasPermission("payroll.create");
   const canEdit = hasPermission("salary.edit") || hasPermission("payroll.edit");
-  const canDelete = hasPermission("salary.delete") || hasPermission("payroll.delete");
-  const canExport = hasPermission("salary.export") || hasPermission("payroll.export");
+  const canDelete =
+    hasPermission("salary.delete") || hasPermission("payroll.delete");
+  const canExport =
+    hasPermission("salary.export") || hasPermission("payroll.export");
 
   const [activeTab, setActiveTab] = useState("ALL");
   const [search, setSearch] = useState("");
@@ -295,7 +298,9 @@ export default function SalaryComponents() {
             rowData={components}
             columnDefs={componentsColDefs}
             gridOptions={{
-              onRowDoubleClicked: canEdit ? (params) => handleOpenEdit(params.data) : undefined,
+              onRowDoubleClicked: canEdit
+                ? (params) => handleOpenEdit(params.data)
+                : undefined,
             }}
           />
         </div>
@@ -308,7 +313,7 @@ export default function SalaryComponents() {
             <DialogTitle>Salary Component</DialogTitle>
           </DialogHeader>
 
-          <form onSubmit={handleSubmit} className="space-y-4">
+          <div className="space-y-4">
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-1.5">
                 <Label htmlFor="code">Component Code *</Label>
@@ -489,23 +494,22 @@ export default function SalaryComponents() {
                 </label>
               </div>
             </div>
-
-            <DialogFooter className="pt-4">
-              <Button
-                type="button"
-                variant="outline"
-                onClick={() => setIsModalOpen(false)}
-              >
-                Cancel
-              </Button>
-              <Button
-                type="submit"
-                disabled={createMutation.isPending || updateMutation.isPending}
-              >
-                {editingComponent ? "Save Changes" : "Create Component"}
-              </Button>
-            </DialogFooter>
-          </form>
+          </div>
+          <DialogFooter>
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => setIsModalOpen(false)}
+            >
+              Cancel
+            </Button>
+            <Button
+              onClick={handleSubmit}
+              disabled={createMutation.isPending || updateMutation.isPending}
+            >
+              {editingComponent ? "Save Changes" : "Create Component"}
+            </Button>
+          </DialogFooter>
         </DialogContent>
       </Dialog>
 

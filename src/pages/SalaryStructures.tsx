@@ -47,9 +47,11 @@ import { useAuth } from "@/context/AuthContext";
 export default function SalaryStructures() {
   const { confirm } = useAlert();
   const { hasPermission } = useAuth();
-  const canAdd = hasPermission("salary.create") || hasPermission("payroll.create");
+  const canAdd =
+    hasPermission("salary.create") || hasPermission("payroll.create");
   const canEdit = hasPermission("salary.edit") || hasPermission("payroll.edit");
-  const canDelete = hasPermission("salary.delete") || hasPermission("payroll.delete");
+  const canDelete =
+    hasPermission("salary.delete") || hasPermission("payroll.delete");
 
   const {
     data: structuresResp,
@@ -129,7 +131,8 @@ export default function SalaryStructures() {
     if (hasChanges) {
       if (
         !(await confirm({
-          message: "You have unsaved changes in the current structure. Switch anyway?",
+          message:
+            "You have unsaved changes in the current structure. Switch anyway?",
         }))
       ) {
         return;
@@ -666,11 +669,11 @@ export default function SalaryStructures() {
                           </div>
                         </div>
 
-                        <div className="bg-emerald-50 text-emerald-950 p-3 rounded-xl border border-emerald-200">
-                          <div className="text-xs text-emerald-700 font-medium">
+                        <div className="bg-muted/40 text-foreground p-3 rounded-xl border">
+                          <div className="text-xs text-muted-foreground font-medium">
                             Net Take-Home
                           </div>
-                          <div className="text-lg font-bold text-emerald-900 mt-0.5">
+                          <div className="text-lg font-bold text-foreground mt-0.5">
                             {formatCurrency(previewTotals.net)}
                           </div>
                         </div>

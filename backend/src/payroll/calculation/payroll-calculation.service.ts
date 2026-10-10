@@ -19,6 +19,7 @@ import {
   PayrollRunCalculationResult,
 } from './payroll-calculation.types';
 import { ShiftsService } from '../../shifts/shifts.service';
+import { CompanyWorkPolicy, DEFAULT_WORK_POLICY } from '../../companies/work-policy.types';
 
 @Injectable()
 export class PayrollCalculationService {
@@ -135,6 +136,20 @@ export class PayrollCalculationService {
       const periodMonth = run.periodMonth || parseInt(run.periodStart.slice(5, 7), 10);
       const periodStart = run.periodStart;
       const periodEnd = run.periodEnd;
+
+      // Load company work policy
+      const policySetting: any = await this.db.query.companySettings.findFirst({
+        where: and(
+          eq(schema.companySettings.companyId, companyId),
+          eq(schema.companySettings.key, 'WORK_POLICY'),
+        ),
+      });
+      let companyWorkPolicy: CompanyWorkPolicy = DEFAULT_WORK_POLICY;
+      if (policySetting?.value) {
+        try {
+          companyWorkPolicy = { ...DEFAULT_WORK_POLICY, ...JSON.parse(policySetting.value) };
+        } catch {}
+      }
 
       // 2. Batch load all eligible employees for this company
       const employees: any[] = await this.db.query.employees.findMany({
@@ -374,6 +389,7 @@ export class PayrollCalculationService {
           holidays,
           empShifts,
           policy,
+          companyWorkPolicy,
         );
 
         // Map overrides from employee salary structure assignment
@@ -875,6 +891,20 @@ export class PayrollCalculationService {
     );
     const shiftAssignments = shiftAssignmentsRes.success ? shiftAssignmentsRes.data : [];
 
+    // Load company work policy
+    const policySetting: any = await this.db.query.companySettings.findFirst({
+      where: and(
+        eq(schema.companySettings.companyId, companyId),
+        eq(schema.companySettings.key, 'WORK_POLICY'),
+      ),
+    });
+    let companyWorkPolicy: CompanyWorkPolicy = DEFAULT_WORK_POLICY;
+    if (policySetting?.value) {
+      try {
+        companyWorkPolicy = { ...DEFAULT_WORK_POLICY, ...JSON.parse(policySetting.value) };
+      } catch {}
+    }
+
     const paidDaysRes = this.paidDaysService.calculatePaidDays(
       {
         id: emp.id,
@@ -893,6 +923,7 @@ export class PayrollCalculationService {
       holidayItems,
       shiftAssignments,
       policy,
+      companyWorkPolicy,
     );
 
     // 7. Component definitions and formula evaluation
@@ -1071,13 +1102,23 @@ export class PayrollCalculationService {
         calendarDays: paidDaysRes.calendarDays,
         workingDays: paidDaysRes.workingDays,
         presentDays: paidDaysRes.presentDays,
+        halfDays: paidDaysRes.halfDays,
+        lateDays: paidDaysRes.lateDays,
         absentDays: paidDaysRes.absentDays,
         paidLeaveDays: paidDaysRes.paidLeaveDays,
         unpaidLeaveDays: paidDaysRes.unpaidLeaveDays,
         holidayDays: paidDaysRes.holidayDays,
+        paidHolidayDays: paidDaysRes.paidHolidayDays,
+        unpaidHolidayDays: paidDaysRes.unpaidHolidayDays,
         weekOffDays: paidDaysRes.weekOffDays,
+        paidWeekOffDays: paidDaysRes.paidWeekOffDays,
+        unpaidWeekOffDays: paidDaysRes.unpaidWeekOffDays,
+        unpaidLossOfPayDays: paidDaysRes.unpaidLossOfPayDays,
         paidDays: paidDaysRes.paidDays,
         payableFactor: paidDaysRes.payableFactor,
+        divisor: paidDaysRes.divisor,
+        divisorPolicy: paidDaysRes.divisorPolicy,
+        dailyRate: paidDaysRes.divisor > 0 ? Math.round((grossEarnings / paidDaysRes.divisor) * 100) / 100 : 0,
         overtimeMinutes: paidDaysRes.overtimeMinutes,
         dailyTimeline: paidDaysRes.dailyTimeline || [],
       },

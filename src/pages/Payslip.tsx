@@ -870,8 +870,39 @@ export default function Payslip() {
                 </div>
               )}
 
+              {/* Calculation Policy Transparency Card */}
+              {previewData.attendance?.divisorPolicy && (
+                <div className="bg-primary/5 border border-primary/20 rounded-lg p-2.5 text-xs flex flex-wrap items-center justify-between gap-2">
+                  <div className="flex items-center gap-2">
+                    <Badge variant="outline" className="border-primary/40 text-primary font-mono text-[10px]">
+                      Basis: {previewData.attendance.divisorPolicy}
+                    </Badge>
+                    <span className="text-muted-foreground text-[11px]">
+                      Daily Rate: <span className="font-bold text-foreground font-mono">{formatCurrency(previewData.attendance.dailyRate || 0)}</span> / day
+                    </span>
+                    <span className="text-muted-foreground text-[11px]">
+                      Scheduled Working Days: <span className="font-bold text-foreground">{previewData.attendance.workingDays}</span>
+                    </span>
+                  </div>
+                  <div className="flex items-center gap-2 text-[11px]">
+                    <span className="text-muted-foreground">
+                      Weekly Offs: <span className="font-semibold text-blue-600">{previewData.attendance.paidWeekOffDays ?? previewData.attendance.weekOffDays ?? 0} Paid</span>
+                      {Number(previewData.attendance.unpaidWeekOffDays || 0) > 0 && (
+                        <span className="font-semibold text-amber-600 ml-1">/ {previewData.attendance.unpaidWeekOffDays} Unpaid</span>
+                      )}
+                    </span>
+                    <span className="text-muted-foreground">
+                      Holidays: <span className="font-semibold text-purple-600">{previewData.attendance.paidHolidayDays ?? previewData.attendance.holidayDays ?? 0}</span>
+                    </span>
+                    <span className="text-muted-foreground">
+                      Payable Factor: <span className="font-bold text-emerald-600 font-mono">{((previewData.attendance.payableFactor || 0) * 100).toFixed(1)}%</span>
+                    </span>
+                  </div>
+                </div>
+              )}
+
               {/* KPI Summary Header */}
-              <div className="grid grid-cols-2 sm:grid-cols-4 md:grid-cols-7 gap-2 text-center text-xs">
+              <div className="grid grid-cols-2 sm:grid-cols-4 md:grid-cols-8 gap-2 text-center text-xs">
                 <div className="border p-2 rounded-lg bg-card shadow-sm">
                   <div className="text-[10px] text-muted-foreground">
                     Calendar Days
@@ -890,6 +921,14 @@ export default function Payslip() {
                 </div>
                 <div className="border p-2 rounded-lg bg-card shadow-sm">
                   <div className="text-[10px] text-muted-foreground">
+                    Paid Offs
+                  </div>
+                  <div className="text-sm font-bold text-blue-600">
+                    {previewData.attendance?.paidWeekOffDays ?? previewData.attendance?.weekOffDays ?? 0}
+                  </div>
+                </div>
+                <div className="border p-2 rounded-lg bg-card shadow-sm">
+                  <div className="text-[10px] text-muted-foreground">
                     Paid Leaves
                   </div>
                   <div className="text-sm font-bold text-emerald-600">
@@ -901,12 +940,12 @@ export default function Payslip() {
                     Unpaid LOP
                   </div>
                   <div className="text-sm font-bold text-rose-600">
-                    {previewData.attendance?.unpaidLeaveDays}
+                    {previewData.attendance?.unpaidLossOfPayDays ?? previewData.attendance?.unpaidLeaveDays ?? 0}
                   </div>
                 </div>
                 <div className="border p-2 rounded-lg bg-card shadow-sm">
                   <div className="text-[10px] text-muted-foreground">
-                    Absent
+                    Absent Days
                   </div>
                   <div className="text-sm font-bold text-rose-600">
                     {previewData.attendance?.absentDays}
@@ -929,6 +968,7 @@ export default function Payslip() {
                   </div>
                 </div>
               </div>
+
 
               {/* View Tabs: Salary Breakdown vs Daily Reconciliation Timeline */}
               <div className="flex border-b text-xs">
@@ -1112,12 +1152,22 @@ export default function Payslip() {
                                       item.finalStatus === "PRESENT" ||
                                       item.finalStatus === "PAID_LEAVE"
                                         ? "bg-emerald-600 text-white"
-                                        : item.finalStatus === "UNPAID_LEAVE" ||
-                                            item.finalStatus === "ABSENT"
-                                          ? "bg-rose-600 text-white"
-                                          : item.finalStatus === "HALF_DAY"
-                                            ? "bg-amber-500 text-white"
-                                            : "bg-slate-500 text-white"
+                                        : item.finalStatus === "PAID_WEEK_OFF"
+                                          ? "bg-blue-600 text-white"
+                                          : item.finalStatus === "PAID_HOLIDAY"
+                                            ? "bg-purple-600 text-white"
+                                            : item.finalStatus === "UNPAID_WEEK_OFF"
+                                              ? "bg-amber-600 text-white"
+                                              : item.finalStatus === "UNPAID_HOLIDAY"
+                                                ? "bg-purple-400 text-white"
+                                                : item.finalStatus === "LATE"
+                                                  ? "bg-teal-600 text-white"
+                                                  : item.finalStatus === "HALF_DAY"
+                                                    ? "bg-amber-500 text-white"
+                                                    : item.finalStatus === "UNPAID_LEAVE" ||
+                                                        item.finalStatus === "ABSENT"
+                                                      ? "bg-rose-600 text-white"
+                                                      : "bg-slate-500 text-white"
                                     }`}
                                   >
                                     {item.finalStatus}
